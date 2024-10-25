@@ -1,37 +1,39 @@
 package cmd
 
 import (
-	"buildenv/pkg"
+	"buildenv/config"
 	"flag"
 	"fmt"
 	"log"
 )
 
 type createCmd struct {
-	filename string
+	platformName string
 }
 
 func (cmd *createCmd) register() {
-	flag.StringVar(&cmd.filename, "create", "", "create buildenv")
+	flag.StringVar(&cmd.platformName, "c", "", "create buildenv")
+	flag.StringVar(&cmd.platformName, "create", "", "create buildenv")
 }
 
-func (cmd *createCmd) listen() (exit bool) {
-	if cmd.filename == "" {
+func (cmd *createCmd) listen() (quit bool) {
+	if cmd.platformName == "" {
 		return false
 	}
 
-	if err := cmd.create(cmd.filename); err != nil {
-		log.Println(err)
-	} else {
-		log.Printf("[buildenv/%v.json] was successfully created with default template, please fill it...", cmd.filename)
+	if err := cmd.doCreate(cmd.platformName); err != nil {
+		log.Printf("[cfg/platform/%s]: %s", cmd.platformName, err)
+		return true
 	}
+
+	log.Printf("[cfg/platform/%s]: created successfully...", cmd.platformName)
 	return true
 }
 
-func (cmd *createCmd) create(filename string) error {
-	buildEnv := pkg.BuildEnv{}
-	if err := buildEnv.Write(filename); err != nil {
-		return fmt.Errorf("failed to write buildenv %v", filename)
+func (cmd *createCmd) doCreate(name string) error {
+	buildEnv := config.BuildEnv{}
+	if err := buildEnv.Write(name, force.force); err != nil {
+		return fmt.Errorf("failed to write cfg/buildenv.json: %w", err)
 	}
 
 	return nil

@@ -22,10 +22,11 @@ type versionCmd struct {
 }
 
 func (cmd *versionCmd) register() {
+	flag.BoolVar(&cmd.execute, "v", false, "print version")
 	flag.BoolVar(&cmd.execute, "version", false, "print version")
 }
 
-func (cmd *versionCmd) listen() (exit bool) {
+func (cmd *versionCmd) listen() (quit bool) {
 	if cmd.execute {
 		cmd.PrintVersion()
 		return true

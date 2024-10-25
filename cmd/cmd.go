@@ -4,15 +4,24 @@ import (
 	"flag"
 )
 
-// Command flag command interface
-type Command interface {
-	register()           // implement it to read flag values
-	listen() (exit bool) // handle cmdName, return true when program should exit
+type reisterable interface {
+	register()
 }
 
-var commands = []Command{
-	&versionCmd{},
-	&createCmd{},
+type responsible interface {
+	reisterable
+	listen() (quit bool)
+}
+
+var (
+	force   forceCmd
+	version versionCmd
+	create  createCmd
+)
+var commands = []reisterable{
+	&force,
+	&version,
+	&create,
 }
 
 // Listen listen commands input
@@ -23,10 +32,12 @@ func Listen() bool {
 	}
 	flag.Parse()
 
-	// Receive commands
+	// Handle commands
 	for i := 0; i < len(commands); i++ {
-		if commands[i].listen() {
-			return true
+		if cmd, ok := commands[i].(responsible); ok {
+			if cmd.listen() {
+				return true
+			}
 		}
 	}
 
