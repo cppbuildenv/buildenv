@@ -1,8 +1,6 @@
 package interactive
 
 import (
-	"fmt"
-
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -22,7 +20,7 @@ const (
 	modeAbout
 )
 
-var options = []string{
+var menus = []string{
 	menuCreatePlatform,
 	menuChoosePlatform,
 	menuAbout,
@@ -33,8 +31,8 @@ func createMenuModel(modeChanged func(mode mode)) menuModel {
 	const defaultHeight = 10
 
 	var items []list.Item
-	for _, option := range options {
-		items = append(items, listItem(option))
+	for _, menu := range menus {
+		items = append(items, listItem(menu))
 	}
 
 	styles := createStyles()
@@ -55,7 +53,6 @@ func createMenuModel(modeChanged func(mode mode)) menuModel {
 type menuModel struct {
 	list        list.Model
 	quitting    bool
-	value       string
 	styles      styles
 	modeChanged func(mode mode)
 }
@@ -78,9 +75,8 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "enter":
 			if i, ok := m.list.SelectedItem().(listItem); ok {
-				m.value = string(i)
 				if m.modeChanged != nil {
-					switch m.value {
+					switch string(i) {
 					case menuCreatePlatform:
 						m.modeChanged(modePlatformEdit)
 
@@ -91,8 +87,6 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						m.modeChanged(modeAbout)
 					}
 				}
-
-				m.value = ""
 			}
 
 			return m, nil
@@ -105,10 +99,6 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m menuModel) View() string {
-	if m.value != "" {
-		return m.styles.quitTextStyle.Render(fmt.Sprintf("You selected: %s", m.value))
-	}
-
 	if m.quitting {
 		return m.styles.quitTextStyle.Render("See you next time...")
 	}

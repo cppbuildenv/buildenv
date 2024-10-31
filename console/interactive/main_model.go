@@ -9,19 +9,27 @@ var (
 )
 
 func CreateMainModel(callabcks CommandCallbacks) MainModel {
-	goback := func() { currentMode = modeMenu }
-
 	return MainModel{
-		optionModel: createMenuModel(func(mode mode) {
+		menuMode: createMenuModel(func(mode mode) {
 			currentMode = mode
 		}),
-		platformEditModel: createPlatformCreateModel(func(name string) error {
+		platformCreateModel: createPlatformCreateModel(func(name string) error {
 			return callabcks.OnCreatePlatform(name)
-		}, goback),
-		platformSelectModel: createPlatformSelectModel("./conf/platform", func(platform string) {
-			callabcks.OnCreatePlatform(platform)
-		}, goback),
-		aboutModel: createAboutModel(goback),
+		}, func(this *platformCreateModel) {
+			this.Reset()
+			currentMode = modeMenu
+		}),
+		platformSelectModel: createPlatformSelectModel("./conf/platform",
+			func(platform string) {
+				callabcks.OnCreatePlatform(platform)
+			},
+			func() {
+				currentMode = modeMenu
+			},
+		),
+		aboutModel: createAboutModel(func() {
+			currentMode = modeMenu
+		}),
 	}
 }
 
@@ -31,8 +39,8 @@ type CommandCallbacks interface {
 }
 
 type MainModel struct {
-	optionModel         tea.Model
-	platformEditModel   tea.Model
+	menuMode            tea.Model
+	platformCreateModel tea.Model
 	platformSelectModel tea.Model
 	aboutModel          tea.Model
 }
@@ -46,13 +54,13 @@ func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch currentMode {
 		case modeMenu:
-			updatedModel, cmd := m.optionModel.Update(msg)
-			m.optionModel = updatedModel
+			updatedModel, cmd := m.menuMode.Update(msg)
+			m.menuMode = updatedModel
 			return m, cmd
 
 		case modePlatformEdit:
-			updatedModel, cmd := m.platformEditModel.Update(msg)
-			m.platformEditModel = updatedModel
+			updatedModel, cmd := m.platformCreateModel.Update(msg)
+			m.platformCreateModel = updatedModel
 			return m, cmd
 
 		case modePlatformList:
@@ -73,10 +81,10 @@ func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m MainModel) View() string {
 	switch currentMode {
 	case modeMenu:
-		return m.optionModel.View()
+		return m.menuMode.View()
 
 	case modePlatformEdit:
-		return m.platformEditModel.View()
+		return m.platformCreateModel.View()
 
 	case modePlatformList:
 		return m.platformSelectModel.View()

@@ -7,7 +7,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func createPlatformCreateModel(create func(name string) error, goback func()) platformCreateModel {
+func createPlatformCreateModel(create func(name string) error, goback func(this *platformCreateModel)) platformCreateModel {
 	ti := textinput.New()
 	ti.Placeholder = "for example: x86_64-linux-ubuntu-20.04..."
 	ti.Focus()
@@ -33,7 +33,7 @@ type platformCreateModel struct {
 	err          error
 
 	create func(name string) error
-	goback func()
+	goback func(this *platformCreateModel)
 }
 
 func (p platformCreateModel) Init() tea.Cmd {
@@ -45,7 +45,7 @@ func (p platformCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "esc", "q":
-			p.goback()
+			p.goback(&p)
 			return p, nil
 
 		case "enter":
@@ -80,4 +80,11 @@ func (p platformCreateModel) View() string {
 		p.textInput.View(),
 		p.styles.helpStyle.Render("[esc/q back · ctrl+c quit]"),
 	)
+}
+
+func (p *platformCreateModel) Reset() {
+	p.textInput.Reset()
+	p.platformName = ""
+	p.created = false
+	p.err = nil
 }
