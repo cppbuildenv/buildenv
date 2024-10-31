@@ -1,4 +1,4 @@
-package cmd
+package cli
 
 import (
 	"flag"
@@ -26,7 +26,7 @@ func (cmd *versionCmd) register() {
 	flag.BoolVar(&cmd.execute, "version", false, "print version")
 }
 
-func (cmd *versionCmd) listen() (quit bool) {
+func (cmd *versionCmd) listen() (handled bool) {
 	if cmd.execute {
 		cmd.PrintVersion()
 		return true

@@ -1,11 +1,9 @@
 package main
 
-import (
-	"buildenv/cmd"
-)
+import "buildenv/console/cli"
 
 func main() {
-	if exit := cmd.Listen(); exit {
+	if exit := cli.Listen(); exit {
 		return
 	}
 }

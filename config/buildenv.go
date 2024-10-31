@@ -41,8 +41,8 @@ func (b BuildEnv) Write(platformName string, forcely bool) error {
 		return err
 	}
 
-	// Check if cfg/buildenv.json exists
-	filePath := fmt.Sprintf("cfg/platform/%s.json", platformName)
+	// Check if conf/buildenv.json exists
+	filePath := fmt.Sprintf("conf/platform/%s.json", platformName)
 	if pathExists(filePath) {
 		if !forcely {
 			return fmt.Errorf("it's already exists, but you can create with -f to overwrite")

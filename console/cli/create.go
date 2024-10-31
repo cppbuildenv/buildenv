@@ -1,10 +1,9 @@
-package cmd
+package cli
 
 import (
 	"buildenv/config"
 	"flag"
 	"fmt"
-	"log"
 )
 
 type createCmd struct {
@@ -12,28 +11,28 @@ type createCmd struct {
 }
 
 func (cmd *createCmd) register() {
-	flag.StringVar(&cmd.platformName, "c", "", "create buildenv")
-	flag.StringVar(&cmd.platformName, "create", "", "create buildenv")
+	flag.StringVar(&cmd.platformName, "c", "", "create a new platform")
+	flag.StringVar(&cmd.platformName, "create", "", "create a new platform")
 }
 
-func (cmd *createCmd) listen() (quit bool) {
+func (cmd *createCmd) listen() (handled bool) {
 	if cmd.platformName == "" {
 		return false
 	}
 
 	if err := cmd.doCreate(cmd.platformName); err != nil {
-		log.Printf("[cfg/platform/%s]: %s", cmd.platformName, err)
+		fmt.Printf("[✘] ---- platform create failed: %s", err)
 		return true
 	}
 
-	log.Printf("[cfg/platform/%s]: created successfully...", cmd.platformName)
+	fmt.Printf("[✔] ---- platform create success: %s\n", cmd.platformName)
 	return true
 }
 
 func (cmd *createCmd) doCreate(name string) error {
 	buildEnv := config.BuildEnv{}
 	if err := buildEnv.Write(name, force.force); err != nil {
-		return fmt.Errorf("failed to write cfg/buildenv.json: %w", err)
+		return err
 	}
 
 	return nil

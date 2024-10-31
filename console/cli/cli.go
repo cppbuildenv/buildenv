@@ -1,4 +1,4 @@
-package cmd
+package cli
 
 import (
 	"flag"
@@ -10,16 +10,18 @@ type reisterable interface {
 
 type responsible interface {
 	reisterable
-	listen() (quit bool)
+	listen() (handled bool)
 }
 
 var (
 	force   forceCmd
+	uimode  interactiveCmd
 	version versionCmd
 	create  createCmd
 )
 var commands = []reisterable{
 	&force,
+	&uimode,
 	&version,
 	&create,
 }
