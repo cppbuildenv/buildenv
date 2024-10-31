@@ -93,7 +93,7 @@ func (p platformSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (p platformSelectModel) View() string {
 	if p.value != "" {
-		return p.styles.quitTextStyle.Render(fmt.Sprintf("[✔] ---- build target platform: %s", p.value))
+		return p.styles.resultTextStyle.Render(fmt.Sprintf("[✔] ---- build target platform: %s", p.value))
 	}
 
 	return "\n" + p.list.View()

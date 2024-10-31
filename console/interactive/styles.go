@@ -21,7 +21,7 @@ type styles struct {
 	selectedItemStyle lipgloss.Style
 	paginationStyle   lipgloss.Style
 	helpStyle         lipgloss.Style
-	quitTextStyle     lipgloss.Style
+	resultTextStyle   lipgloss.Style
 }
 
 func createStyles() styles {
@@ -32,7 +32,7 @@ func createStyles() styles {
 		selectedItemStyle: lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("170")),
 		paginationStyle:   list.DefaultStyles().PaginationStyle.PaddingLeft(4),
 		helpStyle:         list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1),
-		quitTextStyle:     lipgloss.NewStyle().Margin(1, 0, 2, 2),
+		resultTextStyle:   lipgloss.NewStyle().Margin(1, 0, 2, 2),
 	}
 }
 

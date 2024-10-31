@@ -100,7 +100,7 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m menuModel) View() string {
 	if m.quitting {
-		return m.styles.quitTextStyle.Render("See you next time...")
+		return ""
 	}
 
 	return "\n" + m.list.View()

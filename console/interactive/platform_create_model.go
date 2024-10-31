@@ -68,11 +68,11 @@ func (p platformCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (p platformCreateModel) View() string {
 	if p.created {
-		return p.styles.quitTextStyle.Render("[✔] ---- platform create success: %s", p.platformName)
+		return p.styles.resultTextStyle.Render("[✔] ---- platform create success:", p.platformName)
 	}
 
 	if p.err != nil {
-		return p.styles.quitTextStyle.Render("[✘] ---- platform create failed: %s", p.err.Error())
+		return p.styles.resultTextStyle.Render("[✘] ---- platform create failed:", p.err.Error())
 	}
 
 	return fmt.Sprintf("\n%s\n\n%s\n\n%s\n",
