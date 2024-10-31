@@ -9,11 +9,11 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func createPlatformPickModel(platformDir string, picked func(platform string), goback func()) platformPickModel {
+func createPlatformSelectModel(platformDir string, selected func(platform string), goback func()) platformSelectModel {
 	const defaultWidth = 80
 	const defaultHeight = 10
 
-	// Create platform dir if not exists
+	// Create platform dir if not exists.
 	if err := os.MkdirAll(platformDir, 0755); err != nil {
 		fmt.Println("Error creating platform dir:", err)
 		os.Exit(1)
@@ -36,7 +36,7 @@ func createPlatformPickModel(platformDir string, picked func(platform string), g
 	}
 
 	l := list.New(items, listDelegate{styleImpl}, defaultWidth, defaultHeight)
-	l.Title = "Please pick one platform as your build target platform:"
+	l.Title = "Please select one platform as your build target platform:"
 
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
@@ -45,27 +45,27 @@ func createPlatformPickModel(platformDir string, picked func(platform string), g
 	l.Styles.PaginationStyle = styleImpl.paginationStyle
 	l.Styles.HelpStyle = styleImpl.helpStyle
 
-	return platformPickModel{
-		list:   l,
-		styles: styleImpl,
-		picked: picked,
-		goback: goback,
+	return platformSelectModel{
+		list:     l,
+		styles:   styleImpl,
+		selected: selected,
+		goback:   goback,
 	}
 }
 
-type platformPickModel struct {
-	list   list.Model
-	value  string
-	styles styles
-	picked func(platform string)
-	goback func()
+type platformSelectModel struct {
+	list     list.Model
+	value    string
+	styles   styles
+	selected func(platform string)
+	goback   func()
 }
 
-func (p platformPickModel) Init() tea.Cmd {
+func (p platformSelectModel) Init() tea.Cmd {
 	return nil
 }
 
-func (p platformPickModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (p platformSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		p.list.SetWidth(msg.Width)
@@ -76,7 +76,7 @@ func (p platformPickModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			if i, ok := p.list.SelectedItem().(listItem); ok {
 				p.value = string(i)
-				p.picked(p.value)
+				p.selected(p.value)
 			}
 			return p, tea.Quit
 
@@ -91,7 +91,7 @@ func (p platformPickModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return p, cmd
 }
 
-func (p platformPickModel) View() string {
+func (p platformSelectModel) View() string {
 	if p.value != "" {
 		return p.styles.quitTextStyle.Render(fmt.Sprintf("[✔] ---- build target platform: %s", p.value))
 	}

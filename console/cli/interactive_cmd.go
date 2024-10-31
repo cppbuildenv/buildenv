@@ -1,13 +1,17 @@
 package cli
 
 import (
-	"buildenv/console/interactive"
+	inter "buildenv/console/interactive"
 	"flag"
 	"fmt"
 	"log"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+func newInteractiveCmd() *interactiveCmd {
+	return &interactiveCmd{}
+}
 
 type interactiveCmd struct {
 	interactive bool
@@ -23,7 +27,7 @@ func (cmd *interactiveCmd) listen() (handled bool) {
 		return false
 	}
 
-	model := interactive.CreateMainModel(commondCallbacks{})
+	model := inter.CreateMainModel(commondCallbacks{})
 	if _, err := tea.NewProgram(model).Run(); err != nil {
 		log.Fatalf("Running cli in interactive mode error: %s", err)
 	}
@@ -41,5 +45,5 @@ func (c commondCallbacks) OnCreatePlatform(platformName string) error {
 	return nil
 }
 
-func (c commondCallbacks) OnPickPlatform(platformName string) {
+func (c commondCallbacks) OnSelectPlatform(platformName string) {
 }

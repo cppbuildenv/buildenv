@@ -18,8 +18,8 @@ func CreateMainModel(callabcks CommandCallbacks) MainModel {
 		platformEditModel: createPlatformCreateModel(func(name string) error {
 			return callabcks.OnCreatePlatform(name)
 		}, goback),
-		platformPickModel: createPlatformPickModel("./conf/platform", func(platform string) {
-			callabcks.OnPickPlatform(platform)
+		platformSelectModel: createPlatformSelectModel("./conf/platform", func(platform string) {
+			callabcks.OnCreatePlatform(platform)
 		}, goback),
 		aboutModel: createAboutModel(goback),
 	}
@@ -27,14 +27,14 @@ func CreateMainModel(callabcks CommandCallbacks) MainModel {
 
 type CommandCallbacks interface {
 	OnCreatePlatform(platformName string) error
-	OnPickPlatform(platformName string)
+	OnSelectPlatform(platformName string)
 }
 
 type MainModel struct {
-	optionModel       tea.Model
-	platformEditModel tea.Model
-	platformPickModel tea.Model
-	aboutModel        tea.Model
+	optionModel         tea.Model
+	platformEditModel   tea.Model
+	platformSelectModel tea.Model
+	aboutModel          tea.Model
 }
 
 func (m MainModel) Init() tea.Cmd {
@@ -56,8 +56,8 @@ func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 
 		case modePlatformList:
-			updatedModel, cmd := m.platformPickModel.Update(msg)
-			m.platformPickModel = updatedModel
+			updatedModel, cmd := m.platformSelectModel.Update(msg)
+			m.platformSelectModel = updatedModel
 			return m, cmd
 
 		case modeAbout:
@@ -79,7 +79,7 @@ func (m MainModel) View() string {
 		return m.platformEditModel.View()
 
 	case modePlatformList:
-		return m.platformPickModel.View()
+		return m.platformSelectModel.View()
 
 	case modeAbout:
 		return m.aboutModel.View()

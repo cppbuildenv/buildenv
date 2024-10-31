@@ -14,21 +14,25 @@ type responsible interface {
 }
 
 var (
-	force   forceCmd
-	uimode  interactiveCmd
-	version versionCmd
-	create  createCmd
+	force          = newForceCmd()
+	interactive    = newInteractiveCmd()
+	version        = newVersionCmd()
+	createPlatform = newCreatePlatformCmd()
+	selectPlatform = newSelectPlatformCmd("", func(fullpath string) {
+
+	})
 )
 var commands = []reisterable{
-	&force,
-	&uimode,
-	&version,
-	&create,
+	force,
+	interactive,
+	version,
+	createPlatform,
+	selectPlatform,
 }
 
 // Listen listen commands input
 func Listen() bool {
-	// Read cmdName via flag
+	// Read command with flag
 	for i := 0; i < len(commands); i++ {
 		commands[i].register()
 	}

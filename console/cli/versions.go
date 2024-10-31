@@ -8,6 +8,10 @@ import (
 	"strings"
 )
 
+func newVersionCmd() *versionCmd {
+	return &versionCmd{}
+}
+
 var (
 	AppName      string // for example: `buildenv`
 	AppVersion   string // for example: `1.0.4`

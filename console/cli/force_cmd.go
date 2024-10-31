@@ -2,6 +2,10 @@ package cli
 
 import "flag"
 
+func newForceCmd() *forceCmd {
+	return &forceCmd{}
+}
+
 type forceCmd struct {
 	force bool
 }
