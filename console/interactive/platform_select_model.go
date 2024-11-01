@@ -102,10 +102,6 @@ func (p platformSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (p platformSelectModel) View() string {
-	if p.err == nil {
-		// panic("-----p.err == nil")
-	}
-
 	if p.err != nil {
 		return p.styles.resultTextStyle.Render("[✘] ---- invalid platform:", p.err.Error())
 	}

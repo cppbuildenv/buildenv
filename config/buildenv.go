@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const PlatformDir = "conf/platform"
 
-// ==============================  buildenv ============================== //
 type BuildEnv struct {
 	Host      string    `json:"host"`
 	RootFS    RootFS    `json:"rootfs"`
@@ -33,7 +33,7 @@ func (b BuildEnv) Verify() error {
 }
 
 func (b *BuildEnv) Read(filePath string) error {
-	// Check if platform file exists
+	// Check if platform file exists.
 	if !pathExists(filePath) {
 		return fmt.Errorf("platform file not exists: %s", filePath)
 	}
@@ -61,7 +61,7 @@ func (b BuildEnv) Write(filePath string) error {
 		return err
 	}
 
-	// Check if conf/buildenv.json exists
+	// Check if conf/buildenv.json exists.
 	if pathExists(filePath) {
 		return fmt.Errorf("[%s] is already exists", filePath)
 	}
@@ -74,89 +74,48 @@ func (b BuildEnv) Write(filePath string) error {
 	return os.WriteFile(filePath, bytes, os.ModePerm)
 }
 
-// ==============================  rootfs ============================== //
-type RootFS struct {
-	Url     string    `json:"url"`
-	EnvVars RootFSEnv `json:"env_vars"`
-}
+func (b BuildEnv) CreateToolchainFile(outputDir string) (string, error) {
+	var builder strings.Builder
+	builder.WriteString(fmt.Sprintf("set(CMAKE_SYSTEM_NAME \"%s\")\n", b.Toolchain.ToolChainVars.CMAKE_SYSTEM_NAME))
+	builder.WriteString(fmt.Sprintf("set(CMAKE_SYSTEM_PROCESSOR \"%s\")\n", b.Toolchain.ToolChainVars.CMAKE_SYSTEM_PROCESSOR))
 
-type RootFSEnv struct {
-	SYSROOT                string   `json:"SYSROOT"`
-	PKG_CONFIG_SYSROOT_DIR string   `json:"PKG_CONFIG_SYSROOT_DIR"`
-	PKG_CONFIG_PATH        []string `json:"PKG_CONFIG_PATH"`
-}
+	if !b.RootFS.None {
+		builder.WriteString("\n# Set sysroot for cross-compile.\n")
+		builder.WriteString(fmt.Sprintf("set(CMAKE_SYSROOT \"%s\")\n", b.RootFS.Path))
+		builder.WriteString(fmt.Sprintf("list(APPEND CMAKE_FIND_ROOT_PATH \"%s\")\n", b.RootFS.Path))
+		builder.WriteString(fmt.Sprintf("list(APPEND CMAKE_PREFIX_PATH NEVER \"%s\")\n", b.RootFS.Path))
 
-func (r RootFS) Verify() error {
-	if r.Url == "" {
-		return fmt.Errorf("rootfs.url is empty")
+		builder.WriteString("\n# Set pkg-config path for cross-compile.\n")
+		builder.WriteString(fmt.Sprintf("set(ENV{PKG_CONFIG_SYSROOT_DIR} \"%s\")\n", b.RootFS.EnvVars.PKG_CONFIG_SYSROOT_DIR))
+		builder.WriteString(fmt.Sprintf("set(ENV{PKG_CONFIG_PATH} \"%s\")\n", strings.Join(b.RootFS.EnvVars.PKG_CONFIG_PATH, ";")))
 	}
 
-	if r.EnvVars.SYSROOT == "" {
-		return fmt.Errorf("rootfs.env.SYSROOT is empty")
+	builder.WriteString("\n# Set toolchain for cross-compile.\n")
+	builder.WriteString(fmt.Sprintf("set(CMAKE_C_COMPILER \"%s\")\n", b.Toolchain.EnvVars.CC))
+	builder.WriteString(fmt.Sprintf("set(CMAKE_CXX_COMPILER \"%s\")\n", b.Toolchain.EnvVars.CXX))
+	builder.WriteString(fmt.Sprintf("set(CMAKE_Fortran_COMPILER \"%s\")\n", b.Toolchain.EnvVars.FC))
+	builder.WriteString(fmt.Sprintf("set(CMAKE_RANLIB \"%s\")\n", b.Toolchain.EnvVars.RANLIB))
+	builder.WriteString(fmt.Sprintf("set(CMAKE_AR \"%s\")\n", b.Toolchain.EnvVars.AR))
+	builder.WriteString(fmt.Sprintf("set(CMAKE_LINKER \"%s\")\n", b.Toolchain.EnvVars.LD))
+	builder.WriteString(fmt.Sprintf("set(CMAKE_NM \"%s\")\n", b.Toolchain.EnvVars.NM))
+	builder.WriteString(fmt.Sprintf("set(CMAKE_OBJDUMP \"%s\")\n", b.Toolchain.EnvVars.OBJDUMP))
+	builder.WriteString(fmt.Sprintf("set(CMAKE_STRIP \"%s\")\n", b.Toolchain.EnvVars.STRIP))
+
+	builder.WriteString("\n# Search programs in the host environment.\n")
+	builder.WriteString("set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)\n")
+
+	builder.WriteString("\n# Search libraries and headers in the target environment.\n")
+	builder.WriteString("set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)\n")
+	builder.WriteString("set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)\n")
+	builder.WriteString("set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)\n")
+
+	// Write the modified content to the output file.
+	filePath := filepath.Join(outputDir, "toolchain_buildenv.cmake")
+	if err := os.WriteFile(filePath, []byte(builder.String()), os.ModePerm); err != nil {
+		return "", err
 	}
 
-	if r.EnvVars.PKG_CONFIG_SYSROOT_DIR == "" {
-		return fmt.Errorf("rootfs.env.PKG_CONFIG_SYSROOT_DIR is empty")
-	}
-
-	if len(r.EnvVars.PKG_CONFIG_PATH) == 0 {
-		return fmt.Errorf("rootfs.env.PKG_CONFIG_PATH is empty")
-	}
-
-	return nil
-}
-
-// ==============================  toolchain ============================== //
-type Toolchain struct {
-	Url           string          `json:"url"`
-	Path          string          `json:"path"`
-	EnvVars       ToolchainEnvVar `json:"env_vars"`
-	ToolChainVars ToolChainVars   `json:"toolchain_vars"`
-}
-
-type ToolchainEnvVar struct {
-	CC      string `json:"CC"`
-	CXX     string `json:"CXX"`
-	FC      string `json:"FC"`
-	RANLIB  string `json:"RANLIB"`
-	AR      string `json:"AR"`
-	LD      string `json:"LD"`
-	NM      string `json:"NM"`
-	OBJDUMP string `json:"OBJDUMP"`
-	STRIP   string `json:"STRIP"`
-}
-
-type ToolChainVars struct {
-	CMAKE_SYSTEM_NAME      string `json:"CMAKE_SYSTEM_NAME"`
-	CMAKE_SYSTEM_PROCESSOR string `json:"CMAKE_SYSTEM_PROCESSOR"`
-}
-
-func (t Toolchain) Verify() error {
-	if t.Url == "" {
-		return fmt.Errorf("toolchain.url is empty")
-	}
-
-	if t.Path == "" {
-		return fmt.Errorf("toolchain.path is empty")
-	}
-
-	if t.EnvVars.CC == "" {
-		return fmt.Errorf("toolchain.env.CC is empty")
-	}
-
-	if t.EnvVars.CXX == "" {
-		return fmt.Errorf("toolchain.env.CXX is empty")
-	}
-
-	if t.ToolChainVars.CMAKE_SYSTEM_NAME == "" {
-		return fmt.Errorf("toolchain.toolchain_vars.CMAKE_SYSTEM_NAME is empty")
-	}
-
-	if t.ToolChainVars.CMAKE_SYSTEM_PROCESSOR == "" {
-		return fmt.Errorf("toolchain.toolchain_vars.CMAKE_SYSTEM_PROCESSOR is empty")
-	}
-
-	return nil
+	return filePath, nil
 }
 
 func pathExists(path string) bool {

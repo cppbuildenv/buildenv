@@ -2,6 +2,7 @@
     "host": "http://192.168.100.25:8083/repository/build_resource",
     "rootfs": {
         "url": "rootfs/ti-processor-sdk-rtos-j721e-evm-07_03_00_07.tar.gz",
+        "path": "rootfs/ti-processor-sdk-rtos-j721e-evm-07_03_00_07",
         "env_vars": {
             "SYSROOT": "rootfs/ti-processor-sdk-rtos-j721e-evm-07_03_00_07",
             "PKG_CONFIG_SYSROOT_DIR": "ti-processor-sdk-rtos-j721e-evm-07_03_00_07",
