@@ -33,9 +33,9 @@ func (c *createPlatformCmd) listen() (handled bool) {
 	return true
 }
 
-func (c *createPlatformCmd) doCreate(name string) error {
+func (c *createPlatformCmd) doCreate(platformName string) error {
 	buildEnv := config.BuildEnv{}
-	if err := buildEnv.Write(name, force.force); err != nil {
+	if err := buildEnv.Write(platformName); err != nil {
 		return err
 	}
 

@@ -7,15 +7,17 @@ import (
 	"path/filepath"
 )
 
+const PlatformDir = "conf/platform"
+
 // ==============================  buildenv ============================== //
 type BuildEnv struct {
-	HostUrl   string    `json:"hostUrl"`
+	Host      string    `json:"host"`
 	RootFS    RootFS    `json:"rootfs"`
 	Toolchain Toolchain `json:"toolchain"`
 }
 
 func (b BuildEnv) Verify() error {
-	if b.HostUrl == "" {
+	if b.Host == "" {
 		return fmt.Errorf("buildenv.hostUrl is empty")
 	}
 
@@ -30,10 +32,28 @@ func (b BuildEnv) Verify() error {
 	return nil
 }
 
-func (b BuildEnv) Write(platformName string, forcely bool) error {
+func (b *BuildEnv) Read(filePath string) error {
+	// Check if platform file exists
+	if !pathExists(filePath) {
+		return fmt.Errorf("platform file not exists: %s", filePath)
+	}
+
+	// Read conf/buildenv.json
+	bytes, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(bytes, b); err != nil {
+		return fmt.Errorf("%s read error: %w", filePath, err)
+	}
+
+	return nil
+}
+
+func (b BuildEnv) Write(filePath string) error {
 	// Create empty array for empty field.
-	if len(b.RootFS.Env.PKG_CONFIG_PATH) == 0 {
-		b.RootFS.Env.PKG_CONFIG_PATH = []string{}
+	if len(b.RootFS.EnvVars.PKG_CONFIG_PATH) == 0 {
+		b.RootFS.EnvVars.PKG_CONFIG_PATH = []string{}
 	}
 
 	bytes, err := json.MarshalIndent(b, "", "    ")
@@ -42,11 +62,8 @@ func (b BuildEnv) Write(platformName string, forcely bool) error {
 	}
 
 	// Check if conf/buildenv.json exists
-	filePath := fmt.Sprintf("conf/platform/%s.json", platformName)
 	if pathExists(filePath) {
-		if !forcely {
-			return fmt.Errorf("it's already exists, but you can create with -f to overwrite")
-		}
+		return fmt.Errorf("[%s] is already exists", filePath)
 	}
 
 	// Makesure the parent directory exists.
@@ -59,8 +76,8 @@ func (b BuildEnv) Write(platformName string, forcely bool) error {
 
 // ==============================  rootfs ============================== //
 type RootFS struct {
-	Url string    `json:"url"`
-	Env RootFSEnv `json:"env"`
+	Url     string    `json:"url"`
+	EnvVars RootFSEnv `json:"env_vars"`
 }
 
 type RootFSEnv struct {
@@ -74,15 +91,15 @@ func (r RootFS) Verify() error {
 		return fmt.Errorf("rootfs.url is empty")
 	}
 
-	if r.Env.SYSROOT == "" {
+	if r.EnvVars.SYSROOT == "" {
 		return fmt.Errorf("rootfs.env.SYSROOT is empty")
 	}
 
-	if r.Env.PKG_CONFIG_SYSROOT_DIR == "" {
+	if r.EnvVars.PKG_CONFIG_SYSROOT_DIR == "" {
 		return fmt.Errorf("rootfs.env.PKG_CONFIG_SYSROOT_DIR is empty")
 	}
 
-	if len(r.Env.PKG_CONFIG_PATH) == 0 {
+	if len(r.EnvVars.PKG_CONFIG_PATH) == 0 {
 		return fmt.Errorf("rootfs.env.PKG_CONFIG_PATH is empty")
 	}
 
@@ -91,12 +108,13 @@ func (r RootFS) Verify() error {
 
 // ==============================  toolchain ============================== //
 type Toolchain struct {
-	Url  string       `json:"url"`
-	Path string       `json:"path"`
-	Env  ToolchainEnv `json:"env"`
+	Url           string          `json:"url"`
+	Path          string          `json:"path"`
+	EnvVars       ToolchainEnvVar `json:"env_vars"`
+	ToolChainVars ToolChainVars   `json:"toolchain_vars"`
 }
 
-type ToolchainEnv struct {
+type ToolchainEnvVar struct {
 	CC      string `json:"CC"`
 	CXX     string `json:"CXX"`
 	FC      string `json:"FC"`
@@ -108,6 +126,11 @@ type ToolchainEnv struct {
 	STRIP   string `json:"STRIP"`
 }
 
+type ToolChainVars struct {
+	CMAKE_SYSTEM_NAME      string `json:"CMAKE_SYSTEM_NAME"`
+	CMAKE_SYSTEM_PROCESSOR string `json:"CMAKE_SYSTEM_PROCESSOR"`
+}
+
 func (t Toolchain) Verify() error {
 	if t.Url == "" {
 		return fmt.Errorf("toolchain.url is empty")
@@ -117,12 +140,20 @@ func (t Toolchain) Verify() error {
 		return fmt.Errorf("toolchain.path is empty")
 	}
 
-	if t.Env.CC == "" {
+	if t.EnvVars.CC == "" {
 		return fmt.Errorf("toolchain.env.CC is empty")
 	}
 
-	if t.Env.CXX == "" {
+	if t.EnvVars.CXX == "" {
 		return fmt.Errorf("toolchain.env.CXX is empty")
+	}
+
+	if t.ToolChainVars.CMAKE_SYSTEM_NAME == "" {
+		return fmt.Errorf("toolchain.toolchain_vars.CMAKE_SYSTEM_NAME is empty")
+	}
+
+	if t.ToolChainVars.CMAKE_SYSTEM_PROCESSOR == "" {
+		return fmt.Errorf("toolchain.toolchain_vars.CMAKE_SYSTEM_PROCESSOR is empty")
 	}
 
 	return nil

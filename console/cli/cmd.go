@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"buildenv/config"
+	"buildenv/console"
 	"flag"
 )
 
@@ -14,16 +16,12 @@ type responsible interface {
 }
 
 var (
-	force          = newForceCmd()
-	interactive    = newInteractiveCmd()
+	interactive    = newInteractiveCmd(console.PlatformCallbacks)
 	version        = newVersionCmd()
 	createPlatform = newCreatePlatformCmd()
-	selectPlatform = newSelectPlatformCmd("", func(fullpath string) {
-
-	})
+	selectPlatform = newSelectPlatformCmd(config.PlatformDir, console.PlatformCallbacks)
 )
 var commands = []reisterable{
-	force,
 	interactive,
 	version,
 	createPlatform,

@@ -1,0 +1,21 @@
+set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR aarch64)
+
+# Set sysroot for cross-compile.
+if (DEFINED ENV{SYSROOT})
+    set(CMAKE_SYSROOT $ENV{SYSROOT})
+
+    list(APPEND CMAKE_FIND_ROOT_PATH $ENV{SYSROOT})
+    list(APPEND CMAKE_PREFIX_PATH $ENV{SYSROOT}/usr)
+endif()
+
+set(CMAKE_C_COMPILER   $ENV{TOOLCHAIN_PREFIX}gcc)
+set(CMAKE_CXX_COMPILER $ENV{TOOLCHAIN_PREFIX}g++)
+
+# Search programs in the host environment.
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+
+# Search headers and libraries in the target environment.
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)

@@ -1,24 +1,24 @@
 package cli
 
 import (
+	"buildenv/config"
 	"flag"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 )
 
-func newSelectPlatformCmd(platformDir string, selected func(fullpath string)) *selectPlatformCmd {
+func newSelectPlatformCmd(platformDir string, callbacks config.PlatformCallbacks) *selectPlatformCmd {
 	return &selectPlatformCmd{
 		platformDir: platformDir,
-		selected:    selected,
+		callbacks:   callbacks,
 	}
 }
 
 type selectPlatformCmd struct {
 	platformName string
 	platformDir  string
-	selected     func(fullpath string)
+	callbacks    config.PlatformCallbacks
 }
 
 func (p *selectPlatformCmd) register() {
@@ -32,28 +32,15 @@ func (s *selectPlatformCmd) listen() (handled bool) {
 	}
 
 	if strings.HasSuffix(s.platformName, ".json") {
-		s.platformName = filepath.Join(s.platformName, ".json")
-
+		s.platformName = s.platformName + ".json"
 	}
-	filePath := filepath.Join(s.platformDir, s.platformName)
-	if s.pathExists(filePath) {
-		fmt.Printf("[✘] ---- none exist platform: %s\n", s.platformName)
+
+	filePath := filepath.Join(config.PlatformDir, s.platformName)
+	if err := s.callbacks.OnSelectPlatform(filePath); err != nil {
+		fmt.Printf("[✘] ---- build target platform: [%s], error: %s\n", filePath, err)
 		return true
 	}
 
-	// TODO: validate platform json file
-
-	s.selected(filePath)
 	fmt.Printf("[✔] ---- build target platform: %s\n", s.platformName)
-
 	return true
-}
-
-func (selectPlatformCmd) pathExists(path string) bool {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true
-	}
-
-	return !os.IsNotExist(err)
 }

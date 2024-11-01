@@ -1,15 +1,17 @@
 package interactive
 
 import (
+	"buildenv/config"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func createPlatformSelectModel(platformDir string, selected func(platform string), goback func()) platformSelectModel {
+func createPlatformSelectModel(platformDir string, callbacks config.PlatformCallbacks, goback func()) platformSelectModel {
 	const defaultWidth = 80
 	const defaultHeight = 10
 
@@ -46,19 +48,20 @@ func createPlatformSelectModel(platformDir string, selected func(platform string
 	l.Styles.HelpStyle = styleImpl.helpStyle
 
 	return platformSelectModel{
-		list:     l,
-		styles:   styleImpl,
-		selected: selected,
-		goback:   goback,
+		list:      l,
+		styles:    styleImpl,
+		callbacks: callbacks,
+		goback:    goback,
 	}
 }
 
 type platformSelectModel struct {
-	list     list.Model
-	value    string
-	styles   styles
-	selected func(platform string)
-	goback   func()
+	list      list.Model
+	value     string
+	err       error
+	styles    styles
+	callbacks config.PlatformCallbacks
+	goback    func()
 }
 
 func (p platformSelectModel) Init() tea.Cmd {
@@ -75,13 +78,20 @@ func (p platformSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "enter":
 			if i, ok := p.list.SelectedItem().(listItem); ok {
-				p.value = string(i)
-				p.selected(p.value)
+				filePath := filepath.Join(config.PlatformDir, string(i)+".json")
+				if err := p.callbacks.OnSelectPlatform(filePath); err != nil {
+					p.err = err
+				} else {
+					p.value = string(i)
+					p.err = nil
+				}
 			}
 			return p, tea.Quit
 
 		case "ctrl+c", "esc", "q":
 			p.goback()
+			p.value = ""
+			p.err = nil
 			return p, nil
 		}
 	}
@@ -92,8 +102,16 @@ func (p platformSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (p platformSelectModel) View() string {
+	if p.err == nil {
+		// panic("-----p.err == nil")
+	}
+
+	if p.err != nil {
+		return p.styles.resultTextStyle.Render("[✘] ---- invalid platform:", p.err.Error())
+	}
+
 	if p.value != "" {
-		return p.styles.resultTextStyle.Render(fmt.Sprintf("[✔] ---- build target platform: %s", p.value))
+		return p.styles.resultTextStyle.Render("[✔] ---- build target platform:", p.value)
 	}
 
 	return "\n" + p.list.View()

@@ -1,6 +1,8 @@
 package interactive
 
 import (
+	"buildenv/config"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -8,34 +10,22 @@ var (
 	currentMode mode
 )
 
-func CreateMainModel(callabcks CommandCallbacks) MainModel {
+func CreateMainModel(callabcks config.PlatformCallbacks) MainModel {
 	return MainModel{
 		menuMode: createMenuModel(func(mode mode) {
 			currentMode = mode
 		}),
-		platformCreateModel: createPlatformCreateModel(func(name string) error {
-			return callabcks.OnCreatePlatform(name)
-		}, func(this *platformCreateModel) {
+		platformCreateModel: createPlatformCreateModel(callabcks, func(this *platformCreateModel) {
 			this.Reset()
 			currentMode = modeMenu
 		}),
-		platformSelectModel: createPlatformSelectModel("./conf/platform",
-			func(platform string) {
-				callabcks.OnCreatePlatform(platform)
-			},
-			func() {
-				currentMode = modeMenu
-			},
-		),
+		platformSelectModel: createPlatformSelectModel(config.PlatformDir, callabcks, func() {
+			currentMode = modeMenu
+		}),
 		aboutModel: createAboutModel(func() {
 			currentMode = modeMenu
 		}),
 	}
-}
-
-type CommandCallbacks interface {
-	OnCreatePlatform(platformName string) error
-	OnSelectPlatform(platformName string)
 }
 
 type MainModel struct {

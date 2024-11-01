@@ -1,13 +1,15 @@
 package interactive
 
 import (
+	"buildenv/config"
 	"fmt"
+	"path/filepath"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func createPlatformCreateModel(create func(name string) error, goback func(this *platformCreateModel)) platformCreateModel {
+func createPlatformCreateModel(callbacks config.PlatformCallbacks, goback func(this *platformCreateModel)) platformCreateModel {
 	ti := textinput.New()
 	ti.Placeholder = "for example: x86_64-linux-ubuntu-20.04..."
 	ti.Focus()
@@ -19,7 +21,7 @@ func createPlatformCreateModel(create func(name string) error, goback func(this 
 
 	return platformCreateModel{
 		textInput: ti,
-		create:    create,
+		callbacks: callbacks,
 		goback:    goback,
 		styles:    styleImpl,
 	}
@@ -32,8 +34,8 @@ type platformCreateModel struct {
 	created      bool
 	err          error
 
-	create func(name string) error
-	goback func(this *platformCreateModel)
+	callbacks config.PlatformCallbacks
+	goback    func(this *platformCreateModel)
 }
 
 func (p platformCreateModel) Init() tea.Cmd {
@@ -49,7 +51,8 @@ func (p platformCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return p, nil
 
 		case "enter":
-			if err := p.create(p.textInput.Value()); err != nil {
+			filePath := filepath.Join(config.PlatformDir, p.textInput.Value()+".json")
+			if err := p.callbacks.OnCreatePlatform(filePath); err != nil {
 				p.err = err
 				p.created = false
 			} else {
