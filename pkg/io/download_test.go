@@ -11,5 +11,11 @@ func TestDownload(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Logf("path: %v", path)
+	if path != "testdata\temp\ti-processor-sdk-rtos-j721e-evm-07_03_00_07.tar.gz" {
+		t.Logf("path: %v", path)
+	}
+}
+
+func TestUncompress(t *testing.T) {
+	ExtractTarGz("testdata/temp/ti-processor-sdk-rtos-j721e-evm-07_03_00_07.tar.gz", "testdata/temp")
 }
