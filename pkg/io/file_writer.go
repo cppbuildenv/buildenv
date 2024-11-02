@@ -8,9 +8,9 @@ import (
 )
 
 type FileWriter struct {
-	fileName string
-	fileSize int64
-	progress func(percent int)
+	fileName     string
+	fileSize     int64
+	progressFunc func(percent int)
 }
 
 func (f FileWriter) Write(reader io.Reader, destDir string) error {
@@ -28,9 +28,9 @@ func (f FileWriter) Write(reader io.Reader, destDir string) error {
 	defer dstFile.Close()
 
 	progressWriter := ProgressWriter{
-		Writer:   dstFile,
-		fileSize: f.fileSize,
-		progress: f.progress,
+		Writer:       dstFile,
+		fileSize:     f.fileSize,
+		progressFunc: f.progressFunc,
 	}
 
 	// Write data to file.
@@ -46,7 +46,7 @@ type ProgressWriter struct {
 	io.Writer
 	fileSize     int64     // Total size of data being written
 	lastProgress int       // Last reported progress
-	progress     func(int) // Callback function to report progress
+	progressFunc func(int) // Callback function to report progress
 	totalWritten int64     // Total bytes written so far
 }
 
@@ -60,11 +60,11 @@ func (pw *ProgressWriter) Write(p []byte) (n int, err error) {
 	pw.totalWritten += int64(n)
 
 	// Calculate progress percentage
-	if pw.fileSize > 0 && pw.progress != nil {
+	if pw.fileSize > 0 && pw.progressFunc != nil {
 		progress := int(float64(pw.totalWritten) / float64(pw.fileSize) * 100.0)
 		if progress > pw.lastProgress {
 			pw.lastProgress = int(progress)
-			pw.progress(progress)
+			pw.progressFunc(progress)
 		}
 	}
 
@@ -73,8 +73,8 @@ func (pw *ProgressWriter) Write(p []byte) (n int, err error) {
 
 func NewFileWriter(fileName string, fileSize int64, progress func(percent int)) FileWriter {
 	return FileWriter{
-		fileName: fileName,
-		fileSize: fileSize,
-		progress: progress,
+		fileName:     fileName,
+		fileSize:     fileSize,
+		progressFunc: progress,
 	}
 }
