@@ -12,20 +12,20 @@ import (
 func ExtractTarGz(tarGzFile string, dest string) error {
 	file, err := os.Open(tarGzFile)
 	if err != nil {
-		return fmt.Errorf("无法打开文件: %v", err)
+		return fmt.Errorf("failed to open tar.gz file: %w", err)
 	}
 	defer file.Close()
 
-	gr, err := gzip.NewReader(file)
+	gzReader, err := gzip.NewReader(file)
 	if err != nil {
 		return err
 	}
-	defer gr.Close()
+	defer gzReader.Close()
 
-	tr := tar.NewReader(gr)
+	tarReader := tar.NewReader(gzReader)
 
 	for {
-		header, err := tr.Next()
+		header, err := tarReader.Next()
 		if err == io.EOF {
 			break
 		}
@@ -40,18 +40,17 @@ func ExtractTarGz(tarGzFile string, dest string) error {
 			if err := os.MkdirAll(target, os.ModePerm); err != nil {
 				return err
 			}
-		case tar.TypeReg:
+
+		default:
 			f, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY, os.FileMode(header.Mode))
 			if err != nil {
 				return err
 			}
-			if _, err := io.Copy(f, tr); err != nil {
+			if _, err := io.Copy(f, tarReader); err != nil {
 				f.Close()
 				return err
 			}
 			f.Close()
-		default:
-			fmt.Printf("未处理的文件类型: %c\n", header.Typeflag)
 		}
 	}
 
