@@ -8,7 +8,7 @@ func TestCreateToolchainFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := buildenv.Verify(); err != nil {
+	if err := buildenv.Verify(true); err != nil {
 		t.Fatal(err)
 	}
 

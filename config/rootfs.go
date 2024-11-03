@@ -1,6 +1,11 @@
 package config
 
-import "fmt"
+import (
+	"buildenv/pkg/io"
+	"fmt"
+	"net/url"
+	"path/filepath"
+)
 
 type RootFS struct {
 	Url     string    `json:"url"`
@@ -15,7 +20,7 @@ type RootFSEnv struct {
 	PKG_CONFIG_PATH        []string `json:"PKG_CONFIG_PATH"`
 }
 
-func (r RootFS) Verify() error {
+func (r RootFS) Verify(host string, onlyFields bool) error {
 	// If none is true, then rootfs is not required.
 	if r.None {
 		return nil
@@ -37,5 +42,31 @@ func (r RootFS) Verify() error {
 		return fmt.Errorf("rootfs.env.PKG_CONFIG_PATH is empty")
 	}
 
+	if onlyFields {
+		return nil
+	}
+
+	return r.checkIntegrity(host)
+}
+
+func (b RootFS) checkIntegrity(host string) error {
+	rootfsPath := filepath.Join(DownloadDir, b.Path)
+	if !pathExists(rootfsPath) {
+		fullUrl, err := url.JoinPath(host, b.Url)
+		if err != nil {
+			return fmt.Errorf("buildenv.rootfs.url error: %w", err)
+		}
+
+		downloaded, err := io.Download(fullUrl, DownloadDir)
+		if err != nil {
+			return fmt.Errorf("%s: download rootfs failed: %w", fullUrl, err)
+		}
+
+		if err := io.Extract(downloaded, rootfsPath); err != nil {
+			return fmt.Errorf("%s: extract rootfs failed: %w", downloaded, err)
+		}
+
+		fmt.Println("[✔] ---- rootfs of platform setup success.")
+	}
 	return nil
 }

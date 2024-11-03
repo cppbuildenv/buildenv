@@ -1,6 +1,7 @@
 package io
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -8,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"strings"
 )
 
 func Download(url string, destDir string) (downloaded string, err error) {
@@ -72,4 +74,49 @@ func getFileName(downloadURL string) (string, error) {
 		return match[1], nil
 	}
 	return "", nil
+}
+
+type progressBar struct {
+	fileName     string
+	fileSize     int64
+	currentSize  int64
+	width        int
+	lastProgress int
+}
+
+func NewProgressBar(fileName string, fileSize int64) *progressBar {
+	return &progressBar{
+		fileName: fileName,
+		fileSize: fileSize,
+		width:    50,
+	}
+}
+
+func (p *progressBar) Write(b []byte) (int, error) {
+	n := len(b)
+	p.currentSize += int64(n)
+	progress := int(float64(p.currentSize*100) / float64(p.fileSize))
+
+	if progress > p.lastProgress {
+		p.lastProgress = progress
+
+		output := fmt.Sprintf("\rDownloading:\t%s ---- %d%% (%s/%s)",
+			p.fileName,
+			progress,
+			formatSize(p.currentSize),
+			formatSize(p.fileSize))
+
+		// Add padding to align the output with the terminal width.
+		padding := terminalWidth() - len(output) - 10
+		if padding > 0 {
+			output += strings.Repeat(" ", padding)
+		}
+		fmt.Printf("\r%s", output)
+
+		if progress == 100 {
+			fmt.Println()
+		}
+	}
+
+	return n, nil
 }

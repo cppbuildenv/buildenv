@@ -36,11 +36,7 @@ func (b *BuildEnvConf) Verify() error {
 		return err
 	}
 
-	if err := buildenv.Verify(); err != nil {
-		return err
-	}
-
-	if err := buildenv.CheckIntegrity(); err != nil {
+	if err := buildenv.Verify(false); err != nil {
 		return err
 	}
 

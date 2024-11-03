@@ -10,17 +10,17 @@ import (
 	"strings"
 )
 
-func ExtractFile(archiveFile string, destDir string, progressFunc func(percent int)) error {
+func Extract(archiveFile string, destDir string) error {
 	switch {
 	case strings.HasSuffix(archiveFile, ".tar.gz"):
-		return extractTarGz(archiveFile, destDir, progressFunc)
+		return extractTarGz(archiveFile, destDir)
 
 	default:
 		return fmt.Errorf("unsupported archive file type")
 	}
 }
 
-func extractTarGz(tarGzFile string, destDir string, progressFunc func(percent int)) error {
+func extractTarGz(tarGzFile string, destDir string) error {
 	file, err := os.Open(tarGzFile)
 	if err != nil {
 		return fmt.Errorf("failed to open tar.gz file: %w", err)
@@ -36,9 +36,12 @@ func extractTarGz(tarGzFile string, destDir string, progressFunc func(percent in
 	tarReader := tar.NewReader(gzReader)
 
 	// Calculate the total size of the tar.gz file.
-	var totalSize int64
-	var extractedSize int64
-	var lastProgress int
+	var (
+		totalSize     int64
+		extractedSize int64
+		lastProgress  int
+		fileName      = filepath.Base(tarGzFile)
+	)
 
 	for {
 		header, err := tarReader.Next()
@@ -53,6 +56,10 @@ func extractTarGz(tarGzFile string, destDir string, progressFunc func(percent in
 
 	// Reset the file pointer for extraction.
 	file.Seek(0, 0)
+
+	if err := os.RemoveAll(destDir); err != nil {
+		return err
+	}
 
 	// Extract the tar.gz file.
 	gzReader, err = gzip.NewReader(file)
@@ -98,14 +105,31 @@ func extractTarGz(tarGzFile string, destDir string, progressFunc func(percent in
 			}
 
 		default:
-			fmt.Printf("unknown file type: %c\n", header.Typeflag)
+			fmt.Printf("Unknown file type: %c\n", header.Typeflag)
 		}
 
 		// Update progress.
 		progress := int(float64(extractedSize) / float64(totalSize) * 100)
 		if progress > lastProgress {
 			lastProgress = int(progress)
-			progressFunc(lastProgress)
+
+			output := fmt.Sprintf("Extracting:\t%s ---- %d%% (%s/%s)",
+				fileName,
+				progress,
+				formatSize(extractedSize),
+				formatSize(totalSize),
+			)
+
+			// Add padding to align the output with the terminal width.
+			padding := terminalWidth() - len(output) - 10
+			if padding > 0 {
+				output += strings.Repeat(" ", padding)
+			}
+			fmt.Printf("\r%s", output)
+
+			if progress == 100 {
+				fmt.Println()
+			}
 		}
 	}
 

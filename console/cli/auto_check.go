@@ -26,7 +26,7 @@ func (a *autoCheckCmd) listen() (handled bool) {
 
 	var buildEnvConf config.BuildEnvConf
 	if err := buildEnvConf.Verify(); err != nil {
-		fmt.Println(err)
+		fmt.Printf("[✘] ---- buildenv setup failed: %s", err)
 	}
 
 	return true

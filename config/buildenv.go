@@ -1,10 +1,8 @@
 package config
 
 import (
-	"buildenv/pkg/io"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -63,32 +61,19 @@ func (b BuildEnv) Write(filePath string) error {
 	return os.WriteFile(filePath, bytes, os.ModePerm)
 }
 
-func (b BuildEnv) Verify() error {
+func (b BuildEnv) Verify(onlyFields bool) error {
 	if b.Host == "" {
 		return fmt.Errorf("buildenv.hostUrl is empty")
 	}
 
-	if err := b.RootFS.Verify(); err != nil {
+	if err := b.RootFS.Verify(b.Host, onlyFields); err != nil {
 		return fmt.Errorf("buildenv.rootfs error: %w", err)
 	}
 
-	if err := b.Toolchain.Verify(); err != nil {
+	if err := b.Toolchain.Verify(b.Host, onlyFields); err != nil {
 		return fmt.Errorf("buildenv.toolchain error: %w", err)
 	}
 
-	return nil
-}
-
-func (b BuildEnv) CheckIntegrity() error {
-	rootfsPath := filepath.Join(DownloadDir, b.RootFS.Path)
-	if !pathExists(rootfsPath) {
-		fullUrl, err := url.JoinPath(b.Host, b.RootFS.Url)
-		if err != nil {
-			return fmt.Errorf("buildenv.rootfs.url error: %w", err)
-		}
-
-		io.Download(fullUrl, DownloadDir)
-	}
 	return nil
 }
 

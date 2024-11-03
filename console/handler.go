@@ -35,7 +35,7 @@ func (p platformCallbacks) OnSelectPlatform(filePath string) error {
 		return err
 	}
 
-	if err := buildenv.Verify(); err != nil {
+	if err := buildenv.Verify(true); err != nil {
 		return err
 	}
 
