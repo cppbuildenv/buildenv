@@ -1,74 +1,75 @@
 package io
 
 import (
-	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 	"os"
+	"path"
 	"path/filepath"
-	"strings"
+	"regexp"
 )
 
-func Download(url string, destDir string, progress func(percent int)) (downloaded string, err error) {
-	// Get file from url.
+func Download(url string, destDir string) (downloaded string, err error) {
+	// Read file size.
 	resp, err := http.Get(url)
-	if err != nil || resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("failed to access file download url: %v", err)
+	if err != nil {
+		return "", err
 	}
 	defer resp.Body.Close()
 
-	// Get file info from http header.
-	fileInfo, err := getFileInfo(url)
+	fileName, err := getFileName(url)
 	if err != nil {
-		return "", fmt.Errorf("failed to get file info: %v", err)
+		return "", err
 	}
 
-	// Mkdir parent folders if not exist.
+	fileSize := resp.ContentLength
+	progress := NewProgressBar(fileName, fileSize)
+
 	if err := os.MkdirAll(destDir, os.ModeDir|os.ModePerm); err != nil {
-		return "", fmt.Errorf("failed to create dir: %v", err)
+		return "", err
 	}
 
-	// Create local file
-	downloaded = filepath.Join(destDir, fileInfo.Name)
-	outputFile, err := os.Create(downloaded)
+	// Build output filePath
+	outputFile := filepath.Join(destDir, fileName)
+	file, err := os.Create(outputFile)
 	if err != nil {
-		return "", fmt.Errorf("failed to create file: %v", err)
+		return "", err
 	}
-	defer outputFile.Close()
+	defer file.Close()
 
-	// Write data to file with progress.
-	fileWriter := NewFileWriter(fileInfo.Name, fileInfo.Size, progress)
-	if err := fileWriter.Write(resp.Body, destDir); err != nil {
-		return "", fmt.Errorf("failed to write file: %v", err)
+	// Copy to local file with progress.
+	_, err = io.Copy(io.MultiWriter(file, progress), resp.Body)
+	if err != nil {
+		return "", err
 	}
 
-	return downloaded, nil
+	return outputFile, nil
 }
 
-type fileInfo struct {
-	Name string
-	Size int64
-	Ext  string
-}
-
-func getFileInfo(url string) (fileInfo, error) {
-	resp, err := http.Head(url)
+func getFileName(downloadURL string) (string, error) {
+	// Read file name from URL.
+	u, err := url.Parse(downloadURL)
 	if err != nil {
-		return fileInfo{}, err
+		return "", err
+	}
+	filename := path.Base(u.Path)
+	if filename != "." && filename != "/" {
+		return filename, nil
+	}
+
+	// Read file name from http header.
+	resp, err := http.Head(downloadURL)
+	if err != nil {
+		return "", err
 	}
 	defer resp.Body.Close()
 
-	var filename string
-	if value := resp.Header.Get("Content-Disposition"); value != "" {
-		if parts := strings.Split(value, "filename="); len(parts) > 1 {
-			filename = strings.Trim(parts[1], "\"")
-		}
-	} else {
-		parts := strings.Split(url, "/")
-		filename = parts[len(parts)-1]
+	re := regexp.MustCompile(`filename=["]?([^"]+)["]?`)
+	header := resp.Header.Get("Content-Disposition")
+	match := re.FindStringSubmatch(header)
+	if len(match) > 1 {
+		return match[1], nil
 	}
-
-	return fileInfo{
-		Name: filename,
-		Size: resp.ContentLength,
-	}, nil
+	return "", nil
 }

@@ -1,35 +1,24 @@
 package config
 
 import (
+	"buildenv/pkg/io"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-const PlatformDir = "conf/platform"
+const (
+	PlatformDir = "conf/platform"
+	DownloadDir = "downloads"
+)
 
 type BuildEnv struct {
 	Host      string    `json:"host"`
 	RootFS    RootFS    `json:"rootfs"`
 	Toolchain Toolchain `json:"toolchain"`
-}
-
-func (b BuildEnv) Verify() error {
-	if b.Host == "" {
-		return fmt.Errorf("buildenv.hostUrl is empty")
-	}
-
-	if err := b.RootFS.Verify(); err != nil {
-		return fmt.Errorf("buildenv.rootfs error: %w", err)
-	}
-
-	if err := b.Toolchain.Verify(); err != nil {
-		return fmt.Errorf("buildenv.toolchain error: %w", err)
-	}
-
-	return nil
 }
 
 func (b *BuildEnv) Read(filePath string) error {
@@ -66,12 +55,41 @@ func (b BuildEnv) Write(filePath string) error {
 		return fmt.Errorf("[%s] is already exists", filePath)
 	}
 
-	// Makesure the parent directory exists.
+	// Make sure the parent directory exists.
 	parentDir := filepath.Dir(filePath)
 	if err := os.MkdirAll(parentDir, 0755); err != nil {
 		return err
 	}
 	return os.WriteFile(filePath, bytes, os.ModePerm)
+}
+
+func (b BuildEnv) Verify() error {
+	if b.Host == "" {
+		return fmt.Errorf("buildenv.hostUrl is empty")
+	}
+
+	if err := b.RootFS.Verify(); err != nil {
+		return fmt.Errorf("buildenv.rootfs error: %w", err)
+	}
+
+	if err := b.Toolchain.Verify(); err != nil {
+		return fmt.Errorf("buildenv.toolchain error: %w", err)
+	}
+
+	return nil
+}
+
+func (b BuildEnv) CheckIntegrity() error {
+	rootfsPath := filepath.Join(DownloadDir, b.RootFS.Path)
+	if !pathExists(rootfsPath) {
+		fullUrl, err := url.JoinPath(b.Host, b.RootFS.Url)
+		if err != nil {
+			return fmt.Errorf("buildenv.rootfs.url error: %w", err)
+		}
+
+		io.Download(fullUrl, DownloadDir)
+	}
+	return nil
 }
 
 func (b BuildEnv) CreateToolchainFile(outputDir string) (string, error) {
