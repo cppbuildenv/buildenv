@@ -20,14 +20,14 @@ var (
 	version        = newVersionCmd()
 	createPlatform = newCreatePlatformCmd()
 	selectPlatform = newSelectPlatformCmd(config.PlatformDir, console.PlatformCallbacks)
-	autoCheck      = newAutoCheckCmd()
+	verify         = newVerifyCmd()
 )
 var commands = []reisterable{
 	interactive,
 	version,
 	createPlatform,
 	selectPlatform,
-	autoCheck,
+	verify,
 }
 
 // Listen listen commands input

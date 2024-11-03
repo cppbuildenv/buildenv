@@ -15,7 +15,6 @@ type createPlatformCmd struct {
 }
 
 func (c *createPlatformCmd) register() {
-	flag.StringVar(&c.platformName, "cp", "", "create a new platform")
 	flag.StringVar(&c.platformName, "create_platform", "", "create a new platform")
 }
 

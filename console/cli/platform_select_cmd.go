@@ -22,7 +22,6 @@ type selectPlatformCmd struct {
 }
 
 func (p *selectPlatformCmd) register() {
-	flag.StringVar(&p.platformName, "sp", "", "select a platform as build target platform")
 	flag.StringVar(&p.platformName, "select_platform", "", "select a platform as build target platform")
 }
 
