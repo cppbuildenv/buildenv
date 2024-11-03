@@ -16,7 +16,7 @@ func Extract(archiveFile string, destDir string) error {
 		return extractTarGz(archiveFile, destDir)
 
 	default:
-		return fmt.Errorf("unsupported archive file type")
+		return fmt.Errorf("unsupported archive file type: %s", archiveFile)
 	}
 }
 
@@ -40,8 +40,10 @@ func extractTarGz(tarGzFile string, destDir string) error {
 		totalSize     int64
 		extractedSize int64
 		lastProgress  int
-		fileName      = filepath.Base(tarGzFile)
 	)
+
+	fmt.Printf("Calculating:\tTotal size of archive file...")
+	PrintInline("") // Clear the line for the next line.
 
 	for {
 		header, err := tarReader.Next()
@@ -67,6 +69,7 @@ func extractTarGz(tarGzFile string, destDir string) error {
 		return err
 	}
 	tarReader = tar.NewReader(gzReader)
+	fileName := filepath.Base(tarGzFile)
 
 	for {
 		header, err := tarReader.Next()
@@ -112,21 +115,14 @@ func extractTarGz(tarGzFile string, destDir string) error {
 		progress := int(float64(extractedSize) / float64(totalSize) * 100)
 		if progress > lastProgress {
 			lastProgress = int(progress)
-
-			output := fmt.Sprintf("Extracting:\t%s ---- %d%% (%s/%s)",
+			content := fmt.Sprintf("Extracting:\t%s ---- %d%% (%s/%s)",
 				fileName,
 				progress,
 				formatSize(extractedSize),
 				formatSize(totalSize),
 			)
 
-			// Add padding to align the output with the terminal width.
-			padding := terminalWidth() - len(output) - 10
-			if padding > 0 {
-				output += strings.Repeat(" ", padding)
-			}
-			fmt.Printf("\r%s", output)
-
+			PrintInline(content)
 			if progress == 100 {
 				fmt.Println()
 			}

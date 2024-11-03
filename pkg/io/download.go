@@ -9,7 +9,6 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
-	"strings"
 )
 
 func Download(url string, destDir string) (downloaded string, err error) {
@@ -100,19 +99,14 @@ func (p *progressBar) Write(b []byte) (int, error) {
 	if progress > p.lastProgress {
 		p.lastProgress = progress
 
-		output := fmt.Sprintf("\rDownloading:\t%s ---- %d%% (%s/%s)",
+		content := fmt.Sprintf("\rDownloading:\t%s ---- %d%% (%s/%s)",
 			p.fileName,
 			progress,
 			formatSize(p.currentSize),
-			formatSize(p.fileSize))
+			formatSize(p.fileSize),
+		)
 
-		// Add padding to align the output with the terminal width.
-		padding := terminalWidth() - len(output) - 10
-		if padding > 0 {
-			output += strings.Repeat(" ", padding)
-		}
-		fmt.Printf("\r%s", output)
-
+		PrintInline(content)
 		if progress == 100 {
 			fmt.Println()
 		}

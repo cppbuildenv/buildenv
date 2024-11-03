@@ -3,9 +3,18 @@ package io
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"golang.org/x/term"
 )
+
+func PrintInline(content string) {
+	padding := terminalWidth() - len(content) - 10
+	if padding > 0 {
+		content += strings.Repeat(" ", padding)
+	}
+	fmt.Printf("\r%s", content)
+}
 
 func formatSize(byteSize int64) string {
 	const (
@@ -41,4 +50,11 @@ func terminalWidth() int {
 		return 100
 	}
 	return width
+}
+
+func If[T any](condition bool, first T, second T) T {
+	if condition {
+		return first
+	}
+	return second
 }
