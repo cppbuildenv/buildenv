@@ -2,6 +2,7 @@ build
 buildenv
 temp
 workspace
+cmake
 *.exe
 cmake/buildenv.cmake
 testdata/*

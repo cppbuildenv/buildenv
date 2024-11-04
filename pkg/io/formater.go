@@ -47,7 +47,7 @@ func formatSize(byteSize int64) string {
 func terminalWidth() int {
 	width, _, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
-		return 100
+		return 150
 	}
 	return width
 }
