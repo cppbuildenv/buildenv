@@ -99,7 +99,7 @@ func (p *progressBar) Write(b []byte) (int, error) {
 	if progress > p.lastProgress {
 		p.lastProgress = progress
 
-		content := fmt.Sprintf("\rDownloading:\t%s ---- %d%% (%s/%s)",
+		content := fmt.Sprintf("\rDownloading: %s ---- %d%% (%s/%s)",
 			p.fileName,
 			progress,
 			formatSize(p.currentSize),

@@ -80,7 +80,7 @@ func (t Toolchain) checkIntegrity(host string) error {
 			return fmt.Errorf("%s: extract toolchain failed: %w", downloaded, err)
 		}
 
-		fmt.Println("[✔] ---- toolchain of platform setup success.")
+		fmt.Printf("[✔] ---- toolchain of platform setup success.\n\n")
 	}
 	return nil
 }

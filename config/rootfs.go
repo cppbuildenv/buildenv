@@ -66,7 +66,7 @@ func (b RootFS) checkIntegrity(host string) error {
 			return fmt.Errorf("%s: extract rootfs failed: %w", downloaded, err)
 		}
 
-		fmt.Println("[✔] ---- rootfs of platform setup success.")
+		fmt.Printf("[✔] ---- rootfs of platform setup success.\n\n")
 	}
 	return nil
 }

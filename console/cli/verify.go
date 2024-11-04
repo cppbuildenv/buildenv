@@ -28,12 +28,12 @@ func (a *verifyCmd) listen() (handled bool) {
 	var buildEnvConf config.BuildEnvConf
 	if err := buildEnvConf.Verify(); err != nil {
 		platformName := strings.TrimSuffix(buildEnvConf.Platform, ".json")
-		fmt.Printf("[✘] ---- buildenv setup failed: %s: %s", platformName, err)
+		fmt.Printf("[✘] ---- buildenv setup failed: %s: %s\n\n", platformName, err)
 		os.Exit(1)
 	}
 
 	platformName := strings.TrimSuffix(buildEnvConf.Platform, ".json")
-	fmt.Printf("[✔] ---- buildenv setup successfully: %s\n", platformName)
+	fmt.Printf("--------------------------------- %s: setup successfully:---------------------------------\n", platformName)
 
 	return true
 }

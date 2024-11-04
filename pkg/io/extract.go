@@ -42,8 +42,7 @@ func extractTarGz(tarGzFile string, destDir string) error {
 		lastProgress  int
 	)
 
-	fmt.Printf("Calculating:\tTotal size of archive file...")
-	PrintInline("") // Clear the line for the next line.
+	PrintInline("\rCalculating: total size of archive file...")
 
 	for {
 		header, err := tarReader.Next()
@@ -115,7 +114,7 @@ func extractTarGz(tarGzFile string, destDir string) error {
 		progress := int(float64(extractedSize) / float64(totalSize) * 100)
 		if progress > lastProgress {
 			lastProgress = int(progress)
-			content := fmt.Sprintf("Extracting:\t%s ---- %d%% (%s/%s)",
+			content := fmt.Sprintf("Extracting:  %s ---- %d%% (%s/%s)",
 				fileName,
 				progress,
 				formatSize(extractedSize),
