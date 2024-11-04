@@ -2,7 +2,7 @@ build
 buildenv
 temp
 workspace
-cmake
+script
 *.exe
 cmake/buildenv.cmake
-testdata/*
+testdata/output

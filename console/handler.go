@@ -39,7 +39,7 @@ func (p platformCallbacks) OnSelectPlatform(filePath string) error {
 		return err
 	}
 
-	_, err := buildenv.CreateToolchainFile("cmake")
+	_, err := buildenv.CreateToolchainFile("script")
 	if err != nil {
 		return err
 	}

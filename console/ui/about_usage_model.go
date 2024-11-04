@@ -8,7 +8,7 @@ import (
 )
 
 func createUsageModel(goback func()) usageModel {
-	toolchainPath, _ := filepath.Abs("cmake/buildenv.cmake")
+	toolchainPath, _ := filepath.Abs("script/buildenv.cmake")
 
 	content := fmt.Sprintf("\nWelcome to buildenv.\n"+
 		"-----------------------------------\n"+
