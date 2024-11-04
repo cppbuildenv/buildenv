@@ -1,4 +1,4 @@
-package interactive
+package ui
 
 import (
 	"buildenv/config"
@@ -22,7 +22,7 @@ func CreateMainModel(callabcks config.PlatformCallbacks) MainModel {
 		platformSelectModel: createPlatformSelectModel(config.PlatformDir, callabcks, func() {
 			currentMode = modeMenu
 		}),
-		aboutModel: createAboutModel(func() {
+		aboutModel: createUsageModel(func() {
 			currentMode = modeMenu
 		}),
 	}

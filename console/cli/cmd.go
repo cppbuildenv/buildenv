@@ -16,7 +16,7 @@ type responsible interface {
 }
 
 var (
-	interactive    = newInteractiveCmd(console.PlatformCallbacks)
+	interactive    = newUICmd(console.PlatformCallbacks)
 	version        = newVersionCmd()
 	createPlatform = newCreatePlatformCmd()
 	selectPlatform = newSelectPlatformCmd(config.PlatformDir, console.PlatformCallbacks)

@@ -1,4 +1,4 @@
-package interactive
+package ui
 
 import (
 	"github.com/charmbracelet/bubbles/list"
@@ -8,7 +8,7 @@ import (
 const (
 	menuCreatePlatform string = "Create a new platform."
 	menuChoosePlatform string = "Choose a platform as your build target."
-	menuAbout          string = "About buildenv."
+	menuUsage          string = "About & Usage."
 )
 
 type mode = int
@@ -23,7 +23,7 @@ const (
 var menus = []string{
 	menuCreatePlatform,
 	menuChoosePlatform,
-	menuAbout,
+	menuUsage,
 }
 
 func createMenuModel(modeChanged func(mode mode)) menuModel {
@@ -83,7 +83,7 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					case menuChoosePlatform:
 						m.modeChanged(modePlatformList)
 
-					case menuAbout:
+					case menuUsage:
 						m.modeChanged(modeAbout)
 					}
 				}

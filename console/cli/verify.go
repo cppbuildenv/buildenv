@@ -33,7 +33,7 @@ func (a *verifyCmd) listen() (handled bool) {
 	}
 
 	platformName := strings.TrimSuffix(buildEnvConf.Platform, ".json")
-	fmt.Printf("--------------------------------- %s: setup successfully:---------------------------------\n", platformName)
+	fmt.Printf("[✔] ==== buildenv setup successfully: %s\n", platformName)
 
 	return true
 }

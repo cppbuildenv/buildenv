@@ -1,30 +1,34 @@
-package interactive
+package ui
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func createAboutModel(goback func()) aboutModel {
+func createUsageModel(goback func()) usageModel {
 	content := `
 Welcome to the buildenv.
 -----------------------------------
 
 This is a simple tool to manage your cross build environment.
 
+Usages:
+option1: set(CMAKE_TOOLCHAIN_FILE "/path/of/buildenv/cmake/buildenv.cmake")
+option2: cmake .. -DCMAKE_TOOLCHAIN_FILE /path/of/buildenv/cmake/buildenv.cmake
+
 [press ctrl+c or q to quit]`
-	return aboutModel{content: content, goback: goback}
+	return usageModel{content: content, goback: goback}
 }
 
-type aboutModel struct {
+type usageModel struct {
 	content string
 	goback  func()
 }
 
-func (aboutModel) Init() tea.Cmd {
+func (usageModel) Init() tea.Cmd {
 	return nil
 }
 
-func (a aboutModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (a usageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -39,6 +43,6 @@ func (a aboutModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return a, nil
 }
 
-func (a aboutModel) View() string {
+func (a usageModel) View() string {
 	return a.content
 }
