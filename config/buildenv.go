@@ -9,8 +9,12 @@ import (
 )
 
 const (
-	PlatformDir = "conf/platform"
-	DownloadDir = "downloads"
+	PlatformDir   = "conf/platform"
+	WorkspaceDir  = "workspace"
+	DownloadDir   = "workspace/downloads"
+	ToolchainDir  = "workspace/toolchain"
+	RootFSDir     = "workspace/rootfs"
+	ToolchainFile = "buildenv.cmake"
 )
 
 type BuildEnv struct {
@@ -82,38 +86,65 @@ func (b BuildEnv) CreateToolchainFile(outputDir string) (string, error) {
 	builder.WriteString(fmt.Sprintf("set(CMAKE_SYSTEM_NAME \"%s\")\n", b.Toolchain.ToolChainVars.CMAKE_SYSTEM_NAME))
 	builder.WriteString(fmt.Sprintf("set(CMAKE_SYSTEM_PROCESSOR \"%s\")\n", b.Toolchain.ToolChainVars.CMAKE_SYSTEM_PROCESSOR))
 
+	// Set sysroot for cross-compile.
 	if !b.RootFS.None {
 		builder.WriteString("\n# Set sysroot for cross-compile.\n")
-		builder.WriteString(fmt.Sprintf("set(CMAKE_SYSROOT \"%s\")\n", b.RootFS.Path))
-		builder.WriteString(fmt.Sprintf("list(APPEND CMAKE_FIND_ROOT_PATH \"%s\")\n", b.RootFS.Path))
-		builder.WriteString(fmt.Sprintf("list(APPEND CMAKE_PREFIX_PATH NEVER \"%s\")\n", b.RootFS.Path))
+		builder.WriteString(fmt.Sprintf("set(CMAKE_SYSROOT \"%s\")\n", b.RootFS.AbsolutePath()))
+		builder.WriteString("list(APPEND CMAKE_FIND_ROOT_PATH \"${CMAKE_SYSROOT}\")\n")
+		builder.WriteString("list(APPEND CMAKE_PREFIX_PATH NEVER \"${CMAKE_SYSROOT}\")\n")
 
 		builder.WriteString("\n# Set pkg-config path for cross-compile.\n")
-		builder.WriteString(fmt.Sprintf("set(ENV{PKG_CONFIG_SYSROOT_DIR} \"%s\")\n", b.RootFS.EnvVars.PKG_CONFIG_SYSROOT_DIR))
+		builder.WriteString("set(ENV{PKG_CONFIG_SYSROOT_DIR} \"${CMAKE_SYSROOT}\")\n")
+
+		// Replace the path with the workspace directory.
+		for i, path := range b.RootFS.EnvVars.PKG_CONFIG_PATH {
+			fullPath := filepath.Join(RootFSDir, path)
+			absPath, err := filepath.Abs(fullPath)
+			if err != nil {
+				return "", fmt.Errorf("cannot get absolute path: %s", fullPath)
+			}
+
+			b.RootFS.EnvVars.PKG_CONFIG_PATH[i] = absPath
+		}
 		builder.WriteString(fmt.Sprintf("set(ENV{PKG_CONFIG_PATH} \"%s\")\n", strings.Join(b.RootFS.EnvVars.PKG_CONFIG_PATH, ";")))
 	}
 
+	// Set toolchain for cross-compile.
 	builder.WriteString("\n# Set toolchain for cross-compile.\n")
-	builder.WriteString(fmt.Sprintf("set(CMAKE_C_COMPILER \"%s\")\n", b.Toolchain.EnvVars.CC))
-	builder.WriteString(fmt.Sprintf("set(CMAKE_CXX_COMPILER \"%s\")\n", b.Toolchain.EnvVars.CXX))
-	builder.WriteString(fmt.Sprintf("set(CMAKE_Fortran_COMPILER \"%s\")\n", b.Toolchain.EnvVars.FC))
-	builder.WriteString(fmt.Sprintf("set(CMAKE_RANLIB \"%s\")\n", b.Toolchain.EnvVars.RANLIB))
-	builder.WriteString(fmt.Sprintf("set(CMAKE_AR \"%s\")\n", b.Toolchain.EnvVars.AR))
-	builder.WriteString(fmt.Sprintf("set(CMAKE_LINKER \"%s\")\n", b.Toolchain.EnvVars.LD))
-	builder.WriteString(fmt.Sprintf("set(CMAKE_NM \"%s\")\n", b.Toolchain.EnvVars.NM))
-	builder.WriteString(fmt.Sprintf("set(CMAKE_OBJDUMP \"%s\")\n", b.Toolchain.EnvVars.OBJDUMP))
-	builder.WriteString(fmt.Sprintf("set(CMAKE_STRIP \"%s\")\n", b.Toolchain.EnvVars.STRIP))
+	toolchainBinPath := filepath.Join(WorkspaceDir, b.Toolchain.Path)
+	absToolchainBinPath, err := filepath.Abs(toolchainBinPath)
+	if err != nil {
+		return "", fmt.Errorf("cannot get absolute path of toolchain path: %s", toolchainBinPath)
+	}
+	builder.WriteString(fmt.Sprintf("set(_TOOLCHAIN_BIN_PATH 	\"%s\")\n", absToolchainBinPath))
 
+	builder.WriteString(fmt.Sprintf("set(CMAKE_C_COMPILER 		\"${_TOOLCHAIN_BIN_PATH}/%s\")\n", b.Toolchain.EnvVars.CC))
+	builder.WriteString(fmt.Sprintf("set(CMAKE_CXX_COMPILER		\"${_TOOLCHAIN_BIN_PATH}/%s\")\n", b.Toolchain.EnvVars.CXX))
+	builder.WriteString(fmt.Sprintf("set(CMAKE_Fortran_COMPILER	\"${_TOOLCHAIN_BIN_PATH}/%s\")\n", b.Toolchain.EnvVars.FC))
+	builder.WriteString(fmt.Sprintf("set(CMAKE_RANLIB 			\"${_TOOLCHAIN_BIN_PATH}/%s\")\n", b.Toolchain.EnvVars.RANLIB))
+	builder.WriteString(fmt.Sprintf("set(CMAKE_AR 				\"${_TOOLCHAIN_BIN_PATH}/%s\")\n", b.Toolchain.EnvVars.AR))
+	builder.WriteString(fmt.Sprintf("set(CMAKE_LINKER 			\"${_TOOLCHAIN_BIN_PATH}/%s\")\n", b.Toolchain.EnvVars.LD))
+	builder.WriteString(fmt.Sprintf("set(CMAKE_NM 				\"${_TOOLCHAIN_BIN_PATH}/%s\")\n", b.Toolchain.EnvVars.NM))
+	builder.WriteString(fmt.Sprintf("set(CMAKE_OBJDUMP 			\"${_TOOLCHAIN_BIN_PATH}/%s\")\n", b.Toolchain.EnvVars.OBJDUMP))
+	builder.WriteString(fmt.Sprintf("set(CMAKE_STRIP 			\"${_TOOLCHAIN_BIN_PATH}/%s\")\n", b.Toolchain.EnvVars.STRIP))
+
+	// Search programs in the host environment.
 	builder.WriteString("\n# Search programs in the host environment.\n")
 	builder.WriteString("set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)\n")
 
+	// Search libraries and headers in the target environment.
 	builder.WriteString("\n# Search libraries and headers in the target environment.\n")
 	builder.WriteString("set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)\n")
 	builder.WriteString("set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)\n")
 	builder.WriteString("set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)\n")
 
+	// Create the output directory if it doesn't exist.
+	if err := os.MkdirAll(outputDir, os.ModeDir|os.ModePerm); err != nil {
+		return "", err
+	}
+
 	// Write the modified content to the output file.
-	filePath := filepath.Join(outputDir, "toolchain_buildenv.cmake")
+	filePath := filepath.Join(outputDir, ToolchainFile)
 	if err := os.WriteFile(filePath, []byte(builder.String()), os.ModePerm); err != nil {
 		return "", err
 	}

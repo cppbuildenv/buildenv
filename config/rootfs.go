@@ -14,6 +14,15 @@ type RootFS struct {
 	None    bool      `json:"none"`
 }
 
+func (r RootFS) AbsolutePath() string {
+	fullPath := filepath.Join(RootFSDir, r.Path)
+	path, err := filepath.Abs(fullPath)
+	if err != nil {
+		panic(fmt.Sprintf("cannot get absolute path: %s", r.Path))
+	}
+	return path
+}
+
 type RootFSEnv struct {
 	SYSROOT                string   `json:"SYSROOT"`
 	PKG_CONFIG_SYSROOT_DIR string   `json:"PKG_CONFIG_SYSROOT_DIR"`

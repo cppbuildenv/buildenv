@@ -1,5 +1,6 @@
 build
 buildenv
 temp
-downloads
+workspace
 *.exe
+cmake/buildenv.cmake

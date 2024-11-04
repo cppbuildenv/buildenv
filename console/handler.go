@@ -35,7 +35,12 @@ func (p platformCallbacks) OnSelectPlatform(filePath string) error {
 		return err
 	}
 
-	if err := buildenv.Verify(true); err != nil {
+	if err := buildenv.Verify(false); err != nil {
+		return err
+	}
+
+	_, err := buildenv.CreateToolchainFile("cmake")
+	if err != nil {
 		return err
 	}
 
