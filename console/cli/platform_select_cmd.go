@@ -30,7 +30,7 @@ func (s *selectPlatformCmd) listen() (handled bool) {
 		return false
 	}
 
-	if strings.HasSuffix(s.platformName, ".json") {
+	if !strings.HasSuffix(s.platformName, ".json") {
 		s.platformName = s.platformName + ".json"
 	}
 

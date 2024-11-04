@@ -64,19 +64,23 @@ func (t Toolchain) Verify(host string, onlyFields bool) error {
 }
 
 func (t Toolchain) checkIntegrity(host string) error {
-	toolchainPath := filepath.Join(DownloadDir, t.Path)
+	toolchainPath := filepath.Join(WorkspaceDir, t.Path)
 	if !pathExists(toolchainPath) {
 		fullUrl, err := url.JoinPath(host, t.Url)
 		if err != nil {
 			return fmt.Errorf("buildenv.toolchain.url error: %w", err)
 		}
 
+		// Download to fixed dir.
 		downloaded, err := io.Download(fullUrl, DownloadDir)
 		if err != nil {
 			return fmt.Errorf("%s: download toolchain failed: %w", fullUrl, err)
 		}
 
-		if err := io.Extract(downloaded, toolchainPath); err != nil {
+		// Extract to dir with same parent.
+		parentDir := filepath.Dir(t.Url)
+		extractDir := filepath.Join(WorkspaceDir, parentDir)
+		if err := io.Extract(downloaded, extractDir); err != nil {
 			return fmt.Errorf("%s: extract toolchain failed: %w", downloaded, err)
 		}
 

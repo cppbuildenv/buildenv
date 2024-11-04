@@ -86,6 +86,15 @@ func (b BuildEnv) CreateToolchainFile(outputDir string) (string, error) {
 	builder.WriteString(fmt.Sprintf("set(CMAKE_SYSTEM_NAME \"%s\")\n", b.Toolchain.ToolChainVars.CMAKE_SYSTEM_NAME))
 	builder.WriteString(fmt.Sprintf("set(CMAKE_SYSTEM_PROCESSOR \"%s\")\n", b.Toolchain.ToolChainVars.CMAKE_SYSTEM_PROCESSOR))
 
+	// Verify buildenv during configuration.
+	builder.WriteString("\n# Verify buildenv during configuration.\n")
+	builder.WriteString("set(HOME_DIR \"${CMAKE_CURRENT_LIST_DIR}/..\")\n")
+	builder.WriteString("set(BUILDENV_EXECUTABLE \"${HOME_DIR}/buildenv\")\n")
+	builder.WriteString("execute_process(\n")
+	builder.WriteString("\tCOMMAND ${BUILDENV_EXECUTABLE} --verify\n")
+	builder.WriteString("\tWORKING_DIRECTORY ${HOME_DIR}\n")
+	builder.WriteString(")\n")
+
 	// Set sysroot for cross-compile.
 	if !b.RootFS.None {
 		builder.WriteString("\n# Set sysroot for cross-compile.\n")
@@ -98,7 +107,7 @@ func (b BuildEnv) CreateToolchainFile(outputDir string) (string, error) {
 
 		// Replace the path with the workspace directory.
 		for i, path := range b.RootFS.EnvVars.PKG_CONFIG_PATH {
-			fullPath := filepath.Join(RootFSDir, path)
+			fullPath := filepath.Join(WorkspaceDir, path)
 			absPath, err := filepath.Abs(fullPath)
 			if err != nil {
 				return "", fmt.Errorf("cannot get absolute path: %s", fullPath)

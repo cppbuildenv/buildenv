@@ -15,7 +15,7 @@ type RootFS struct {
 }
 
 func (r RootFS) AbsolutePath() string {
-	fullPath := filepath.Join(RootFSDir, r.Path)
+	fullPath := filepath.Join(WorkspaceDir, r.Path)
 	path, err := filepath.Abs(fullPath)
 	if err != nil {
 		panic(fmt.Sprintf("cannot get absolute path: %s", r.Path))
@@ -59,19 +59,23 @@ func (r RootFS) Verify(host string, onlyFields bool) error {
 }
 
 func (b RootFS) checkIntegrity(host string) error {
-	rootfsPath := filepath.Join(DownloadDir, b.Path)
+	rootfsPath := filepath.Join(WorkspaceDir, b.Path)
 	if !pathExists(rootfsPath) {
 		fullUrl, err := url.JoinPath(host, b.Url)
 		if err != nil {
 			return fmt.Errorf("buildenv.rootfs.url error: %w", err)
 		}
 
+		// Download to fixed dir.
 		downloaded, err := io.Download(fullUrl, DownloadDir)
 		if err != nil {
 			return fmt.Errorf("%s: download rootfs failed: %w", fullUrl, err)
 		}
 
-		if err := io.Extract(downloaded, rootfsPath); err != nil {
+		// Extract to dir with same parent.
+		parentDir := filepath.Dir(b.Url)
+		extractDir := filepath.Join(WorkspaceDir, parentDir)
+		if err := io.Extract(downloaded, extractDir); err != nil {
 			return fmt.Errorf("%s: extract rootfs failed: %w", downloaded, err)
 		}
 
