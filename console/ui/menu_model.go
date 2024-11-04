@@ -38,7 +38,7 @@ func createMenuModel(modeChanged func(mode mode)) menuModel {
 	styles := createStyles()
 
 	l := list.New(items, listDelegate{styles}, defaultWidth, defaultHeight)
-	l.Title = "Please choose one option from the list..."
+	l.Title = "Please choose one item from the menus..."
 
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
