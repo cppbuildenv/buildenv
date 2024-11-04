@@ -8,11 +8,12 @@ import (
 )
 
 type BuildEnvConf struct {
-	Platform string `json:"platform"`
-	ConfRepo string `json:"conf_repo"`
+	ResRepoUrl  string `json:"res_repo_url"`
+	ConfRepoUrl string `json:"conf_repo_url"`
+	Platform    string `json:"platform"`
 }
 
-func (b *BuildEnvConf) Verify() error {
+func (b *BuildEnvConf) Verify(onlyFields bool) error {
 	bytes, err := os.ReadFile("conf/buildenv.json")
 	if err != nil {
 		return err
@@ -26,7 +27,7 @@ func (b *BuildEnvConf) Verify() error {
 		return fmt.Errorf("platform is empty")
 	}
 
-	filePath := filepath.Join(PlatformDir, b.Platform)
+	filePath := filepath.Join(PlatformsDir, b.Platform)
 	if !pathExists(filePath) {
 		return fmt.Errorf("platform file not exists: %s", filePath)
 	}
@@ -36,7 +37,7 @@ func (b *BuildEnvConf) Verify() error {
 		return err
 	}
 
-	if err := buildenv.Verify(false); err != nil {
+	if err := buildenv.Verify(b.ResRepoUrl, onlyFields); err != nil {
 		return err
 	}
 

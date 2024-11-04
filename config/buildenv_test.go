@@ -8,7 +8,8 @@ func TestCreateToolchainFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := buildenv.Verify(true); err != nil {
+	repoUrl := "http://192.168.100.25:8083/repository/build_resource"
+	if err := buildenv.Verify(repoUrl, true); err != nil {
 		t.Fatal(err)
 	}
 

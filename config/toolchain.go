@@ -31,7 +31,7 @@ type ToolChainVars struct {
 	CMAKE_SYSTEM_PROCESSOR string `json:"CMAKE_SYSTEM_PROCESSOR"`
 }
 
-func (t Toolchain) Verify(host string, onlyFields bool) error {
+func (t Toolchain) Verify(resRepoUrl string, onlyFields bool) error {
 	if t.Url == "" {
 		return fmt.Errorf("toolchain.url is empty")
 	}
@@ -60,31 +60,33 @@ func (t Toolchain) Verify(host string, onlyFields bool) error {
 		return nil
 	}
 
-	return t.checkIntegrity(host)
+	return t.ensureIntegrity(resRepoUrl)
 }
 
-func (t Toolchain) checkIntegrity(host string) error {
+func (t Toolchain) ensureIntegrity(resRepoUrl string) error {
 	toolchainPath := filepath.Join(WorkspaceDir, t.Path)
-	if !pathExists(toolchainPath) {
-		fullUrl, err := url.JoinPath(host, t.Url)
-		if err != nil {
-			return fmt.Errorf("buildenv.toolchain.url error: %w", err)
-		}
-
-		// Download to fixed dir.
-		downloaded, err := io.Download(fullUrl, DownloadDir)
-		if err != nil {
-			return fmt.Errorf("%s: download toolchain failed: %w", fullUrl, err)
-		}
-
-		// Extract to dir with same parent.
-		parentDir := filepath.Dir(t.Url)
-		extractDir := filepath.Join(WorkspaceDir, parentDir)
-		if err := io.Extract(downloaded, extractDir); err != nil {
-			return fmt.Errorf("%s: extract toolchain failed: %w", downloaded, err)
-		}
-
-		fmt.Printf("[✔] ---- toolchain of platform setup success.\n\n")
+	if pathExists(toolchainPath) {
+		return nil
 	}
+
+	fullUrl, err := url.JoinPath(resRepoUrl, t.Url)
+	if err != nil {
+		return fmt.Errorf("buildenv.toolchain.url error: %w", err)
+	}
+
+	// Download to fixed dir.
+	downloaded, err := io.Download(fullUrl, DownloadDir)
+	if err != nil {
+		return fmt.Errorf("%s: download toolchain failed: %w", fullUrl, err)
+	}
+
+	// Extract to dir with same parent.
+	parentDir := filepath.Dir(t.Url)
+	extractDir := filepath.Join(WorkspaceDir, parentDir)
+	if err := io.Extract(downloaded, extractDir); err != nil {
+		return fmt.Errorf("%s: extract toolchain failed: %w", downloaded, err)
+	}
+
+	fmt.Printf("[✔] ---- toolchain of platform setup success.\n\n")
 	return nil
 }

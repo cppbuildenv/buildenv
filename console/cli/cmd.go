@@ -19,7 +19,7 @@ var (
 	interactive    = newUICmd(console.PlatformCallbacks)
 	version        = newVersionCmd()
 	createPlatform = newCreatePlatformCmd()
-	selectPlatform = newSelectPlatformCmd(config.PlatformDir, console.PlatformCallbacks)
+	selectPlatform = newSelectPlatformCmd(config.PlatformsDir, console.PlatformCallbacks)
 	verify         = newVerifyCmd()
 )
 var commands = []reisterable{

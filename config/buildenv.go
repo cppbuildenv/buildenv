@@ -10,16 +10,19 @@ import (
 )
 
 const (
-	PlatformDir   = "conf/platform"
+	PlatformsDir = "conf/platforms"
+	ToolsDir     = "conf/tools"
+
 	WorkspaceDir  = "workspace"
 	DownloadDir   = "workspace/downloads"
 	ToolchainFile = "buildenv.cmake"
 )
 
 type BuildEnv struct {
-	Host      string    `json:"host"`
 	RootFS    RootFS    `json:"rootfs"`
 	Toolchain Toolchain `json:"toolchain"`
+	Tools     []string  `json:"tools"`
+	Packages  []string  `json:"packages"`
 }
 
 func (b *BuildEnv) Read(filePath string) error {
@@ -64,17 +67,24 @@ func (b BuildEnv) Write(filePath string) error {
 	return os.WriteFile(filePath, bytes, os.ModePerm)
 }
 
-func (b BuildEnv) Verify(onlyFields bool) error {
-	if b.Host == "" {
-		return fmt.Errorf("buildenv.hostUrl is empty")
+func (b BuildEnv) Verify(resRepoUrl string, onlyFields bool) error {
+	if resRepoUrl == "" {
+		return fmt.Errorf("repoUrl is empty")
 	}
 
-	if err := b.RootFS.Verify(b.Host, onlyFields); err != nil {
+	if err := b.RootFS.Verify(resRepoUrl, onlyFields); err != nil {
 		return fmt.Errorf("buildenv.rootfs error: %w", err)
 	}
 
-	if err := b.Toolchain.Verify(b.Host, onlyFields); err != nil {
+	if err := b.Toolchain.Verify(resRepoUrl, onlyFields); err != nil {
 		return fmt.Errorf("buildenv.toolchain error: %w", err)
+	}
+
+	for _, item := range b.Tools {
+		var tool Tool
+		if err := tool.Verify(resRepoUrl, item, onlyFields); err != nil {
+			return fmt.Errorf("buildenv.tools[%s] error: %w", item, err)
+		}
 	}
 
 	return nil

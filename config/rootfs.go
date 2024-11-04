@@ -29,7 +29,7 @@ type RootFSEnv struct {
 	PKG_CONFIG_PATH        []string `json:"PKG_CONFIG_PATH"`
 }
 
-func (r RootFS) Verify(host string, onlyFields bool) error {
+func (r RootFS) Verify(resRepoUrl string, onlyFields bool) error {
 	// If none is true, then rootfs is not required.
 	if r.None {
 		return nil
@@ -55,31 +55,33 @@ func (r RootFS) Verify(host string, onlyFields bool) error {
 		return nil
 	}
 
-	return r.checkIntegrity(host)
+	return r.ensureIntegrity(resRepoUrl)
 }
 
-func (b RootFS) checkIntegrity(host string) error {
+func (b RootFS) ensureIntegrity(resRepoUrl string) error {
 	rootfsPath := filepath.Join(WorkspaceDir, b.Path)
-	if !pathExists(rootfsPath) {
-		fullUrl, err := url.JoinPath(host, b.Url)
-		if err != nil {
-			return fmt.Errorf("buildenv.rootfs.url error: %w", err)
-		}
-
-		// Download to fixed dir.
-		downloaded, err := io.Download(fullUrl, DownloadDir)
-		if err != nil {
-			return fmt.Errorf("%s: download rootfs failed: %w", fullUrl, err)
-		}
-
-		// Extract to dir with same parent.
-		parentDir := filepath.Dir(b.Url)
-		extractDir := filepath.Join(WorkspaceDir, parentDir)
-		if err := io.Extract(downloaded, extractDir); err != nil {
-			return fmt.Errorf("%s: extract rootfs failed: %w", downloaded, err)
-		}
-
-		fmt.Printf("[✔] ---- rootfs of platform setup success.\n\n")
+	if pathExists(rootfsPath) {
+		return nil
 	}
+
+	fullUrl, err := url.JoinPath(resRepoUrl, b.Url)
+	if err != nil {
+		return fmt.Errorf("buildenv.rootfs.url error: %w", err)
+	}
+
+	// Download to fixed dir.
+	downloaded, err := io.Download(fullUrl, DownloadDir)
+	if err != nil {
+		return fmt.Errorf("%s: download rootfs failed: %w", fullUrl, err)
+	}
+
+	// Extract to dir with same parent.
+	parentDir := filepath.Dir(b.Url)
+	extractDir := filepath.Join(WorkspaceDir, parentDir)
+	if err := io.Extract(downloaded, extractDir); err != nil {
+		return fmt.Errorf("%s: extract rootfs failed: %w", downloaded, err)
+	}
+
+	fmt.Printf("[✔] ---- rootfs of platform setup success.\n\n")
 	return nil
 }

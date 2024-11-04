@@ -78,7 +78,7 @@ func (p platformSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "enter":
 			if i, ok := p.list.SelectedItem().(listItem); ok {
-				filePath := filepath.Join(config.PlatformDir, string(i)+".json")
+				filePath := filepath.Join(config.PlatformsDir, string(i)+".json")
 				if err := p.callbacks.OnSelectPlatform(filePath); err != nil {
 					p.err = err
 				} else {

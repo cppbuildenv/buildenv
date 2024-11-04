@@ -30,12 +30,17 @@ func (p platformCallbacks) OnCreatePlatform(filePath string) error {
 }
 
 func (p platformCallbacks) OnSelectPlatform(filePath string) error {
+	var buildenvConf config.BuildEnvConf
+	if err := buildenvConf.Verify(true); err != nil {
+		return err
+	}
+
 	var buildenv config.BuildEnv
 	if err := buildenv.Read(filePath); err != nil {
 		return err
 	}
 
-	if err := buildenv.Verify(true); err != nil {
+	if err := buildenv.Verify(buildenvConf.ResRepoUrl, true); err != nil {
 		return err
 	}
 

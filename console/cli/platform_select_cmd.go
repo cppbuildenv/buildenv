@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"path/filepath"
-	"strings"
 )
 
 func newSelectPlatformCmd(platformDir string, callbacks config.PlatformCallbacks) *selectPlatformCmd {
@@ -30,11 +29,7 @@ func (s *selectPlatformCmd) listen() (handled bool) {
 		return false
 	}
 
-	if !strings.HasSuffix(s.platformName, ".json") {
-		s.platformName = s.platformName + ".json"
-	}
-
-	filePath := filepath.Join(config.PlatformDir, s.platformName)
+	filePath := filepath.Join(config.PlatformsDir, s.platformName+".json")
 	if err := s.callbacks.OnSelectPlatform(filePath); err != nil {
 		fmt.Printf("[✘] ---- build target platform: [%s], error: %s\n", filePath, err)
 		return true
