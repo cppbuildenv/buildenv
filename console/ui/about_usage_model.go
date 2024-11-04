@@ -8,15 +8,22 @@ import (
 )
 
 func createUsageModel(goback func()) usageModel {
-	toolchainPath, _ := filepath.Abs("script/buildenv.cmake")
+	toolchainFile, _ := filepath.Abs("script/buildenv.cmake")
+	environmentFile, _ := filepath.Abs("script/buildenv.sh")
 
 	content := fmt.Sprintf("\nWelcome to buildenv.\n"+
 		"-----------------------------------\n"+
 		"This is a simple tool to manage your cross build environment.\n\n"+
-		"How to use in cmake project: \n"+
-		"\033[34moption1: set(CMAKE_TOOLCHAIN_FILE \"%s\")\033[0m\n"+
-		"\033[34moption2: cmake .. -DCMAKE_TOOLCHAIN_FILE %s\033[0m\n\n"+
-		"[press ctrl+c or q to quit]", toolchainPath, toolchainPath)
+		"1. How to use in cmake project: \n"+
+		"option1: \033[34mset(CMAKE_TOOLCHAIN_FILE \"%s\")\033[0m\n"+
+		"option2: \033[34mcmake .. -DCMAKE_TOOLCHAIN_FILE=%s\033[0m\n\n"+
+		"2. How to use in makefile project: \n"+
+		"\033[34msource %s\033[0m\n\n"+
+		"[press ctrl+c or q to quit]",
+		toolchainFile,
+		toolchainFile,
+		environmentFile,
+	)
 	return usageModel{content: content, goback: goback}
 }
 
