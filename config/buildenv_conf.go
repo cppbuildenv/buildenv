@@ -8,12 +8,11 @@ import (
 )
 
 type BuildEnvConf struct {
-	ResRepoUrl  string `json:"res_repo_url"`
 	ConfRepoUrl string `json:"conf_repo_url"`
 	Platform    string `json:"platform"`
 }
 
-func (b *BuildEnvConf) Verify(onlyFields bool) error {
+func (b *BuildEnvConf) Verify(checkAndRepair bool) error {
 	bytes, err := os.ReadFile("conf/buildenv.json")
 	if err != nil {
 		return err
@@ -37,7 +36,7 @@ func (b *BuildEnvConf) Verify(onlyFields bool) error {
 		return err
 	}
 
-	if err := buildenv.Verify(b.ResRepoUrl, onlyFields); err != nil {
+	if err := buildenv.Verify(checkAndRepair); err != nil {
 		return err
 	}
 

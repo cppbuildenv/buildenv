@@ -67,23 +67,23 @@ func (b BuildEnv) Write(filePath string) error {
 	return os.WriteFile(filePath, bytes, os.ModePerm)
 }
 
-func (b BuildEnv) Verify(resRepoUrl string, onlyFields bool) error {
-	if resRepoUrl == "" {
-		return fmt.Errorf("repoUrl is empty")
-	}
-
-	if err := b.RootFS.Verify(resRepoUrl, onlyFields); err != nil {
+func (b BuildEnv) Verify(checkAndRepair bool) error {
+	if err := b.RootFS.Verify(checkAndRepair); err != nil {
 		return fmt.Errorf("buildenv.rootfs error: %w", err)
 	}
 
-	if err := b.Toolchain.Verify(resRepoUrl, onlyFields); err != nil {
+	if err := b.Toolchain.Verify(checkAndRepair); err != nil {
 		return fmt.Errorf("buildenv.toolchain error: %w", err)
 	}
 
 	for _, item := range b.Tools {
 		var tool Tool
-		if err := tool.Verify(resRepoUrl, item, onlyFields); err != nil {
-			return fmt.Errorf("buildenv.tools[%s] error: %w", item, err)
+		if err := tool.Read(item); err != nil {
+			return fmt.Errorf("buildenv.tools[%s] read error: %w", item, err)
+		}
+
+		if err := tool.Verify(checkAndRepair); err != nil {
+			return fmt.Errorf("buildenv.tools[%s] verify error: %w", item, err)
 		}
 	}
 
@@ -187,7 +187,7 @@ func (b *BuildEnv) writeRootFS(toolchain, environment *strings.Builder) error {
 
 func (b *BuildEnv) writeToolchain(toolchain, environment *strings.Builder) error {
 	toolchain.WriteString("\n# Set toolchain for cross-compile.\n")
-	toolchainBinPath := filepath.Join(WorkspaceDir, b.Toolchain.Path)
+	toolchainBinPath := filepath.Join(WorkspaceDir, b.Toolchain.RuntimePath)
 	absToolchainBinPath, err := filepath.Abs(toolchainBinPath)
 	if err != nil {
 		return fmt.Errorf("cannot get absolute path of toolchain path: %s", toolchainBinPath)

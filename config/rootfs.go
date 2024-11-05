@@ -3,22 +3,22 @@ package config
 import (
 	"buildenv/pkg/io"
 	"fmt"
-	"net/url"
 	"path/filepath"
 )
 
 type RootFS struct {
-	Url     string    `json:"url"`
-	Path    string    `json:"path"`
-	EnvVars RootFSEnv `json:"env_vars"`
-	None    bool      `json:"none"`
+	Url         string    `json:"url"`
+	ExtractPath string    `json:"extract_path"`
+	RuntimePath string    `json:"runtime_path"`
+	EnvVars     RootFSEnv `json:"env_vars"`
+	None        bool      `json:"none"`
 }
 
 func (r RootFS) AbsolutePath() string {
-	fullPath := filepath.Join(WorkspaceDir, r.Path)
+	fullPath := filepath.Join(WorkspaceDir, r.RuntimePath)
 	path, err := filepath.Abs(fullPath)
 	if err != nil {
-		panic(fmt.Sprintf("cannot get absolute path: %s", r.Path))
+		panic(fmt.Sprintf("cannot get absolute path: %s", r.RuntimePath))
 	}
 	return path
 }
@@ -29,7 +29,7 @@ type RootFSEnv struct {
 	PKG_CONFIG_PATH        []string `json:"PKG_CONFIG_PATH"`
 }
 
-func (r RootFS) Verify(resRepoUrl string, onlyFields bool) error {
+func (r RootFS) Verify(checkAndRepiar bool) error {
 	// If none is true, then rootfs is not required.
 	if r.None {
 		return nil
@@ -38,46 +38,48 @@ func (r RootFS) Verify(resRepoUrl string, onlyFields bool) error {
 	if r.Url == "" {
 		return fmt.Errorf("rootfs.url is empty")
 	}
-	if r.Path == "" {
-		return fmt.Errorf("rootfs.path is empty")
+
+	if r.ExtractPath == "" {
+		return fmt.Errorf("rootfs.extract_path is empty")
 	}
+
+	if r.RuntimePath == "" {
+		return fmt.Errorf("rootfs.runtime_path is empty")
+	}
+
 	if r.EnvVars.SYSROOT == "" {
 		return fmt.Errorf("rootfs.env.SYSROOT is empty")
 	}
+
 	if r.EnvVars.PKG_CONFIG_SYSROOT_DIR == "" {
 		return fmt.Errorf("rootfs.env.PKG_CONFIG_SYSROOT_DIR is empty")
 	}
+
 	if len(r.EnvVars.PKG_CONFIG_PATH) == 0 {
 		return fmt.Errorf("rootfs.env.PKG_CONFIG_PATH is empty")
 	}
 
-	if onlyFields {
+	if !checkAndRepiar {
 		return nil
 	}
 
-	return r.ensureIntegrity(resRepoUrl)
+	return r.checkAndRepair()
 }
 
-func (b RootFS) ensureIntegrity(resRepoUrl string) error {
-	rootfsPath := filepath.Join(WorkspaceDir, b.Path)
+func (b RootFS) checkAndRepair() error {
+	rootfsPath := filepath.Join(WorkspaceDir, b.RuntimePath)
 	if pathExists(rootfsPath) {
 		return nil
 	}
 
-	fullUrl, err := url.JoinPath(resRepoUrl, b.Url)
-	if err != nil {
-		return fmt.Errorf("buildenv.rootfs.url error: %w", err)
-	}
-
 	// Download to fixed dir.
-	downloaded, err := io.Download(fullUrl, DownloadDir)
+	downloaded, err := io.Download(b.Url, DownloadDir)
 	if err != nil {
-		return fmt.Errorf("%s: download rootfs failed: %w", fullUrl, err)
+		return fmt.Errorf("%s: download rootfs failed: %w", b.Url, err)
 	}
 
-	// Extract to dir with same parent.
-	parentDir := filepath.Dir(b.Url)
-	extractDir := filepath.Join(WorkspaceDir, parentDir)
+	// Extract to `extract_path`
+	extractDir := filepath.Join(WorkspaceDir, b.ExtractPath)
 	if err := io.Extract(downloaded, extractDir); err != nil {
 		return fmt.Errorf("%s: extract rootfs failed: %w", downloaded, err)
 	}

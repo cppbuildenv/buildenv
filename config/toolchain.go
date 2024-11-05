@@ -3,13 +3,13 @@ package config
 import (
 	"buildenv/pkg/io"
 	"fmt"
-	"net/url"
 	"path/filepath"
 )
 
 type Toolchain struct {
 	Url           string          `json:"url"`
-	Path          string          `json:"path"`
+	ExtractPath   string          `json:"extract_path"`
+	RuntimePath   string          `json:"runtime_path"`
 	EnvVars       ToolchainEnvVar `json:"env_vars"`
 	ToolChainVars ToolChainVars   `json:"toolchain_vars"`
 }
@@ -31,13 +31,17 @@ type ToolChainVars struct {
 	CMAKE_SYSTEM_PROCESSOR string `json:"CMAKE_SYSTEM_PROCESSOR"`
 }
 
-func (t Toolchain) Verify(resRepoUrl string, onlyFields bool) error {
+func (t Toolchain) Verify(checkAndRepiar bool) error {
 	if t.Url == "" {
 		return fmt.Errorf("toolchain.url is empty")
 	}
 
-	if t.Path == "" {
-		return fmt.Errorf("toolchain.path is empty")
+	if t.ExtractPath == "" {
+		return fmt.Errorf("toolchain.extract_path is empty")
+	}
+
+	if t.RuntimePath == "" {
+		return fmt.Errorf("toolchain.runtime_path is empty")
 	}
 
 	if t.EnvVars.CC == "" {
@@ -56,33 +60,27 @@ func (t Toolchain) Verify(resRepoUrl string, onlyFields bool) error {
 		return fmt.Errorf("toolchain.toolchain_vars.CMAKE_SYSTEM_PROCESSOR is empty")
 	}
 
-	if onlyFields {
+	if !checkAndRepiar {
 		return nil
 	}
 
-	return t.ensureIntegrity(resRepoUrl)
+	return t.checkAndRepair()
 }
 
-func (t Toolchain) ensureIntegrity(resRepoUrl string) error {
-	toolchainPath := filepath.Join(WorkspaceDir, t.Path)
+func (t Toolchain) checkAndRepair() error {
+	toolchainPath := filepath.Join(WorkspaceDir, t.RuntimePath)
 	if pathExists(toolchainPath) {
 		return nil
 	}
 
-	fullUrl, err := url.JoinPath(resRepoUrl, t.Url)
-	if err != nil {
-		return fmt.Errorf("buildenv.toolchain.url error: %w", err)
-	}
-
 	// Download to fixed dir.
-	downloaded, err := io.Download(fullUrl, DownloadDir)
+	downloaded, err := io.Download(t.Url, DownloadDir)
 	if err != nil {
-		return fmt.Errorf("%s: download toolchain failed: %w", fullUrl, err)
+		return fmt.Errorf("%s: download toolchain failed: %w", t.Url, err)
 	}
 
-	// Extract to dir with same parent.
-	parentDir := filepath.Dir(t.Url)
-	extractDir := filepath.Join(WorkspaceDir, parentDir)
+	// Extract to `extract_path`
+	extractDir := filepath.Join(WorkspaceDir, t.ExtractPath)
 	if err := io.Extract(downloaded, extractDir); err != nil {
 		return fmt.Errorf("%s: extract toolchain failed: %w", downloaded, err)
 	}
