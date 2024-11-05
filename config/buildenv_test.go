@@ -4,10 +4,11 @@ import "testing"
 
 func TestCreateToolchainFile(t *testing.T) {
 	var buildenv BuildEnv
-	if err := buildenv.Read("testdata/aarch64-linux-test.json"); err != nil {
+	if err := buildenv.Read("testdata/conf/platforms/aarch64-linux-test.json"); err != nil {
 		t.Fatal(err)
 	}
 
+	buildenv.toolDir = "testdata/conf/tools" // change for test
 	if err := buildenv.Verify(false); err != nil {
 		t.Fatal(err)
 	}

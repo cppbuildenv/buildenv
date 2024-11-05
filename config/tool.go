@@ -10,29 +10,28 @@ import (
 
 type Tool struct {
 	Url         string `json:"url"`
-	RuntimePath string `json:"runtime_path"`
+	RunPath     string `json:"run_path"`
 	ExtractPath string `json:"extract_path"`
 	Md5         string `json:"md5"`
 	ToolName    string `json:"-"`
 }
 
-func (t *Tool) Read(toolName string) error {
+func (t *Tool) Read(toolpath string) error {
 	// Check if tool.json exists.
-	toolPath := filepath.Join(ToolsDir, toolName+".json")
-	if !pathExists(toolPath) {
-		return fmt.Errorf("config file of %s doesn't exists in %s", toolName, ToolsDir)
+	if !pathExists(toolpath) {
+		return fmt.Errorf("%s doesn't exists", toolpath)
 	}
 
 	// Read json file.
-	bytes, err := os.ReadFile(toolPath)
+	bytes, err := os.ReadFile(toolpath)
 	if err != nil {
-		return fmt.Errorf("config file of %s not exists in %s", toolName, ToolsDir)
+		return fmt.Errorf("%s not exists", toolpath)
 	}
 	if err := json.Unmarshal(bytes, t); err != nil {
-		return fmt.Errorf("config file of %s is not valid: %w", toolName, err)
+		return fmt.Errorf("%s is not valid: %w", toolpath, err)
 	}
 
-	t.ToolName = toolName
+	t.ToolName = filepath.Base(toolpath)
 	return nil
 }
 
@@ -41,7 +40,7 @@ func (t *Tool) Verify(checkAndRepiar bool) error {
 		return fmt.Errorf("url of %s is empty", t.ToolName)
 	}
 
-	if t.RuntimePath == "" {
+	if t.RunPath == "" {
 		return fmt.Errorf("path of %s is empty", t.ToolName)
 	}
 
@@ -53,7 +52,7 @@ func (t *Tool) Verify(checkAndRepiar bool) error {
 }
 
 func (t Tool) checkAndRepair() error {
-	toolPath := filepath.Join(WorkspaceDir, t.RuntimePath)
+	toolPath := filepath.Join(WorkspaceDir, t.RunPath)
 	if pathExists(toolPath) {
 		return nil
 	}

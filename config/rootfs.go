@@ -9,16 +9,16 @@ import (
 type RootFS struct {
 	Url         string    `json:"url"`
 	ExtractPath string    `json:"extract_path"`
-	RuntimePath string    `json:"runtime_path"`
+	RunPath     string    `json:"run_path"`
 	EnvVars     RootFSEnv `json:"env_vars"`
 	None        bool      `json:"none"`
 }
 
 func (r RootFS) AbsolutePath() string {
-	fullPath := filepath.Join(WorkspaceDir, r.RuntimePath)
+	fullPath := filepath.Join(WorkspaceDir, r.RunPath)
 	path, err := filepath.Abs(fullPath)
 	if err != nil {
-		panic(fmt.Sprintf("cannot get absolute path: %s", r.RuntimePath))
+		panic(fmt.Sprintf("cannot get absolute path: %s", r.RunPath))
 	}
 	return path
 }
@@ -43,8 +43,8 @@ func (r RootFS) Verify(checkAndRepiar bool) error {
 		return fmt.Errorf("rootfs.extract_path is empty")
 	}
 
-	if r.RuntimePath == "" {
-		return fmt.Errorf("rootfs.runtime_path is empty")
+	if r.RunPath == "" {
+		return fmt.Errorf("rootfs.run_path is empty")
 	}
 
 	if r.EnvVars.SYSROOT == "" {
@@ -67,7 +67,7 @@ func (r RootFS) Verify(checkAndRepiar bool) error {
 }
 
 func (b RootFS) checkAndRepair() error {
-	rootfsPath := filepath.Join(WorkspaceDir, b.RuntimePath)
+	rootfsPath := filepath.Join(WorkspaceDir, b.RunPath)
 	if pathExists(rootfsPath) {
 		return nil
 	}

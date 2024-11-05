@@ -57,12 +57,13 @@ func createPlatformSelectModel(platformDir string, callbacks config.PlatformCall
 }
 
 type platformSelectModel struct {
-	list      list.Model
-	value     string
-	err       error
-	styles    styles
-	callbacks config.PlatformCallbacks
-	goback    func()
+	list        list.Model
+	trySelected string
+	selected    string
+	err         error
+	styles      styles
+	callbacks   config.PlatformCallbacks
+	goback      func()
 }
 
 func (p platformSelectModel) Init() tea.Cmd {
@@ -80,10 +81,11 @@ func (p platformSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			if i, ok := p.list.SelectedItem().(listItem); ok {
 				filePath := filepath.Join(config.PlatformsDir, string(i)+".json")
+				p.trySelected = string(i)
 				if err := p.callbacks.OnSelectPlatform(filePath); err != nil {
 					p.err = err
 				} else {
-					p.value = string(i)
+					p.selected = string(i)
 					p.err = nil
 				}
 			}
@@ -91,7 +93,8 @@ func (p platformSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "ctrl+c", "esc", "q":
 			p.goback()
-			p.value = ""
+			p.trySelected = ""
+			p.selected = ""
 			p.err = nil
 			return p, nil
 		}
@@ -104,11 +107,11 @@ func (p platformSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (p platformSelectModel) View() string {
 	if p.err != nil {
-		return p.styles.resultTextStyle.Render(fmt.Sprintf(console.PlatformSelectedFailed, p.value, p.err))
+		return p.styles.resultTextStyle.Render(fmt.Sprintf(console.PlatformSelectedFailed, p.trySelected, p.err))
 	}
 
-	if p.value != "" {
-		return p.styles.resultTextStyle.Render(fmt.Sprintf(console.PlatformSelected, p.value))
+	if p.selected != "" {
+		return p.styles.resultTextStyle.Render(fmt.Sprintf(console.PlatformSelected, p.selected))
 	}
 
 	return "\n" + p.list.View()

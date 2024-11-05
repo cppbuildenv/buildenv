@@ -13,9 +13,8 @@ const (
 	PlatformsDir = "conf/platforms"
 	ToolsDir     = "conf/tools"
 
-	WorkspaceDir  = "workspace"
-	DownloadDir   = "workspace/downloads"
-	ToolchainFile = "buildenv.cmake"
+	WorkspaceDir = "workspace"
+	DownloadDir  = "workspace/downloads"
 )
 
 type BuildEnv struct {
@@ -23,6 +22,7 @@ type BuildEnv struct {
 	Toolchain Toolchain `json:"toolchain"`
 	Tools     []string  `json:"tools"`
 	Packages  []string  `json:"packages"`
+	toolDir   string    `json:"-"` // Default toolDir is "conf/tools"
 }
 
 func (b *BuildEnv) Read(filePath string) error {
@@ -37,9 +37,11 @@ func (b *BuildEnv) Read(filePath string) error {
 		return err
 	}
 	if err := json.Unmarshal(bytes, b); err != nil {
-		return fmt.Errorf("%s read error: %w", filePath, err)
+		return fmt.Errorf("read error: %w", err)
 	}
 
+	// Set default toolDir as "conf/tools", but can be changed during tests.
+	b.toolDir = ToolsDir
 	return nil
 }
 
@@ -77,8 +79,9 @@ func (b BuildEnv) Verify(checkAndRepair bool) error {
 	}
 
 	for _, item := range b.Tools {
+		toolpath := filepath.Join(b.toolDir, item+".json")
 		var tool Tool
-		if err := tool.Read(item); err != nil {
+		if err := tool.Read(toolpath); err != nil {
 			return fmt.Errorf("buildenv.tools[%s] read error: %w", item, err)
 		}
 
@@ -127,24 +130,29 @@ func (b BuildEnv) CreateToolchainFile(outputDir string) (string, error) {
 	toolchain.WriteString("set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)\n")
 	toolchain.WriteString("set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)\n")
 
+	// Set tools for cross-compile.
+	if err := b.writeTools(&toolchain, &environment); err != nil {
+		return "", err
+	}
+
 	// Create the output directory if it doesn't exist.
 	if err := os.MkdirAll(outputDir, os.ModeDir|os.ModePerm); err != nil {
 		return "", err
 	}
 
-	// Write the modified content to the output file.
-	toolchainPath := filepath.Join(outputDir, ToolchainFile)
+	// Write toolchain file.
+	toolchainPath := filepath.Join(outputDir, "buildenv.cmake")
 	if err := os.WriteFile(toolchainPath, []byte(toolchain.String()), os.ModePerm); err != nil {
 		return "", err
 	}
 
-	// Write environment variables to the file.
+	// Write environment file.
 	environmentPath := filepath.Join(outputDir, "buildenv.sh")
 	if err := os.WriteFile(environmentPath, []byte(environment.String()), os.ModePerm); err != nil {
 		return "", err
 	}
 
-	// Set permissions for the file: rwxr-xr-x
+	// Grant executable permission to the file: rwxr-xr-x
 	if err := os.Chmod(environmentPath, 0755); err != nil {
 		log.Fatalf("Error setting permissions: %v", err)
 	}
@@ -159,7 +167,7 @@ func (b *BuildEnv) writeRootFS(toolchain, environment *strings.Builder) error {
 		toolchain.WriteString("\n# Set sysroot for cross-compile.\n")
 		toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSROOT \"%s\")\n", rootFSPath))
 		toolchain.WriteString("list(APPEND CMAKE_FIND_ROOT_PATH \"${CMAKE_SYSROOT}\")\n")
-		toolchain.WriteString("list(APPEND CMAKE_PREFIX_PATH NEVER \"${CMAKE_SYSROOT}\")\n")
+		toolchain.WriteString("list(APPEND CMAKE_PREFIX_PATH \"${CMAKE_SYSROOT}\")\n")
 
 		toolchain.WriteString("\n# Set pkg-config path for cross-compile.\n")
 		toolchain.WriteString("set(ENV{PKG_CONFIG_SYSROOT_DIR} \"${CMAKE_SYSROOT}\")\n")
@@ -177,7 +185,9 @@ func (b *BuildEnv) writeRootFS(toolchain, environment *strings.Builder) error {
 		toolchain.WriteString(fmt.Sprintf("set(ENV{PKG_CONFIG_PATH} \"%s\")\n", strings.Join(b.RootFS.EnvVars.PKG_CONFIG_PATH, ":")))
 
 		// Set environment variables for makefile project.
+		environment.WriteString("\n# Set rootfs for cross compile.\n")
 		environment.WriteString(fmt.Sprintf("export SYSROOT=%s\n", rootFSPath))
+		environment.WriteString("export PATH=${SYSROOT}:${PATH}\n")
 		environment.WriteString("export PKG_CONFIG_SYSROOT_DIR=${SYSROOT}\n")
 		environment.WriteString(fmt.Sprintf("export PKG_CONFIG_PATH=%s\n\n", strings.Join(b.RootFS.EnvVars.PKG_CONFIG_PATH, ":")))
 	}
@@ -187,36 +197,60 @@ func (b *BuildEnv) writeRootFS(toolchain, environment *strings.Builder) error {
 
 func (b *BuildEnv) writeToolchain(toolchain, environment *strings.Builder) error {
 	toolchain.WriteString("\n# Set toolchain for cross-compile.\n")
-	toolchainBinPath := filepath.Join(WorkspaceDir, b.Toolchain.RuntimePath)
-	absToolchainBinPath, err := filepath.Abs(toolchainBinPath)
+	toolchainPath := filepath.Join(WorkspaceDir, b.Toolchain.RunPath)
+	absToolchainPath, err := filepath.Abs(toolchainPath)
 	if err != nil {
-		return fmt.Errorf("cannot get absolute path of toolchain path: %s", toolchainBinPath)
+		return fmt.Errorf("cannot get absolute path of toolchain path: %s", toolchainPath)
 	}
 
-	toolchain.WriteString(fmt.Sprintf("set(_TOOLCHAIN_BIN_PATH		\"%s\")\n", absToolchainBinPath))
+	toolchain.WriteString(fmt.Sprintf("set(ENV{PATH} \"%s:$ENV{PATH}\")\n", absToolchainPath))
 
 	writeIfNotEmpty := func(content, env, value string) {
 		if value != "" {
 			// Set toolchain variables.
-			toolchain.WriteString(fmt.Sprintf("set(%s%s\")\n", content, value))
+			toolchain.WriteString(fmt.Sprintf("set(%s\"%s\")\n", content, value))
 
 			// Set environment variables for makefile project.
-			environment.WriteString(fmt.Sprintf("export %s=${TOOLCHAIN_BIN_PATH}/%s\n", env, value))
+			environment.WriteString(fmt.Sprintf("export %s=%s\n", env, value))
 		}
 	}
 
-	environment.WriteString(fmt.Sprintf("export TOOLCHAIN_BIN_PATH=%s\n", absToolchainBinPath))
+	environment.WriteString("# Set toolchain for cross compile.\n")
+	environment.WriteString(fmt.Sprintf("export TOOLCHAIN_PATH=%s\n", absToolchainPath))
+	environment.WriteString("export PATH=${TOOLCHAIN_PATH}:${PATH}\n\n")
 
-	writeIfNotEmpty("CMAKE_C_COMPILER 		\"${_TOOLCHAIN_BIN_PATH}/", "CC", b.Toolchain.EnvVars.CC)
-	writeIfNotEmpty("CMAKE_CXX_COMPILER		\"${_TOOLCHAIN_BIN_PATH}/", "CXX", b.Toolchain.EnvVars.CXX)
-	writeIfNotEmpty("CMAKE_Fortran_COMPILER	\"${_TOOLCHAIN_BIN_PATH}/", "FC", b.Toolchain.EnvVars.FC)
-	writeIfNotEmpty("CMAKE_RANLIB 			\"${_TOOLCHAIN_BIN_PATH}/", "RANLIB", b.Toolchain.EnvVars.RANLIB)
-	writeIfNotEmpty("CMAKE_AR 				\"${_TOOLCHAIN_BIN_PATH}/", "AR", b.Toolchain.EnvVars.AR)
-	writeIfNotEmpty("CMAKE_LINKER 			\"${_TOOLCHAIN_BIN_PATH}/", "LD", b.Toolchain.EnvVars.LD)
-	writeIfNotEmpty("CMAKE_NM 				\"${_TOOLCHAIN_BIN_PATH}/", "NM", b.Toolchain.EnvVars.NM)
-	writeIfNotEmpty("CMAKE_OBJDUMP 			\"${_TOOLCHAIN_BIN_PATH}/", "OBJDUMP", b.Toolchain.EnvVars.OBJDUMP)
-	writeIfNotEmpty("CMAKE_STRIP 			\"${_TOOLCHAIN_BIN_PATH}/", "STRIP", b.Toolchain.EnvVars.STRIP)
+	writeIfNotEmpty("CMAKE_C_COMPILER 		", "CC", b.Toolchain.EnvVars.CC)
+	writeIfNotEmpty("CMAKE_CXX_COMPILER		", "CXX", b.Toolchain.EnvVars.CXX)
+	writeIfNotEmpty("CMAKE_Fortran_COMPILER	", "FC", b.Toolchain.EnvVars.FC)
+	writeIfNotEmpty("CMAKE_RANLIB 			", "RANLIB", b.Toolchain.EnvVars.RANLIB)
+	writeIfNotEmpty("CMAKE_AR 				", "AR", b.Toolchain.EnvVars.AR)
+	writeIfNotEmpty("CMAKE_LINKER 			", "LD", b.Toolchain.EnvVars.LD)
+	writeIfNotEmpty("CMAKE_NM 				", "NM", b.Toolchain.EnvVars.NM)
+	writeIfNotEmpty("CMAKE_OBJDUMP 			", "OBJDUMP", b.Toolchain.EnvVars.OBJDUMP)
+	writeIfNotEmpty("CMAKE_STRIP 			", "STRIP", b.Toolchain.EnvVars.STRIP)
 
+	return nil
+}
+
+func (b *BuildEnv) writeTools(toolchain, environment *strings.Builder) error {
+	toolchain.WriteString("\n# Append `run_path` of tools into $PATH.\n")
+	environment.WriteString("\n# Append `run_path` of tools into $PATH.\n")
+
+	for _, item := range b.Tools {
+		toolPath := filepath.Join(ToolsDir, item+".json")
+		var tool Tool
+		if err := tool.Read(toolPath); err != nil {
+			return fmt.Errorf("cannot read tool: %s", toolPath)
+		}
+
+		absToolPath, err := filepath.Abs(tool.RunPath)
+		if err != nil {
+			return fmt.Errorf("cannot get absolute path of tool path: %s", toolPath)
+		}
+
+		toolchain.WriteString(fmt.Sprintf("set(ENV{PATH} \"%s:$ENV{PATH}\")\n", absToolPath))
+		environment.WriteString(fmt.Sprintf("export PATH=%s:$PATH\n", absToolPath))
+	}
 	return nil
 }
 

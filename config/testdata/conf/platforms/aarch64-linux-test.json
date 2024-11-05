@@ -1,8 +1,8 @@
 {
-    "host": "http://192.168.100.25:8083/repository/build_resource",
     "rootfs": {
-        "url": "rootfs/ti-processor-sdk-rtos-j721e-evm-07_03_00_07.tar.gz",
-        "path": "rootfs/ti-processor-sdk-rtos-j721e-evm-07_03_00_07",
+        "url": "http://192.168.100.25:8083/repository/build_resource/rootfs/ti-processor-sdk-rtos-j721e-evm-07_03_00_07.tar.gz",
+        "extract_path": "rootfs",
+        "run_path": "rootfs/ti-processor-sdk-rtos-j721e-evm-07_03_00_07",
         "env_vars": {
             "SYSROOT": "rootfs/ti-processor-sdk-rtos-j721e-evm-07_03_00_07",
             "PKG_CONFIG_SYSROOT_DIR": "ti-processor-sdk-rtos-j721e-evm-07_03_00_07",
@@ -13,8 +13,9 @@
         }
     },
     "toolchain": {
-        "url": "toolchain/aarch64-linux/gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu.tar.gz",
-        "path": "toolchain/aarch64-linux/gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu/bin",
+        "url": "http://192.168.100.25:8083/repository/build_resource/toolchain/aarch64-linux/gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu.tar.gz",
+        "extract_path": "toolchain/aarch64-linux",
+        "run_path": "toolchain/aarch64-linux/gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu/bin",
         "env_vars": {
             "CC": "aarch64-none-linux-gnu-gcc",
             "CXX": "aarch64-none-linux-gnu-g++",
@@ -30,5 +31,10 @@
             "CMAKE_SYSTEM_NAME": "Linux",
             "CMAKE_SYSTEM_PROCESSOR": "aarch64"
         }
-    }
+    },
+    "tools": [
+        "cmake-3.30.5-linux-x86_64"
+    ],
+    "packages": [
+    ]
 }

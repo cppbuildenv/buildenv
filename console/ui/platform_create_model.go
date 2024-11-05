@@ -76,7 +76,7 @@ func (p platformCreateModel) View() string {
 	}
 
 	if p.err != nil {
-		return p.styles.resultTextStyle.Render(fmt.Sprintf(console.PlatformCreateFailed, p.platformName, p.err.Error()))
+		return p.styles.resultTextStyle.Render(fmt.Sprintf(console.PlatformCreateFailed, p.platformName, p.err))
 	}
 
 	return fmt.Sprintf("\n%s\n\n%s\n\n%s\n",

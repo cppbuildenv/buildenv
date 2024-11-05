@@ -9,7 +9,7 @@ import (
 type Toolchain struct {
 	Url           string          `json:"url"`
 	ExtractPath   string          `json:"extract_path"`
-	RuntimePath   string          `json:"runtime_path"`
+	RunPath       string          `json:"run_path"`
 	EnvVars       ToolchainEnvVar `json:"env_vars"`
 	ToolChainVars ToolChainVars   `json:"toolchain_vars"`
 }
@@ -40,8 +40,8 @@ func (t Toolchain) Verify(checkAndRepiar bool) error {
 		return fmt.Errorf("toolchain.extract_path is empty")
 	}
 
-	if t.RuntimePath == "" {
-		return fmt.Errorf("toolchain.runtime_path is empty")
+	if t.RunPath == "" {
+		return fmt.Errorf("toolchain.run_path is empty")
 	}
 
 	if t.EnvVars.CC == "" {
@@ -68,7 +68,7 @@ func (t Toolchain) Verify(checkAndRepiar bool) error {
 }
 
 func (t Toolchain) checkAndRepair() error {
-	toolchainPath := filepath.Join(WorkspaceDir, t.RuntimePath)
+	toolchainPath := filepath.Join(WorkspaceDir, t.RunPath)
 	if pathExists(toolchainPath) {
 		return nil
 	}
