@@ -5,4 +5,6 @@ const (
 	PlatformCreateFailed   = "[✘] -------- platform [%s] is create failed: %s.\n"
 	PlatformSelected       = "[✔] ======== platform [%s] is selected.\n"
 	PlatformSelectedFailed = "[✘] ======== platform [%s] is invalid: %s.\n"
+	InstallSuccess         = "[✔] ======== buildenv is installed.\n"
+	InstallFailed          = "[✘] ======== buildenv install failed: %s.\n"
 )
