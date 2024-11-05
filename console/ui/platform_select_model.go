@@ -2,6 +2,7 @@ package ui
 
 import (
 	"buildenv/config"
+	"buildenv/console"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -103,11 +104,11 @@ func (p platformSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (p platformSelectModel) View() string {
 	if p.err != nil {
-		return p.styles.resultTextStyle.Render("[✘] ---- invalid platform:", p.err.Error())
+		return p.styles.resultTextStyle.Render(fmt.Sprintf(console.PlatformSelectedFailed, p.value, p.err))
 	}
 
 	if p.value != "" {
-		return p.styles.resultTextStyle.Render("[✔] ---- build target platform:", p.value)
+		return p.styles.resultTextStyle.Render(fmt.Sprintf(console.PlatformSelected, p.value))
 	}
 
 	return "\n" + p.list.View()

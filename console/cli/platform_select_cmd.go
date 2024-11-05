@@ -2,6 +2,7 @@ package cli
 
 import (
 	"buildenv/config"
+	"buildenv/console"
 	"flag"
 	"fmt"
 	"path/filepath"
@@ -31,10 +32,10 @@ func (s *selectPlatformCmd) listen() (handled bool) {
 
 	filePath := filepath.Join(config.PlatformsDir, s.platformName+".json")
 	if err := s.callbacks.OnSelectPlatform(filePath); err != nil {
-		fmt.Printf("[✘] ---- build target platform: [%s], error: %s\n", filePath, err)
+		fmt.Printf(console.PlatformSelectedFailed, s.platformName, err)
 		return true
 	}
 
-	fmt.Printf("[✔] ---- build target platform: %s\n", s.platformName)
+	fmt.Printf(console.PlatformSelected, s.platformName)
 	return true
 }
