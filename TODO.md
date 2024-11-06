@@ -16,3 +16,4 @@
 
 - 通过获取资源文件的大小和本地文件大小对比，来判断是否需要重新下载覆盖
 - platform添加native的支持
+- 提供quiet cli参数，用于在toolchain调用buildenv时候不输出过程信息

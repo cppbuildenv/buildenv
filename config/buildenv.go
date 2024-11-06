@@ -12,17 +12,19 @@ import (
 const (
 	PlatformsDir = "conf/platforms"
 	ToolsDir     = "conf/tools"
+	PortDir      = "conf/ports"
 
 	WorkspaceDir = "workspace"
 	DownloadDir  = "workspace/downloads"
 )
 
 type BuildEnv struct {
-	RootFS    RootFS    `json:"rootfs"`
-	Toolchain Toolchain `json:"toolchain"`
-	Tools     []string  `json:"tools"`
-	Packages  []string  `json:"packages"`
-	toolDir   string    `json:"-"` // Default toolDir is "conf/tools"
+	RootFS       RootFS    `json:"rootfs"`
+	Toolchain    Toolchain `json:"toolchain"`
+	Tools        []string  `json:"tools"`
+	Dependencies []string  `json:"dependencies"`
+	toolDir      string    `json:"-"` // Default toolDir is "conf/tools"
+	portDir      string    `json:"-"` // Default portDir is "conf/ports"
 }
 
 func (b *BuildEnv) Read(filePath string) error {
@@ -40,8 +42,9 @@ func (b *BuildEnv) Read(filePath string) error {
 		return fmt.Errorf("read error: %w", err)
 	}
 
-	// Set default toolDir as "conf/tools", but can be changed during tests.
+	// Set default toolDir and portDir and can be changed during unit tests.
 	b.toolDir = ToolsDir
+	b.portDir = PortDir
 	return nil
 }
 
@@ -78,15 +81,30 @@ func (b BuildEnv) Verify(checkAndRepair bool) error {
 		return fmt.Errorf("buildenv.toolchain error: %w", err)
 	}
 
+	// Verify tools.
 	for _, item := range b.Tools {
 		toolpath := filepath.Join(b.toolDir, item+".json")
 		var tool Tool
+
 		if err := tool.Read(toolpath); err != nil {
 			return fmt.Errorf("buildenv.tools[%s] read error: %w", item, err)
 		}
 
 		if err := tool.Verify(checkAndRepair); err != nil {
 			return fmt.Errorf("buildenv.tools[%s] verify error: %w", item, err)
+		}
+	}
+
+	// Verify dependencies.
+	for _, item := range b.Dependencies {
+		portPath := filepath.Join(b.portDir, item+".json")
+		var port Port
+		if err := port.Read(portPath); err != nil {
+			return fmt.Errorf("buildenv.dependencies[%s] read error: %w", item, err)
+		}
+
+		if err := port.Verify(checkAndRepair); err != nil {
+			return fmt.Errorf("buildenv.dependencies[%s] verify error: %w", item, err)
 		}
 	}
 
@@ -107,8 +125,8 @@ func (b BuildEnv) CreateToolchainFile(outputDir string) (string, error) {
 
 	// Set toolchain platform infos.
 	toolchain.WriteString("\n# Set toolchain platform infos.\n")
-	toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSTEM_NAME \"%s\")\n", b.Toolchain.ToolChainVars.CMAKE_SYSTEM_NAME))
-	toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSTEM_PROCESSOR \"%s\")\n", b.Toolchain.ToolChainVars.CMAKE_SYSTEM_PROCESSOR))
+	toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSTEM_NAME \"%s\")\n", b.Toolchain.CMakeVars.CMAKE_SYSTEM_NAME))
+	toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSTEM_PROCESSOR \"%s\")\n", b.Toolchain.CMakeVars.CMAKE_SYSTEM_PROCESSOR))
 
 	// Set sysroot for cross-compile.
 	if err := b.writeRootFS(&toolchain, &environment); err != nil {
@@ -190,6 +208,12 @@ func (b *BuildEnv) writeRootFS(toolchain, environment *strings.Builder) error {
 		environment.WriteString("export PATH=${SYSROOT}:${PATH}\n")
 		environment.WriteString("export PKG_CONFIG_SYSROOT_DIR=${SYSROOT}\n")
 		environment.WriteString(fmt.Sprintf("export PKG_CONFIG_PATH=%s\n\n", strings.Join(b.RootFS.EnvVars.PKG_CONFIG_PATH, ":")))
+
+		// Make sure the toolchain is in the PATH of current process.
+		os.Setenv("SYSROOT", rootFSPath)
+		os.Setenv("PKG_CONFIG_SYSROOT_DIR", rootFSPath)
+		os.Setenv("PKG_CONFIG_PATH", strings.Join(b.RootFS.EnvVars.PKG_CONFIG_PATH, ":"))
+		os.Setenv("PATH", fmt.Sprintf("%s%c%s", rootFSPath, os.PathListSeparator, os.Getenv("PATH")))
 	}
 
 	return nil
@@ -212,12 +236,18 @@ func (b *BuildEnv) writeToolchain(toolchain, environment *strings.Builder) error
 
 			// Set environment variables for makefile project.
 			environment.WriteString(fmt.Sprintf("export %s=%s\n", env, value))
+
+			// Make sure the tool is in the PATH of current process.
+			os.Setenv(strings.TrimSpace(env), value)
 		}
 	}
 
 	environment.WriteString("# Set toolchain for cross compile.\n")
 	environment.WriteString(fmt.Sprintf("export TOOLCHAIN_PATH=%s\n", absToolchainPath))
 	environment.WriteString("export PATH=${TOOLCHAIN_PATH}:${PATH}\n\n")
+
+	// Make sure the toolchain is in the PATH of current process.
+	os.Setenv("PATH", fmt.Sprintf("%s%c%s", absToolchainPath, os.PathListSeparator, os.Getenv("PATH")))
 
 	writeIfNotEmpty("CMAKE_C_COMPILER 		", "CC", b.Toolchain.EnvVars.CC)
 	writeIfNotEmpty("CMAKE_CXX_COMPILER		", "CXX", b.Toolchain.EnvVars.CXX)
@@ -250,6 +280,9 @@ func (b *BuildEnv) writeTools(toolchain, environment *strings.Builder) error {
 
 		toolchain.WriteString(fmt.Sprintf("set(ENV{PATH} \"%s:$ENV{PATH}\")\n", absToolPath))
 		environment.WriteString(fmt.Sprintf("export PATH=%s:$PATH\n", absToolPath))
+
+		// Make sure the tool is in the PATH of current process.
+		os.Setenv("PATH", fmt.Sprintf("%s%c%s", absToolPath, os.PathListSeparator, os.Getenv("PATH")))
 	}
 	return nil
 }

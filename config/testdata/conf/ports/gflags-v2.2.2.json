@@ -1,0 +1,14 @@
+{
+    "repo": "ssh://git@192.168.12.18:7999/thdpty/gflags.git",
+    "ref": "v2.2.2",
+    "dependencies": [],
+    "build_config": {
+        "build_tool": "cmake",
+        "arguments": [
+            "-DBUILD_SHARED_LIBS=ON",
+            "-DBUILD_STATIC_LIBS=OFF",
+            "-DBUILD_TESTING=OFF",
+            "-DCMAKE_BUILD_TYPE=Release"
+        ]
+    }
+}

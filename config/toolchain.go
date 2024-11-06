@@ -4,14 +4,14 @@ import (
 	"buildenv/pkg/io"
 	"fmt"
 	"path/filepath"
+	"strings"
 )
 
 type Toolchain struct {
-	Url           string          `json:"url"`
-	ExtractPath   string          `json:"extract_path"`
-	RunPath       string          `json:"run_path"`
-	EnvVars       ToolchainEnvVar `json:"env_vars"`
-	ToolChainVars ToolChainVars   `json:"toolchain_vars"`
+	Url       string          `json:"url"`
+	RunPath   string          `json:"run_path"`
+	EnvVars   ToolchainEnvVar `json:"env_vars"`
+	CMakeVars ToolChainVars   `json:"cmake_vars"`
 }
 
 type ToolchainEnvVar struct {
@@ -36,10 +36,6 @@ func (t Toolchain) Verify(checkAndRepiar bool) error {
 		return fmt.Errorf("toolchain.url is empty")
 	}
 
-	if t.ExtractPath == "" {
-		return fmt.Errorf("toolchain.extract_path is empty")
-	}
-
 	if t.RunPath == "" {
 		return fmt.Errorf("toolchain.run_path is empty")
 	}
@@ -52,12 +48,12 @@ func (t Toolchain) Verify(checkAndRepiar bool) error {
 		return fmt.Errorf("toolchain.env.CXX is empty")
 	}
 
-	if t.ToolChainVars.CMAKE_SYSTEM_NAME == "" {
-		return fmt.Errorf("toolchain.toolchain_vars.CMAKE_SYSTEM_NAME is empty")
+	if t.CMakeVars.CMAKE_SYSTEM_NAME == "" {
+		return fmt.Errorf("toolchain.cmake_vars.CMAKE_SYSTEM_NAME is empty")
 	}
 
-	if t.ToolChainVars.CMAKE_SYSTEM_PROCESSOR == "" {
-		return fmt.Errorf("toolchain.toolchain_vars.CMAKE_SYSTEM_PROCESSOR is empty")
+	if t.CMakeVars.CMAKE_SYSTEM_PROCESSOR == "" {
+		return fmt.Errorf("toolchain.cmake_vars.CMAKE_SYSTEM_PROCESSOR is empty")
 	}
 
 	if !checkAndRepiar {
@@ -79,9 +75,11 @@ func (t Toolchain) checkAndRepair() error {
 		return fmt.Errorf("%s: download toolchain failed: %w", t.Url, err)
 	}
 
-	// Extract to `extract_path`
-	extractDir := filepath.Join(WorkspaceDir, t.ExtractPath)
-	if err := io.Extract(downloaded, extractDir); err != nil {
+	// Extract archive file.
+	fileName := filepath.Base(t.Url)
+	folderName := strings.TrimSuffix(fileName, ".tar.gz")
+	extractPath := filepath.Join(DownloadDir, folderName)
+	if err := io.Extract(downloaded, extractPath); err != nil {
 		return fmt.Errorf("%s: extract toolchain failed: %w", downloaded, err)
 	}
 

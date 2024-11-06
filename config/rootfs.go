@@ -4,14 +4,14 @@ import (
 	"buildenv/pkg/io"
 	"fmt"
 	"path/filepath"
+	"strings"
 )
 
 type RootFS struct {
-	Url         string    `json:"url"`
-	ExtractPath string    `json:"extract_path"`
-	RunPath     string    `json:"run_path"`
-	EnvVars     RootFSEnv `json:"env_vars"`
-	None        bool      `json:"none"`
+	Url     string    `json:"url"`
+	RunPath string    `json:"run_path"`
+	EnvVars RootFSEnv `json:"env_vars"`
+	None    bool      `json:"none"`
 }
 
 func (r RootFS) AbsolutePath() string {
@@ -37,10 +37,6 @@ func (r RootFS) Verify(checkAndRepiar bool) error {
 
 	if r.Url == "" {
 		return fmt.Errorf("rootfs.url is empty")
-	}
-
-	if r.ExtractPath == "" {
-		return fmt.Errorf("rootfs.extract_path is empty")
 	}
 
 	if r.RunPath == "" {
@@ -78,9 +74,11 @@ func (b RootFS) checkAndRepair() error {
 		return fmt.Errorf("%s: download rootfs failed: %w", b.Url, err)
 	}
 
-	// Extract to `extract_path`
-	extractDir := filepath.Join(WorkspaceDir, b.ExtractPath)
-	if err := io.Extract(downloaded, extractDir); err != nil {
+	// Extract archive file.
+	fileName := filepath.Base(b.Url)
+	folderName := strings.TrimSuffix(fileName, ".tar.gz")
+	extractPath := filepath.Join(DownloadDir, folderName)
+	if err := io.Extract(downloaded, extractPath); err != nil {
 		return fmt.Errorf("%s: extract rootfs failed: %w", downloaded, err)
 	}
 

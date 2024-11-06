@@ -21,29 +21,30 @@ func Extract(archiveFile string, destDir string) error {
 }
 
 func extractTarGz(tarGzFile string, destDir string) error {
+	// Open the tar.gz file.
 	file, err := os.Open(tarGzFile)
 	if err != nil {
 		return fmt.Errorf("failed to open tar.gz file: %w", err)
 	}
 	defer file.Close()
 
+	// Create a gzip reader.
 	gzReader, err := gzip.NewReader(file)
 	if err != nil {
 		return err
 	}
 	defer gzReader.Close()
 
-	tarReader := tar.NewReader(gzReader)
-
-	// Calculate the total size of the tar.gz file.
+	// Step 1: Calculate the total size and check the first layer directory
 	var (
 		totalSize     int64
-		extractedSize int64
-		lastProgress  int
+		firstLayerDir string
 	)
 
 	fileName := filepath.Base(tarGzFile)
 	PrintInline(fmt.Sprintf("\rCalculating: %s -------- total size of archive file...", fileName))
+
+	tarReader := tar.NewReader(gzReader)
 
 	for {
 		header, err := tarReader.Next()
@@ -54,11 +55,20 @@ func extractTarGz(tarGzFile string, destDir string) error {
 			return err
 		}
 		totalSize += header.Size
+
+		// Extract the first layer directory name
+		if firstLayerDir == "" {
+			parts := strings.SplitN(header.Name, "/", 2)
+			if len(parts) > 1 {
+				firstLayerDir = parts[0]
+			}
+		}
 	}
 
 	// Reset the file pointer for extraction.
 	file.Seek(0, 0)
 
+	// Step 2: Prepare destination directory
 	if err := os.RemoveAll(destDir); err != nil {
 		return err
 	}
@@ -70,6 +80,10 @@ func extractTarGz(tarGzFile string, destDir string) error {
 	}
 	tarReader = tar.NewReader(gzReader)
 
+	// Step 3: Extract files
+	var extractedSize int64
+	var lastProgress int
+
 	for {
 		header, err := tarReader.Next()
 		if err == io.EOF {
@@ -79,7 +93,14 @@ func extractTarGz(tarGzFile string, destDir string) error {
 			return err
 		}
 
-		target := filepath.Join(destDir, header.Name)
+		// Determine the file path:
+		// If the first layer directory exists and matches the tar.gz file name, remove it from the path.
+		var target string
+		if firstLayerDir != "" && strings.HasPrefix(header.Name, firstLayerDir+"/") {
+			target = filepath.Join(destDir, strings.TrimPrefix(header.Name, firstLayerDir+"/"))
+		} else {
+			target = filepath.Join(destDir, header.Name)
+		}
 
 		switch header.Typeflag {
 		case tar.TypeDir:

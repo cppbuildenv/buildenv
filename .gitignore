@@ -5,4 +5,5 @@ workspace
 script
 *.exe
 cmake/buildenv.cmake
-testdata/output/*
+**/testdata/buildtrees/
+**/testdata/installed/

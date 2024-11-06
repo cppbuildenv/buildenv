@@ -8,8 +8,8 @@ import (
 )
 
 type BuildEnvConf struct {
-	ConfRepoUrl string `json:"conf_repo_url"`
-	Platform    string `json:"platform"`
+	ConfRepo string `json:"conf_repo"`
+	Platform string `json:"platform"`
 }
 
 func (b *BuildEnvConf) Verify(checkAndRepair bool) error {

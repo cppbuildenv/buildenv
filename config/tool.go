@@ -6,14 +6,16 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type Tool struct {
-	Url         string `json:"url"`
-	RunPath     string `json:"run_path"`
-	ExtractPath string `json:"extract_path"`
-	Md5         string `json:"md5"`
-	ToolName    string `json:"-"`
+	Url     string `json:"url"`
+	RunPath string `json:"run_path"`
+	Md5     string `json:"md5"`
+
+	// Internal fields.
+	toolName string `json:"-"`
 }
 
 func (t *Tool) Read(toolpath string) error {
@@ -31,17 +33,18 @@ func (t *Tool) Read(toolpath string) error {
 		return fmt.Errorf("%s is not valid: %w", toolpath, err)
 	}
 
-	t.ToolName = filepath.Base(toolpath)
+	// Set internal fields.
+	t.toolName = strings.TrimSuffix(filepath.Base(toolpath), ".json")
 	return nil
 }
 
 func (t *Tool) Verify(checkAndRepiar bool) error {
 	if t.Url == "" {
-		return fmt.Errorf("url of %s is empty", t.ToolName)
+		return fmt.Errorf("url of %s is empty", t.toolName)
 	}
 
 	if t.RunPath == "" {
-		return fmt.Errorf("path of %s is empty", t.ToolName)
+		return fmt.Errorf("path of %s is empty", t.toolName)
 	}
 
 	if !checkAndRepiar {
@@ -65,9 +68,9 @@ func (t Tool) checkAndRepair() error {
 		return fmt.Errorf("%s: download failed: %w", fileName, err)
 	}
 
-	// Extract to `extract_path`.
-	extractDir := filepath.Join(WorkspaceDir, t.ExtractPath)
-	if err := io.Extract(downloaded, extractDir); err != nil {
+	// Extract archive file.
+	extractPath := filepath.Join(DownloadDir, t.toolName)
+	if err := io.Extract(downloaded, extractPath); err != nil {
 		return fmt.Errorf("%s: extract failed: %w", fileName, err)
 	}
 
