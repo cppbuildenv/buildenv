@@ -1,31 +1,24 @@
 package config
 
 import (
+	"buildenv/config/buildsystem"
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 )
 
 type BuildTool int
 
 type Port struct {
-	Repo        string      `json:"repo"`
-	Ref         string      `json:"ref"`
-	Depedencies []string    `json:"dependencies"`
-	BuildConfig BuildConfig `json:"build_config"`
-}
+	Repo        string                  `json:"repo"`
+	Ref         string                  `json:"ref"`
+	Depedencies []string                `json:"dependencies"`
+	BuildConfig buildsystem.BuildConfig `json:"build_config"`
 
-type BuildConfig struct {
-	BuildTool    string   `json:"build_tool"`
-	Arguments    []string `json:"arguments"`
-	SrcDir       string   `json:"-"`
-	BuildDir     string   `json:"-"`
-	InstalledDir string   `json:"-"`
-	JobNum       int      `json:"-"`
+	// Internal fields.
+	portName string `json:"-"`
 }
 
 func (p *Port) Read(filePath string) error {
@@ -38,13 +31,15 @@ func (p *Port) Read(filePath string) error {
 		return err
 	}
 
-	portName := strings.ReplaceAll(filepath.Base(p.Repo), ".git", "")
+	portName := strings.ReplaceAll(filepath.Base(p.Repo), ".git", "") + "-" + p.Ref
 
 	// Set default build dir and installed dir and also can be changed during units tests.
-	p.BuildConfig.BuildDir, _ = filepath.Abs(filepath.Join(WorkspaceDir, "buildtrees", portName, p.Ref, "x86_64-linux-Release"))
-	p.BuildConfig.SrcDir, _ = filepath.Abs(filepath.Join(WorkspaceDir, "buildtrees", portName, p.Ref, "src"))
+	p.BuildConfig.BuildDir, _ = filepath.Abs(filepath.Join(WorkspaceDir, "buildtrees", portName, "x86_64-linux-Release"))
+	p.BuildConfig.SourceDir, _ = filepath.Abs(filepath.Join(WorkspaceDir, "buildtrees", portName, "src"))
 	p.BuildConfig.InstalledDir, _ = filepath.Abs(filepath.Join(WorkspaceDir, "installed", "x86_64-linux-Release"))
 	p.BuildConfig.JobNum = 8
+
+	p.portName = portName
 	return nil
 }
 
@@ -65,70 +60,47 @@ func (p *Port) Verify(checkAndRepair bool) error {
 		return nil
 	}
 
-	if err := p.Clone(); err != nil {
-		return err
-	}
-
-	if err := p.Build(); err != nil {
+	if err := p.checkAndRepair(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (p Port) Clone() error {
-	scripts := p.generateCloneScripts()
-	return p.executeScript(scripts)
-}
+func (p Port) checkAndRepair() error {
+	var buildSystem buildsystem.BuildSystem
 
-func (p Port) Build() error {
-	scripts := p.generateCMakeBuildScript()
-	return p.executeScript(scripts)
-}
-
-func (p Port) generateCloneScripts() []string {
-	scripts := make([]string, 0)
-
-	// clone repo or sync repo.
-	if pathExists(p.BuildConfig.SrcDir) {
-		scripts = append(scripts, fmt.Sprintf("git -C %s fetch", p.BuildConfig.SrcDir))
-		scripts = append(scripts, fmt.Sprintf("git -C %s checkout %s", p.BuildConfig.SrcDir, p.Ref))
-	} else {
-		scripts = append(scripts, fmt.Sprintf("git clone --branch %s --single-branch %s %s", p.Ref, p.Repo, p.BuildConfig.SrcDir))
+	switch p.BuildConfig.BuildTool {
+	case "cmake":
+		buildSystem = buildsystem.NewCMake(p.BuildConfig)
+	case "ninja":
+		buildSystem = buildsystem.NewNinja(p.BuildConfig)
+	case "make":
+		buildSystem = buildsystem.NewMake(p.BuildConfig)
+	case "autotools":
+		buildSystem = buildsystem.NewAutoTool(p.BuildConfig)
+	case "meson":
+		buildSystem = buildsystem.NewMeson(p.BuildConfig)
+	default:
+		return fmt.Errorf("unsupported build system: %s", p.BuildConfig.BuildTool)
 	}
 
-	return scripts
-}
-
-func (p Port) generateCMakeBuildScript() []string {
-	scripts := make([]string, 0)
-	p.BuildConfig.Arguments = append(p.BuildConfig.Arguments, fmt.Sprintf("-DCMAKE_PREFIX_PATH=%s", p.BuildConfig.InstalledDir))
-	p.BuildConfig.Arguments = append(p.BuildConfig.Arguments, fmt.Sprintf("-DCMAKE_INSTALL_PREFIX=%s", p.BuildConfig.InstalledDir))
-	args := strings.Join(p.BuildConfig.Arguments, " ")
-
-	if p.BuildConfig.BuildTool == "cmake" {
-		scripts = append(scripts, fmt.Sprintf("mkdir -p %s", p.BuildConfig.BuildDir))
-		scripts = append(scripts, fmt.Sprintf("cmake -S %s -B %s %s", p.BuildConfig.SrcDir, p.BuildConfig.BuildDir, args))
-		scripts = append(scripts, fmt.Sprintf("cmake --build %s --target install --parallel %d", p.BuildConfig.BuildDir, p.BuildConfig.JobNum))
-	}
-	return scripts
-}
-
-func (p Port) executeScript(scripts []string) error {
-	for _, script := range scripts {
-		fmt.Println(script)
-
-		var cmd *exec.Cmd
-		if runtime.GOOS == "windows" {
-			cmd = exec.Command("cmd", "/c", script)
-		} else {
-			cmd = exec.Command("bash", "-c", script)
-		}
-
-		if err := cmd.Run(); err != nil {
-			return err
-		}
+	if err := buildSystem.Clone(p.Repo, p.Ref); err != nil {
+		return err
 	}
 
+	if err := buildSystem.Configure(); err != nil {
+		return err
+	}
+
+	if err := buildSystem.Build(); err != nil {
+		return err
+	}
+
+	if err := buildSystem.Install(); err != nil {
+		return err
+	}
+
+	fmt.Printf("[✔] -------- %s\n\n", p.portName)
 	return nil
 }

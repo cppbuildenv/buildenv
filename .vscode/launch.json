@@ -12,6 +12,5 @@
             "program": "${workspaceFolder}",
             "args": [],
         }
-
     ]
 }

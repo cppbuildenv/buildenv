@@ -55,7 +55,7 @@ func (t *Tool) Verify(checkAndRepiar bool) error {
 }
 
 func (t Tool) checkAndRepair() error {
-	toolPath := filepath.Join(WorkspaceDir, t.RunPath)
+	toolPath := filepath.Join(DownloadDir, t.RunPath)
 	if pathExists(toolPath) {
 		return nil
 	}

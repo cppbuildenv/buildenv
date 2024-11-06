@@ -63,7 +63,7 @@ func (r RootFS) Verify(checkAndRepiar bool) error {
 }
 
 func (b RootFS) checkAndRepair() error {
-	rootfsPath := filepath.Join(WorkspaceDir, b.RunPath)
+	rootfsPath := filepath.Join(DownloadDir, b.RunPath)
 	if pathExists(rootfsPath) {
 		return nil
 	}
@@ -82,6 +82,6 @@ func (b RootFS) checkAndRepair() error {
 		return fmt.Errorf("%s: extract rootfs failed: %w", downloaded, err)
 	}
 
-	fmt.Printf("[✔] -------- %s.\n\n", filepath.Base(b.Url))
+	fmt.Printf("[✔] -------- %s(rootfs).\n\n", filepath.Base(b.Url))
 	return nil
 }

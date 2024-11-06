@@ -64,7 +64,7 @@ func (t Toolchain) Verify(checkAndRepiar bool) error {
 }
 
 func (t Toolchain) checkAndRepair() error {
-	toolchainPath := filepath.Join(WorkspaceDir, t.RunPath)
+	toolchainPath := filepath.Join(DownloadDir, t.RunPath)
 	if pathExists(toolchainPath) {
 		return nil
 	}
@@ -83,6 +83,6 @@ func (t Toolchain) checkAndRepair() error {
 		return fmt.Errorf("%s: extract toolchain failed: %w", downloaded, err)
 	}
 
-	fmt.Printf("[✔] -------- %s.\n\n", filepath.Base(t.Url))
+	fmt.Printf("[✔] -------- %s(toolchain).\n\n", filepath.Base(t.Url))
 	return nil
 }
