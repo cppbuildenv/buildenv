@@ -21,8 +21,8 @@ func (v *verifyCmd) register() {
 	flag.BoolVar(&v.verify, "verify", false, "verify buildenv")
 }
 
-func (a *verifyCmd) listen() (handled bool) {
-	if !a.verify {
+func (v *verifyCmd) listen() (handled bool) {
+	if !v.verify {
 		return false
 	}
 
@@ -33,8 +33,11 @@ func (a *verifyCmd) listen() (handled bool) {
 		os.Exit(1)
 	}
 
-	platformName := strings.TrimSuffix(buildEnvConf.Platform, ".json")
-	fmt.Printf(console.PlatformSelected, platformName)
+	// Silent mode runs from buildenv.cmake
+	if !silent.silent {
+		platformName := strings.TrimSuffix(buildEnvConf.Platform, ".json")
+		fmt.Printf(console.PlatformSelected, platformName)
+	}
 
 	return true
 }

@@ -120,7 +120,7 @@ func (b BuildEnv) CreateToolchainFile(folderName string) (string, error) {
 	toolchain.WriteString("set(HOME_DIR \"${CMAKE_CURRENT_LIST_DIR}/..\")\n")
 	toolchain.WriteString("set(BUILDENV_EXECUTABLE \"${HOME_DIR}/buildenv\")\n")
 	toolchain.WriteString("execute_process(\n")
-	toolchain.WriteString("\tCOMMAND ${BUILDENV_EXECUTABLE} --verify\n")
+	toolchain.WriteString("\tCOMMAND ${BUILDENV_EXECUTABLE} -verify -silent\n")
 	toolchain.WriteString("\tWORKING_DIRECTORY ${HOME_DIR}\n")
 	toolchain.WriteString(")\n")
 
@@ -180,9 +180,14 @@ func (b *BuildEnv) writeRootFS(toolchain, environment *strings.Builder) error {
 	}
 
 	// Generate rootfs description.
-	rootFSPath := b.RootFS.AbsolutePath()
+	rootfsPath := filepath.Join(Dirs.DownloadDir, b.RootFS.RunPath)
+	absRootFSPath, err := filepath.Abs(rootfsPath)
+	if err != nil {
+		panic(fmt.Sprintf("cannot get absolute path: %s", rootfsPath))
+	}
+
 	toolchain.WriteString("\n# Set sysroot for cross-compile.\n")
-	toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSROOT \"%s\")\n", rootFSPath))
+	toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSROOT \"%s\")\n", absRootFSPath))
 	toolchain.WriteString("list(APPEND CMAKE_FIND_ROOT_PATH \"${CMAKE_SYSROOT}\")\n")
 	toolchain.WriteString("list(APPEND CMAKE_PREFIX_PATH \"${CMAKE_SYSROOT}\")\n")
 
@@ -201,7 +206,7 @@ func (b *BuildEnv) writeRootFS(toolchain, environment *strings.Builder) error {
 
 	// Replace the path with the workspace directory.
 	for i, path := range b.RootFS.EnvVars.PKG_CONFIG_PATH {
-		fullPath := filepath.Join(Dirs.WorkspaceDir, path)
+		fullPath := filepath.Join(Dirs.DownloadDir, path)
 		absPath, err := filepath.Abs(fullPath)
 		if err != nil {
 			return fmt.Errorf("cannot get absolute path: %s", fullPath)
@@ -213,16 +218,16 @@ func (b *BuildEnv) writeRootFS(toolchain, environment *strings.Builder) error {
 
 	// Set environment variables for makefile project.
 	environment.WriteString("\n# Set rootfs for cross compile.\n")
-	environment.WriteString(fmt.Sprintf("export SYSROOT=%s\n", rootFSPath))
+	environment.WriteString(fmt.Sprintf("export SYSROOT=%s\n", absRootFSPath))
 	environment.WriteString("export PATH=${SYSROOT}:${PATH}\n")
 	environment.WriteString("export PKG_CONFIG_SYSROOT_DIR=${SYSROOT}\n")
 	environment.WriteString(fmt.Sprintf("export PKG_CONFIG_PATH=%s\n\n", strings.Join(b.RootFS.EnvVars.PKG_CONFIG_PATH, ":")))
 
 	// Make sure the toolchain is in the PATH of current process.
-	os.Setenv("SYSROOT", rootFSPath)
-	os.Setenv("PKG_CONFIG_SYSROOT_DIR", rootFSPath)
+	os.Setenv("SYSROOT", absRootFSPath)
+	os.Setenv("PKG_CONFIG_SYSROOT_DIR", absRootFSPath)
 	os.Setenv("PKG_CONFIG_PATH", strings.Join(b.RootFS.EnvVars.PKG_CONFIG_PATH, ":"))
-	os.Setenv("PATH", fmt.Sprintf("%s%c%s", rootFSPath, os.PathListSeparator, os.Getenv("PATH")))
+	os.Setenv("PATH", fmt.Sprintf("%s%c%s", absRootFSPath, os.PathListSeparator, os.Getenv("PATH")))
 
 	return nil
 }
@@ -235,7 +240,7 @@ func (b *BuildEnv) writeToolchain(toolchain, environment *strings.Builder) error
 
 	// Generate toolchain description.
 	toolchain.WriteString("\n# Set toolchain for cross-compile.\n")
-	toolchainPath := filepath.Join(Dirs.WorkspaceDir, b.Toolchain.RunPath)
+	toolchainPath := filepath.Join(Dirs.DownloadDir, b.Toolchain.RunPath)
 	absToolchainPath, err := filepath.Abs(toolchainPath)
 	if err != nil {
 		return fmt.Errorf("cannot get absolute path of toolchain path: %s", toolchainPath)

@@ -3,11 +3,11 @@
         "url": "http://192.168.100.25:8083/repository/build_resource/rootfs/ti-processor-sdk-rtos-j721e-evm-07_03_00_07.tar.gz",
         "run_path": "ti-processor-sdk-rtos-j721e-evm-07_03_00_07",
         "env_vars": {
-            "SYSROOT": "rootfs/ti-processor-sdk-rtos-j721e-evm-07_03_00_07",
+            "SYSROOT": "ti-processor-sdk-rtos-j721e-evm-07_03_00_07",
             "PKG_CONFIG_SYSROOT_DIR": "ti-processor-sdk-rtos-j721e-evm-07_03_00_07",
             "PKG_CONFIG_PATH": [
-                "rootfs/ti-processor-sdk-rtos-j721e-evm-07_03_00_07/usr/lib/pkgconfig",
-                "rootfs/ti-processor-sdk-rtos-j721e-evm-07_03_00_07/usr/ext/lib/pkgconfig"
+                "ti-processor-sdk-rtos-j721e-evm-07_03_00_07/usr/lib/pkgconfig",
+                "ti-processor-sdk-rtos-j721e-evm-07_03_00_07/usr/ext/lib/pkgconfig"
             ]
         }
     },

@@ -32,8 +32,8 @@ func createPlatformSelectModel(callbacks config.PlatformCallbacks, goback func()
 	var items []list.Item
 	for _, entity := range entities {
 		if !entity.IsDir() && strings.HasSuffix(entity.Name(), ".json") {
-			simpleName := strings.TrimSuffix(entity.Name(), ".json")
-			items = append(items, listItem(simpleName))
+			platformName := strings.TrimSuffix(entity.Name(), ".json")
+			items = append(items, listItem(platformName))
 		}
 	}
 

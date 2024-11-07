@@ -13,15 +13,6 @@ type RootFS struct {
 	EnvVars RootFSEnv `json:"env_vars"`
 }
 
-func (r RootFS) AbsolutePath() string {
-	fullPath := filepath.Join(Dirs.WorkspaceDir, r.RunPath)
-	path, err := filepath.Abs(fullPath)
-	if err != nil {
-		panic(fmt.Sprintf("cannot get absolute path: %s", r.RunPath))
-	}
-	return path
-}
-
 type RootFSEnv struct {
 	SYSROOT                string   `json:"SYSROOT"`
 	PKG_CONFIG_SYSROOT_DIR string   `json:"PKG_CONFIG_SYSROOT_DIR"`
