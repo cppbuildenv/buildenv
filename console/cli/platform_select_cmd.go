@@ -5,19 +5,16 @@ import (
 	"buildenv/console"
 	"flag"
 	"fmt"
-	"path/filepath"
 )
 
-func newSelectPlatformCmd(platformDir string, callbacks config.PlatformCallbacks) *selectPlatformCmd {
+func newSelectPlatformCmd(callbacks config.PlatformCallbacks) *selectPlatformCmd {
 	return &selectPlatformCmd{
-		platformDir: platformDir,
-		callbacks:   callbacks,
+		callbacks: callbacks,
 	}
 }
 
 type selectPlatformCmd struct {
 	platformName string
-	platformDir  string
 	callbacks    config.PlatformCallbacks
 }
 
@@ -30,8 +27,7 @@ func (s *selectPlatformCmd) listen() (handled bool) {
 		return false
 	}
 
-	filePath := filepath.Join(config.PlatformsDir, s.platformName+".json")
-	if err := s.callbacks.OnSelectPlatform(filePath); err != nil {
+	if err := s.callbacks.OnSelectPlatform(s.platformName); err != nil {
 		fmt.Printf(console.PlatformSelectedFailed, s.platformName, err)
 		return true
 	}

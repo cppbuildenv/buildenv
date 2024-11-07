@@ -55,7 +55,7 @@ func (t *Tool) Verify(checkAndRepiar bool) error {
 }
 
 func (t Tool) checkAndRepair() error {
-	toolPath := filepath.Join(DownloadDir, t.RunPath)
+	toolPath := filepath.Join(Dirs.DownloadDir, t.RunPath)
 	if pathExists(toolPath) {
 		return nil
 	}
@@ -63,13 +63,13 @@ func (t Tool) checkAndRepair() error {
 	fileName := filepath.Base(t.Url)
 
 	// Download to fixed dir.
-	downloaded, err := io.Download(t.Url, DownloadDir)
+	downloaded, err := io.Download(t.Url, Dirs.DownloadDir)
 	if err != nil {
 		return fmt.Errorf("%s: download failed: %w", fileName, err)
 	}
 
 	// Extract archive file.
-	extractPath := filepath.Join(DownloadDir, t.toolName)
+	extractPath := filepath.Join(Dirs.DownloadDir, t.toolName)
 	if err := io.Extract(downloaded, extractPath); err != nil {
 		return fmt.Errorf("%s: extract failed: %w", fileName, err)
 	}

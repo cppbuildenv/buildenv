@@ -9,22 +9,11 @@ import (
 	"strings"
 )
 
-const (
-	PlatformsDir = "conf/platforms"
-	ToolsDir     = "conf/tools"
-	PortDir      = "conf/ports"
-
-	WorkspaceDir = "workspace"
-	DownloadDir  = "workspace/downloads"
-)
-
 type BuildEnv struct {
 	RootFS       RootFS    `json:"rootfs"`
 	Toolchain    Toolchain `json:"toolchain"`
 	Tools        []string  `json:"tools"`
 	Dependencies []string  `json:"dependencies"`
-	toolDir      string    `json:"-"` // Default toolDir is "conf/tools"
-	portDir      string    `json:"-"` // Default portDir is "conf/ports"
 }
 
 func (b *BuildEnv) Read(filePath string) error {
@@ -42,9 +31,6 @@ func (b *BuildEnv) Read(filePath string) error {
 		return fmt.Errorf("read error: %w", err)
 	}
 
-	// Set default toolDir and portDir and can be changed during unit tests.
-	b.toolDir = ToolsDir
-	b.portDir = PortDir
 	return nil
 }
 
@@ -83,7 +69,7 @@ func (b BuildEnv) Verify(checkAndRepair bool) error {
 
 	// Verify tools.
 	for _, item := range b.Tools {
-		toolpath := filepath.Join(b.toolDir, item+".json")
+		toolpath := filepath.Join(Dirs.ToolDir, item+".json")
 		var tool Tool
 
 		if err := tool.Read(toolpath); err != nil {
@@ -97,7 +83,7 @@ func (b BuildEnv) Verify(checkAndRepair bool) error {
 
 	// Verify dependencies.
 	for _, item := range b.Dependencies {
-		portPath := filepath.Join(b.portDir, item+".json")
+		portPath := filepath.Join(Dirs.PortDir, item+".json")
 		var port Port
 		if err := port.Read(portPath); err != nil {
 			return fmt.Errorf("buildenv.dependencies[%s] read error: %w", item, err)
@@ -192,7 +178,7 @@ func (b *BuildEnv) writeRootFS(toolchain, environment *strings.Builder) error {
 
 		// Replace the path with the workspace directory.
 		for i, path := range b.RootFS.EnvVars.PKG_CONFIG_PATH {
-			fullPath := filepath.Join(WorkspaceDir, path)
+			fullPath := filepath.Join(Dirs.WorkspaceDir, path)
 			absPath, err := filepath.Abs(fullPath)
 			if err != nil {
 				return fmt.Errorf("cannot get absolute path: %s", fullPath)
@@ -221,7 +207,7 @@ func (b *BuildEnv) writeRootFS(toolchain, environment *strings.Builder) error {
 
 func (b *BuildEnv) writeToolchain(toolchain, environment *strings.Builder) error {
 	toolchain.WriteString("\n# Set toolchain for cross-compile.\n")
-	toolchainPath := filepath.Join(WorkspaceDir, b.Toolchain.RunPath)
+	toolchainPath := filepath.Join(Dirs.WorkspaceDir, b.Toolchain.RunPath)
 	absToolchainPath, err := filepath.Abs(toolchainPath)
 	if err != nil {
 		return fmt.Errorf("cannot get absolute path of toolchain path: %s", toolchainPath)
@@ -267,7 +253,7 @@ func (b *BuildEnv) writeTools(toolchain, environment *strings.Builder) error {
 	environment.WriteString("\n# Append `run_path` of tools into $PATH.\n")
 
 	for _, item := range b.Tools {
-		toolPath := filepath.Join(ToolsDir, item+".json")
+		toolPath := filepath.Join(Dirs.ToolDir, item+".json")
 		var tool Tool
 		if err := tool.Read(toolPath); err != nil {
 			return fmt.Errorf("cannot read tool: %s", toolPath)

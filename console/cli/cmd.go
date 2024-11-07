@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"buildenv/config"
 	"buildenv/console"
 	"flag"
 	"runtime"
@@ -20,7 +19,7 @@ var (
 	gui            = newGUICmd(console.PlatformCallbacks)
 	version        = newVersionCmd()
 	createPlatform = newCreatePlatformCmd()
-	selectPlatform = newSelectPlatformCmd(config.PlatformsDir, console.PlatformCallbacks)
+	selectPlatform = newSelectPlatformCmd(console.PlatformCallbacks)
 	verify         = newVerifyCmd()
 )
 var commands = []reisterable{

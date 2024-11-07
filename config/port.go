@@ -34,9 +34,9 @@ func (p *Port) Read(filePath string) error {
 	portName := strings.ReplaceAll(filepath.Base(p.Repo), ".git", "") + "-" + p.Ref
 
 	// Set default build dir and installed dir and also can be changed during units tests.
-	p.BuildConfig.BuildDir, _ = filepath.Abs(filepath.Join(WorkspaceDir, "buildtrees", portName, "x86_64-linux-Release"))
-	p.BuildConfig.SourceDir, _ = filepath.Abs(filepath.Join(WorkspaceDir, "buildtrees", portName, "src"))
-	p.BuildConfig.InstalledDir, _ = filepath.Abs(filepath.Join(WorkspaceDir, "installed", "x86_64-linux-Release"))
+	p.BuildConfig.BuildDir, _ = filepath.Abs(filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, "x86_64-linux-Release"))
+	p.BuildConfig.SourceDir, _ = filepath.Abs(filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, "src"))
+	p.BuildConfig.InstalledDir, _ = filepath.Abs(filepath.Join(Dirs.WorkspaceDir, "installed", "x86_64-linux-Release"))
 	p.BuildConfig.JobNum = 8
 
 	p.portName = portName

@@ -19,7 +19,7 @@ func CreateMainModel(callabcks config.PlatformCallbacks) MainModel {
 			this.Reset()
 			currentMode = modeMenu
 		}),
-		platformSelectModel: createPlatformSelectModel(config.PlatformsDir, callabcks, func() {
+		platformSelectModel: createPlatformSelectModel(callabcks, func() {
 			currentMode = modeMenu
 		}),
 		aboutModel: createUsageModel(func() {

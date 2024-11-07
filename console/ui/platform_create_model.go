@@ -4,7 +4,6 @@ import (
 	"buildenv/config"
 	"buildenv/console"
 	"fmt"
-	"path/filepath"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -52,8 +51,7 @@ func (p platformCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return p, nil
 
 		case "enter":
-			filePath := filepath.Join(config.PlatformsDir, p.textInput.Value()+".json")
-			if err := p.callbacks.OnCreatePlatform(filePath); err != nil {
+			if err := p.callbacks.OnCreatePlatform(p.textInput.Value()); err != nil {
 				p.err = err
 				p.created = false
 			} else {

@@ -1,7 +1,9 @@
 build
 buildenv
 temp
-workspace
+buildtrees
+downloads
+installed
 script
 *.exe
 cmake/buildenv.cmake

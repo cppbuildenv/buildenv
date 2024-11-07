@@ -4,39 +4,42 @@ import (
 	"buildenv/config"
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 var PlatformCallbacks = platformCallbacks{}
 
 type platformCallbacks struct{}
 
-func (p platformCallbacks) OnCreatePlatform(filePath string) error {
-	if filePath == "" {
+func (p platformCallbacks) OnCreatePlatform(platformName string) error {
+	if platformName == "" {
 		return fmt.Errorf("platform name is empty")
 	}
 
 	// Check if same platform exists.
-	if pathExists(filePath) {
-		return fmt.Errorf("[%s] already exists", filePath)
+	platformPath := filepath.Join(config.Dirs.PlatformDir, platformName+".json")
+	if pathExists(platformPath) {
+		return fmt.Errorf("[%s] already exists", platformPath)
 	}
 
 	// Create platform file.
 	var buildenv config.BuildEnv
-	if err := buildenv.Write(filePath); err != nil {
+	if err := buildenv.Write(platformPath); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (p platformCallbacks) OnSelectPlatform(filePath string) error {
+func (p platformCallbacks) OnSelectPlatform(platformName string) error {
 	var buildenvConf config.BuildEnvConf
 	if err := buildenvConf.Verify(false); err != nil {
 		return err
 	}
 
 	var buildenv config.BuildEnv
-	if err := buildenv.Read(filePath); err != nil {
+	platformPath := filepath.Join(config.Dirs.PlatformDir, platformName+".json")
+	if err := buildenv.Read(platformPath); err != nil {
 		return err
 	}
 
@@ -44,8 +47,7 @@ func (p platformCallbacks) OnSelectPlatform(filePath string) error {
 		return err
 	}
 
-	_, err := buildenv.CreateToolchainFile("script")
-	if err != nil {
+	if _, err := buildenv.CreateToolchainFile("script"); err != nil {
 		return err
 	}
 

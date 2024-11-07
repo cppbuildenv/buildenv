@@ -60,13 +60,13 @@ func (t Toolchain) Verify(checkAndRepiar bool) error {
 }
 
 func (t Toolchain) checkAndRepair() error {
-	toolchainPath := filepath.Join(DownloadDir, t.RunPath)
+	toolchainPath := filepath.Join(Dirs.DownloadDir, t.RunPath)
 	if pathExists(toolchainPath) {
 		return nil
 	}
 
 	// Download to fixed dir.
-	downloaded, err := io.Download(t.Url, DownloadDir)
+	downloaded, err := io.Download(t.Url, Dirs.DownloadDir)
 	if err != nil {
 		return fmt.Errorf("%s: download toolchain failed: %w", t.Url, err)
 	}
@@ -74,7 +74,7 @@ func (t Toolchain) checkAndRepair() error {
 	// Extract archive file.
 	fileName := filepath.Base(t.Url)
 	folderName := strings.TrimSuffix(fileName, ".tar.gz")
-	extractPath := filepath.Join(DownloadDir, folderName)
+	extractPath := filepath.Join(Dirs.DownloadDir, folderName)
 	if err := io.Extract(downloaded, extractPath); err != nil {
 		return fmt.Errorf("%s: extract toolchain failed: %w", downloaded, err)
 	}

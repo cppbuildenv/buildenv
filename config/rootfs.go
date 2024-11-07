@@ -15,7 +15,7 @@ type RootFS struct {
 }
 
 func (r RootFS) AbsolutePath() string {
-	fullPath := filepath.Join(WorkspaceDir, r.RunPath)
+	fullPath := filepath.Join(Dirs.WorkspaceDir, r.RunPath)
 	path, err := filepath.Abs(fullPath)
 	if err != nil {
 		panic(fmt.Sprintf("cannot get absolute path: %s", r.RunPath))
@@ -63,13 +63,13 @@ func (r RootFS) Verify(checkAndRepiar bool) error {
 }
 
 func (b RootFS) checkAndRepair() error {
-	rootfsPath := filepath.Join(DownloadDir, b.RunPath)
+	rootfsPath := filepath.Join(Dirs.DownloadDir, b.RunPath)
 	if pathExists(rootfsPath) {
 		return nil
 	}
 
 	// Download to fixed dir.
-	downloaded, err := io.Download(b.Url, DownloadDir)
+	downloaded, err := io.Download(b.Url, Dirs.DownloadDir)
 	if err != nil {
 		return fmt.Errorf("%s: download rootfs failed: %w", b.Url, err)
 	}
@@ -77,7 +77,7 @@ func (b RootFS) checkAndRepair() error {
 	// Extract archive file.
 	fileName := filepath.Base(b.Url)
 	folderName := strings.TrimSuffix(fileName, ".tar.gz")
-	extractPath := filepath.Join(DownloadDir, folderName)
+	extractPath := filepath.Join(Dirs.DownloadDir, folderName)
 	if err := io.Extract(downloaded, extractPath); err != nil {
 		return fmt.Errorf("%s: extract rootfs failed: %w", downloaded, err)
 	}

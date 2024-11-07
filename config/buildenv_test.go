@@ -8,7 +8,7 @@ func TestCreateToolchainFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	buildenv.toolDir = "testdata/conf/tools" // change for test
+	Dirs.ToolDir = "testdata/conf/tools" // change for test
 	if err := buildenv.Verify(false); err != nil {
 		t.Fatal(err)
 	}
