@@ -18,7 +18,7 @@ type Tool struct {
 	toolName string `json:"-"`
 }
 
-func (t *Tool) Read(toolpath string) error {
+func (t *Tool) Init(toolpath string) error {
 	// Check if tool.json exists.
 	if !pathExists(toolpath) {
 		return fmt.Errorf("%s doesn't exists", toolpath)

@@ -92,7 +92,7 @@ func (b BuildEnv) Verify(checkAndRepair bool, buildType string) error {
 		toolpath := filepath.Join(Dirs.ToolDir, item+".json")
 		var tool Tool
 
-		if err := tool.Read(toolpath); err != nil {
+		if err := tool.Init(toolpath); err != nil {
 			return fmt.Errorf("buildenv.tools[%s] read error: %w", item, err)
 		}
 
@@ -297,7 +297,7 @@ func (b *BuildEnv) writeTools(toolchain, environment *strings.Builder) error {
 	for _, item := range b.Tools {
 		toolPath := filepath.Join(Dirs.ToolDir, item+".json")
 		var tool Tool
-		if err := tool.Read(toolPath); err != nil {
+		if err := tool.Init(toolPath); err != nil {
 			return fmt.Errorf("cannot read tool: %s", toolPath)
 		}
 

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bufio"
 	"buildenv/config/buildsystem"
 	"encoding/json"
 	"fmt"
@@ -18,8 +19,9 @@ type Port struct {
 	BuildConfig buildsystem.BuildConfig `json:"build_config"`
 
 	// Internal fields.
-	portName  string `json:"-"`
-	buildType string `json:"-"`
+	portName     string `json:"-"`
+	platformName string `json:"-"`
+	buildType    string `json:"-"`
 }
 
 func (p *Port) Init(portPath, platformName, buildType string) error {
@@ -35,13 +37,13 @@ func (p *Port) Init(portPath, platformName, buildType string) error {
 	portName := strings.TrimSuffix(filepath.Base(p.Repo), ".git") + "-" + p.Ref
 
 	// Set default build dir and installed dir and also can be changed during units tests.
-	pattern := fmt.Sprintf("%s-%s", platformName, buildType)
-	p.BuildConfig.BuildDir, _ = filepath.Abs(filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, pattern))
-	p.BuildConfig.SourceDir, _ = filepath.Abs(filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, "src"))
-	p.BuildConfig.InstalledDir, _ = filepath.Abs(filepath.Join(Dirs.WorkspaceDir, "installed", pattern))
-	p.BuildConfig.JobNum = 8
+	p.BuildConfig.BuildDir = filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, platformName, buildType)
+	p.BuildConfig.SourceDir = filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, "src")
+	p.BuildConfig.InstalledDir = filepath.Join(Dirs.WorkspaceDir, "installed", platformName, buildType)
+	p.BuildConfig.JobNum = 8 // TODO: make it configurable.
 
 	p.portName = portName
+	p.platformName = platformName
 	p.buildType = buildType
 	return nil
 }
@@ -71,10 +73,39 @@ func (p *Port) Verify(checkAndRepair bool) error {
 }
 
 func (p Port) Installed() bool {
+	// Check if the info list is exist.
+	fileName := fmt.Sprintf("%s-%s.list", p.platformName, p.buildType)
+	infoPath := filepath.Join(Dirs.InstalledDir, "buildenv", fileName)
+	if !pathExists(infoPath) {
+		return false
+	}
+
+	// Open the file and read its content.
+	file, err := os.OpenFile(infoPath, os.O_RDWR, os.ModePerm)
+	if err != nil {
+		return false
+	}
+	defer file.Close()
+
+	// Scan through the file line by line to check if the port is installed.
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		if strings.Contains(line, p.portName) {
+			return true
+		}
+	}
+
 	return false
 }
 
 func (p Port) checkAndRepair() error {
+	// No need to check and repair if the port is already installed.
+	if p.Installed() {
+		return nil
+	}
+
 	var buildSystem buildsystem.BuildSystem
 
 	switch p.BuildConfig.BuildTool {
