@@ -15,7 +15,7 @@ func TestBuildGFlags(t *testing.T) {
 	port.BuildConfig.BuildDir = "testdata/buildtrees/gflags-v2.2.2/x86_64-linux-Release"
 	port.BuildConfig.InstalledDir = "testdata/installed/x86_64-linux-Release"
 
-	if err := port.Verify(true); err != nil {
+	if err := port.Verify(true, "Release"); err != nil {
 		t.Fatal(err)
 	}
 }

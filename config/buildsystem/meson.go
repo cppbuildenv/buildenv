@@ -8,7 +8,7 @@ type meson struct {
 	BuildConfig
 }
 
-func (a meson) Configure() error {
+func (a meson) Configure(buildType string) error {
 	return nil
 }
 

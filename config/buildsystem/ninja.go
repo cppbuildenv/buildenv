@@ -8,7 +8,7 @@ type ninja struct {
 	BuildConfig
 }
 
-func (n ninja) Configure() error {
+func (n ninja) Configure(buildType string) error {
 	return nil
 }
 

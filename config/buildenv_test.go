@@ -9,7 +9,7 @@ func TestCreateToolchainFile(t *testing.T) {
 	}
 
 	Dirs.ToolDir = "testdata/conf/tools" // change for test
-	if err := buildenv.Verify(false); err != nil {
+	if err := buildenv.Verify(false, "Release"); err != nil {
 		t.Fatal(err)
 	}
 

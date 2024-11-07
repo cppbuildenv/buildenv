@@ -33,7 +33,7 @@ func (p platformCallbacks) OnCreatePlatform(platformName string) error {
 
 func (p platformCallbacks) OnSelectPlatform(platformName string) error {
 	var buildenvConf config.BuildEnvConf
-	if err := buildenvConf.Verify(false); err != nil {
+	if err := buildenvConf.Verify(false, "Release"); err != nil {
 		return err
 	}
 
@@ -43,7 +43,7 @@ func (p platformCallbacks) OnSelectPlatform(platformName string) error {
 		return err
 	}
 
-	if err := buildenv.Verify(false); err != nil {
+	if err := buildenv.Verify(false, "Release"); err != nil {
 		return err
 	}
 

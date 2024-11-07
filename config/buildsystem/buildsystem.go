@@ -10,7 +10,7 @@ import (
 
 type BuildSystem interface {
 	Clone(repo, ref string) error
-	Configure() error
+	Configure(buildType string) error
 	Build() error
 	Install() error
 }

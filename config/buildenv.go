@@ -67,7 +67,7 @@ func (b BuildEnv) Write(filePath string) error {
 	return os.WriteFile(filePath, bytes, os.ModePerm)
 }
 
-func (b BuildEnv) Verify(checkAndRepair bool) error {
+func (b BuildEnv) Verify(checkAndRepair bool, buildType string) error {
 	// RootFS maybe nil when platform is native.
 	if b.RootFS != nil {
 		if err := b.RootFS.Verify(checkAndRepair); err != nil {
@@ -104,7 +104,7 @@ func (b BuildEnv) Verify(checkAndRepair bool) error {
 			return fmt.Errorf("buildenv.dependencies[%s] read error: %w", item, err)
 		}
 
-		if err := port.Verify(checkAndRepair); err != nil {
+		if err := port.Verify(checkAndRepair, buildType); err != nil {
 			return fmt.Errorf("buildenv.dependencies[%s] verify error: %w", item, err)
 		}
 	}

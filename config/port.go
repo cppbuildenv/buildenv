@@ -43,7 +43,7 @@ func (p *Port) Read(filePath string) error {
 	return nil
 }
 
-func (p *Port) Verify(checkAndRepair bool) error {
+func (p *Port) Verify(checkAndRepair bool, buildType string) error {
 	if p.Repo == "" {
 		return fmt.Errorf("port.repo is empty")
 	}
@@ -60,7 +60,7 @@ func (p *Port) Verify(checkAndRepair bool) error {
 		return nil
 	}
 
-	if err := p.checkAndRepair(); err != nil {
+	if err := p.checkAndRepair(buildType); err != nil {
 		return err
 	}
 
@@ -71,7 +71,7 @@ func (p Port) Installed() bool {
 	return false
 }
 
-func (p Port) checkAndRepair() error {
+func (p Port) checkAndRepair(buildType string) error {
 	var buildSystem buildsystem.BuildSystem
 
 	switch p.BuildConfig.BuildTool {
@@ -93,7 +93,7 @@ func (p Port) checkAndRepair() error {
 		return err
 	}
 
-	if err := buildSystem.Configure(); err != nil {
+	if err := buildSystem.Configure(buildType); err != nil {
 		return err
 	}
 

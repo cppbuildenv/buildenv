@@ -14,7 +14,7 @@ type BuildEnvConf struct {
 	JobNum   int    `json:"job_num"`
 }
 
-func (b *BuildEnvConf) Verify(checkAndRepair bool) error {
+func (b *BuildEnvConf) Verify(checkAndRepair bool, buildType string) error {
 	currentDir, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("cannot get current directory: %w", err)
@@ -40,7 +40,7 @@ func (b *BuildEnvConf) Verify(checkAndRepair bool) error {
 			return err
 		}
 
-		return fmt.Errorf("no platform has been selected for buildenv.")
+		return fmt.Errorf("no platform has been selected for buildenv")
 	}
 
 	bytes, err := os.ReadFile(filepath.Join(currentDir, "conf/buildenv.json"))
@@ -65,7 +65,7 @@ func (b *BuildEnvConf) Verify(checkAndRepair bool) error {
 		return err
 	}
 
-	if err := buildenv.Verify(checkAndRepair); err != nil {
+	if err := buildenv.Verify(checkAndRepair, buildType); err != nil {
 		return err
 	}
 

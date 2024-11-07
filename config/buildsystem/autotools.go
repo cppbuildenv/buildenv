@@ -8,7 +8,7 @@ type autoTool struct {
 	BuildConfig
 }
 
-func (a autoTool) Configure() error {
+func (a autoTool) Configure(buildType string) error {
 	return nil
 }
 

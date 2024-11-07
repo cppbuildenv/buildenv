@@ -8,7 +8,7 @@ type make struct {
 	BuildConfig
 }
 
-func (m make) Configure() error {
+func (m make) Configure(buildType string) error {
 	return nil
 }
 

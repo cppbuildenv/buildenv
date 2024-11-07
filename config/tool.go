@@ -38,7 +38,7 @@ func (t *Tool) Read(toolpath string) error {
 	return nil
 }
 
-func (t *Tool) Verify(checkAndRepiar bool) error {
+func (t *Tool) Verify(checkAndRepair bool) error {
 	if t.Url == "" {
 		return fmt.Errorf("url of %s is empty", t.toolName)
 	}
@@ -47,7 +47,7 @@ func (t *Tool) Verify(checkAndRepiar bool) error {
 		return fmt.Errorf("path of %s is empty", t.toolName)
 	}
 
-	if !checkAndRepiar {
+	if !checkAndRepair {
 		return nil
 	}
 

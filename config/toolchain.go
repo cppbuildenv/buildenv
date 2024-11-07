@@ -27,7 +27,7 @@ type ToolchainEnvVar struct {
 	STRIP   string `json:"STRIP"`
 }
 
-func (t Toolchain) Verify(checkAndRepiar bool) error {
+func (t Toolchain) Verify(checkAndRepair bool) error {
 	if t.Url == "" {
 		return fmt.Errorf("toolchain.url is empty")
 	}
@@ -52,7 +52,7 @@ func (t Toolchain) Verify(checkAndRepiar bool) error {
 		return fmt.Errorf("toolchain.env.CXX is empty")
 	}
 
-	if !checkAndRepiar {
+	if !checkAndRepair {
 		return nil
 	}
 
