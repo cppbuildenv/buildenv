@@ -18,11 +18,12 @@ type Port struct {
 	BuildConfig buildsystem.BuildConfig `json:"build_config"`
 
 	// Internal fields.
-	portName string `json:"-"`
+	portName  string `json:"-"`
+	buildType string `json:"-"`
 }
 
-func (p *Port) Read(filePath string) error {
-	bytes, err := os.ReadFile(filePath)
+func (p *Port) Init(portPath, platformName, buildType string) error {
+	bytes, err := os.ReadFile(portPath)
 	if err != nil {
 		return err
 	}
@@ -34,16 +35,18 @@ func (p *Port) Read(filePath string) error {
 	portName := strings.TrimSuffix(filepath.Base(p.Repo), ".git") + "-" + p.Ref
 
 	// Set default build dir and installed dir and also can be changed during units tests.
-	p.BuildConfig.BuildDir, _ = filepath.Abs(filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, "x86_64-linux-Release"))
+	pattern := fmt.Sprintf("%s-%s", platformName, buildType)
+	p.BuildConfig.BuildDir, _ = filepath.Abs(filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, pattern))
 	p.BuildConfig.SourceDir, _ = filepath.Abs(filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, "src"))
-	p.BuildConfig.InstalledDir, _ = filepath.Abs(filepath.Join(Dirs.WorkspaceDir, "installed", "x86_64-linux-Release"))
+	p.BuildConfig.InstalledDir, _ = filepath.Abs(filepath.Join(Dirs.WorkspaceDir, "installed", pattern))
 	p.BuildConfig.JobNum = 8
 
 	p.portName = portName
+	p.buildType = buildType
 	return nil
 }
 
-func (p *Port) Verify(checkAndRepair bool, buildType string) error {
+func (p *Port) Verify(checkAndRepair bool) error {
 	if p.Repo == "" {
 		return fmt.Errorf("port.repo is empty")
 	}
@@ -60,7 +63,7 @@ func (p *Port) Verify(checkAndRepair bool, buildType string) error {
 		return nil
 	}
 
-	if err := p.checkAndRepair(buildType); err != nil {
+	if err := p.checkAndRepair(); err != nil {
 		return err
 	}
 
@@ -71,7 +74,7 @@ func (p Port) Installed() bool {
 	return false
 }
 
-func (p Port) checkAndRepair(buildType string) error {
+func (p Port) checkAndRepair() error {
 	var buildSystem buildsystem.BuildSystem
 
 	switch p.BuildConfig.BuildTool {
@@ -93,7 +96,7 @@ func (p Port) checkAndRepair(buildType string) error {
 		return err
 	}
 
-	if err := buildSystem.Configure(buildType); err != nil {
+	if err := buildSystem.Configure(p.buildType); err != nil {
 		return err
 	}
 

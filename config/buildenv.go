@@ -14,16 +14,19 @@ type BuildEnv struct {
 	Toolchain    *Toolchain `json:"toolchain"`
 	Tools        []string   `json:"tools"`
 	Dependencies []string   `json:"dependencies"`
+
+	// Internal fields.
+	platformName string `json:"-"`
 }
 
-func (b *BuildEnv) Read(filePath string) error {
+func (b *BuildEnv) Read(platformPath string) error {
 	// Check if platform file exists.
-	if !pathExists(filePath) {
-		return fmt.Errorf("platform file not exists: %s", filePath)
+	if !pathExists(platformPath) {
+		return fmt.Errorf("platform file not exists: %s", platformPath)
 	}
 
 	// Read conf/buildenv.json
-	bytes, err := os.ReadFile(filePath)
+	bytes, err := os.ReadFile(platformPath)
 	if err != nil {
 		return err
 	}
@@ -31,6 +34,8 @@ func (b *BuildEnv) Read(filePath string) error {
 		return fmt.Errorf("read error: %w", err)
 	}
 
+	// Set values of internal fields.
+	b.platformName = strings.TrimSuffix(filepath.Base(platformPath), ".json")
 	return nil
 }
 
@@ -100,11 +105,11 @@ func (b BuildEnv) Verify(checkAndRepair bool, buildType string) error {
 	for _, item := range b.Dependencies {
 		portPath := filepath.Join(Dirs.PortDir, item+".json")
 		var port Port
-		if err := port.Read(portPath); err != nil {
+		if err := port.Init(portPath, b.platformName, buildType); err != nil {
 			return fmt.Errorf("buildenv.dependencies[%s] read error: %w", item, err)
 		}
 
-		if err := port.Verify(checkAndRepair, buildType); err != nil {
+		if err := port.Verify(checkAndRepair); err != nil {
 			return fmt.Errorf("buildenv.dependencies[%s] verify error: %w", item, err)
 		}
 	}
@@ -114,6 +119,12 @@ func (b BuildEnv) Verify(checkAndRepair bool, buildType string) error {
 
 func (b BuildEnv) CreateToolchainFile(scriptDir string) (string, error) {
 	var toolchain, environment strings.Builder
+
+	// Set default CMAKE_BUILD_TYPE.
+	toolchain.WriteString("# Set default CMAKE_BUILD_TYPE.\n")
+	toolchain.WriteString("if(NOT CMAKE_BUILD_TYPE)\n")
+	toolchain.WriteString("\tset(CMAKE_BUILD_TYPE \"Release\")\n")
+	toolchain.WriteString("endif()\n")
 
 	// Verify buildenv during configuration.
 	toolchain.WriteString("\n# Verify buildenv during configuration.\n")

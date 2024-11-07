@@ -21,6 +21,8 @@ func (c cmake) Configure(buildType string) error {
 		return err
 	}
 
+	buildType = c.formatBuildType(buildType)
+
 	// Assemble script.
 	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_PREFIX_PATH=%s", c.InstalledDir))
 	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_INSTALL_PREFIX=%s", c.InstalledDir))
@@ -30,7 +32,7 @@ func (c cmake) Configure(buildType string) error {
 		return strings.Contains(arg, "CMAKE_BUILD_TYPE")
 	})
 	if !containBuildType {
-		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_BUILD_TYPE=%s", c.formatBuildType(buildType)))
+		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_BUILD_TYPE=%s", buildType))
 	}
 
 	// Assemble args into a string.
