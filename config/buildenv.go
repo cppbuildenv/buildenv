@@ -125,8 +125,8 @@ func (b BuildEnv) CreateToolchainFile(outputDir string) (string, error) {
 
 	// Set toolchain platform infos.
 	toolchain.WriteString("\n# Set toolchain platform infos.\n")
-	toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSTEM_NAME \"%s\")\n", b.Toolchain.CMakeVars.CMAKE_SYSTEM_NAME))
-	toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSTEM_PROCESSOR \"%s\")\n", b.Toolchain.CMakeVars.CMAKE_SYSTEM_PROCESSOR))
+	toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSTEM_NAME \"%s\")\n", b.Toolchain.SystemName))
+	toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSTEM_PROCESSOR \"%s\")\n", b.Toolchain.SystemProcessor))
 
 	// Set sysroot for cross-compile.
 	if err := b.writeRootFS(&toolchain, &environment); err != nil {

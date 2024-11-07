@@ -8,10 +8,11 @@ import (
 )
 
 type Toolchain struct {
-	Url       string          `json:"url"`
-	RunPath   string          `json:"run_path"`
-	EnvVars   ToolchainEnvVar `json:"env_vars"`
-	CMakeVars ToolChainVars   `json:"cmake_vars"`
+	Url             string          `json:"url"`
+	RunPath         string          `json:"run_path"`
+	SystemName      string          `json:"system_name"`
+	SystemProcessor string          `json:"system_processor"`
+	EnvVars         ToolchainEnvVar `json:"env_vars"`
 }
 
 type ToolchainEnvVar struct {
@@ -26,11 +27,6 @@ type ToolchainEnvVar struct {
 	STRIP   string `json:"STRIP"`
 }
 
-type ToolChainVars struct {
-	CMAKE_SYSTEM_NAME      string `json:"CMAKE_SYSTEM_NAME"`
-	CMAKE_SYSTEM_PROCESSOR string `json:"CMAKE_SYSTEM_PROCESSOR"`
-}
-
 func (t Toolchain) Verify(checkAndRepiar bool) error {
 	if t.Url == "" {
 		return fmt.Errorf("toolchain.url is empty")
@@ -40,20 +36,20 @@ func (t Toolchain) Verify(checkAndRepiar bool) error {
 		return fmt.Errorf("toolchain.run_path is empty")
 	}
 
+	if t.SystemName == "" {
+		return fmt.Errorf("toolchain.system_name is empty")
+	}
+
+	if t.SystemProcessor == "" {
+		return fmt.Errorf("toolchain.system_processor is empty")
+	}
+
 	if t.EnvVars.CC == "" {
 		return fmt.Errorf("toolchain.env.CC is empty")
 	}
 
 	if t.EnvVars.CXX == "" {
 		return fmt.Errorf("toolchain.env.CXX is empty")
-	}
-
-	if t.CMakeVars.CMAKE_SYSTEM_NAME == "" {
-		return fmt.Errorf("toolchain.cmake_vars.CMAKE_SYSTEM_NAME is empty")
-	}
-
-	if t.CMakeVars.CMAKE_SYSTEM_PROCESSOR == "" {
-		return fmt.Errorf("toolchain.cmake_vars.CMAKE_SYSTEM_PROCESSOR is empty")
 	}
 
 	if !checkAndRepiar {
