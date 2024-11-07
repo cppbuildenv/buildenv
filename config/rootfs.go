@@ -11,7 +11,6 @@ type RootFS struct {
 	Url     string    `json:"url"`
 	RunPath string    `json:"run_path"`
 	EnvVars RootFSEnv `json:"env_vars"`
-	None    bool      `json:"none"`
 }
 
 func (r RootFS) AbsolutePath() string {
@@ -30,11 +29,6 @@ type RootFSEnv struct {
 }
 
 func (r RootFS) Verify(checkAndRepiar bool) error {
-	// If none is true, then rootfs is not required.
-	if r.None {
-		return nil
-	}
-
 	if r.Url == "" {
 		return fmt.Errorf("rootfs.url is empty")
 	}
