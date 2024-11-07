@@ -52,7 +52,7 @@ func (b *BuildEnvConf) Verify(checkAndRepair bool) error {
 	}
 
 	if b.Platform == "" {
-		return fmt.Errorf("no platform has been selected for buildenv.")
+		return fmt.Errorf("no platform has been selected for buildenv")
 	}
 
 	platformPath := filepath.Join(Dirs.PlatformDir, b.Platform)

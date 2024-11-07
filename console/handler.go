@@ -47,7 +47,8 @@ func (p platformCallbacks) OnSelectPlatform(platformName string) error {
 		return err
 	}
 
-	if _, err := buildenv.CreateToolchainFile("script"); err != nil {
+	scriptDir := filepath.Join(config.Dirs.WorkspaceDir, "script")
+	if _, err := buildenv.CreateToolchainFile(scriptDir); err != nil {
 		return err
 	}
 

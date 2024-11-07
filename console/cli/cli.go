@@ -17,6 +17,7 @@ type responsible interface {
 
 var (
 	silent         = newSilentCmd()
+	buildType      = newBuildTypeCmd()
 	gui            = newGUICmd(console.PlatformCallbacks)
 	version        = newVersionCmd()
 	createPlatform = newCreatePlatformCmd()
@@ -25,6 +26,7 @@ var (
 )
 var commands = []reisterable{
 	silent,
+	buildType,
 	gui,
 	version,
 	createPlatform,

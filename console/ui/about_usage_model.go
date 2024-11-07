@@ -8,8 +8,8 @@ import (
 )
 
 func createUsageModel(goback func()) usageModel {
-	toolchainFile, _ := filepath.Abs("script/buildenv.cmake")
-	environmentFile, _ := filepath.Abs("script/buildenv.sh")
+	toolchainPath, _ := filepath.Abs("script/buildenv.cmake")
+	environmentPath, _ := filepath.Abs("script/buildenv.sh")
 
 	content := fmt.Sprintf("\nWelcome to buildenv.\n"+
 		"-----------------------------------\n"+
@@ -20,9 +20,9 @@ func createUsageModel(goback func()) usageModel {
 		"2. How to use in makefile project: \n"+
 		"\033[34msource %s\033[0m\n\n"+
 		"[press ctrl+c or q to quit]",
-		toolchainFile,
-		toolchainFile,
-		environmentFile,
+		toolchainPath,
+		toolchainPath,
+		environmentPath,
 	)
 	return usageModel{content: content, goback: goback}
 }
@@ -36,21 +36,21 @@ func (usageModel) Init() tea.Cmd {
 	return nil
 }
 
-func (a usageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (u usageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
-			return a, tea.Quit
+			return u, tea.Quit
 
 		case "esc":
-			a.goback()
-			return a, nil
+			u.goback()
+			return u, nil
 		}
 	}
-	return a, nil
+	return u, nil
 }
 
-func (a usageModel) View() string {
-	return a.content
+func (u usageModel) View() string {
+	return u.content
 }

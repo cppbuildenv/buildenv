@@ -112,7 +112,7 @@ func (b BuildEnv) Verify(checkAndRepair bool) error {
 	return nil
 }
 
-func (b BuildEnv) CreateToolchainFile(folderName string) (string, error) {
+func (b BuildEnv) CreateToolchainFile(scriptDir string) (string, error) {
 	var toolchain, environment strings.Builder
 
 	// Verify buildenv during configuration.
@@ -120,7 +120,7 @@ func (b BuildEnv) CreateToolchainFile(folderName string) (string, error) {
 	toolchain.WriteString("set(HOME_DIR \"${CMAKE_CURRENT_LIST_DIR}/..\")\n")
 	toolchain.WriteString("set(BUILDENV_EXECUTABLE \"${HOME_DIR}/buildenv\")\n")
 	toolchain.WriteString("execute_process(\n")
-	toolchain.WriteString("\tCOMMAND ${BUILDENV_EXECUTABLE} -verify -silent\n")
+	toolchain.WriteString("\tCOMMAND ${BUILDENV_EXECUTABLE} -verify -silent -build_type=${CMAKE_BUILD_TYPE}\n")
 	toolchain.WriteString("\tWORKING_DIRECTORY ${HOME_DIR}\n")
 	toolchain.WriteString(")\n")
 
@@ -145,8 +145,6 @@ func (b BuildEnv) CreateToolchainFile(folderName string) (string, error) {
 	if err := b.writeTools(&toolchain, &environment); err != nil {
 		return "", err
 	}
-
-	scriptDir := filepath.Join(Dirs.WorkspaceDir, folderName)
 
 	// Create the output directory if it doesn't exist.
 	if err := os.MkdirAll(scriptDir, os.ModeDir|os.ModePerm); err != nil {
