@@ -6,12 +6,12 @@ import (
 )
 
 const (
-	RedFmt     string = "\033[31m%s\033[0m"
-	GreenFmt   string = "\033[32m%s\033[0m"
-	YellowFmt  string = "\033[33m%s\033[0m"
-	BlueFmt    string = "\033[34m%s\033[0m"
-	MagentaFmt string = "\033[35m%s\033[0m"
-	CyanFmt    string = "\033[36m%s\033[0m"
+	Red     string = "\033[31m%s\033[0m"
+	Green   string = "\033[32m%s\033[0m"
+	Yellow  string = "\033[33m%s\033[0m"
+	Blue    string = "\033[34m%s\033[0m"
+	Magenta string = "\033[35m%s\033[0m"
+	Cyan    string = "\033[36m%s\033[0m"
 )
 
 func NewWriter(w io.Writer, colorFmt string) *Writer {
@@ -40,6 +40,14 @@ func Print(colorFmt, message string) {
 	fmt.Printf(colorFmt, message)
 }
 
+func Printf(colorFmt, format string, args ...interface{}) {
+	fmt.Printf(colorFmt, fmt.Sprintf(format, args...))
+}
+
 func Println(colorFmt, message string) {
 	fmt.Printf(colorFmt+"\n", message)
+}
+
+func Sprintf(color, format string, args ...interface{}) string {
+	return fmt.Sprintf(color, fmt.Sprintf(format, args...))
 }

@@ -71,14 +71,14 @@ func (b BuildConfig) execute(command, logPath string) error {
 	}
 	defer logFile.Close()
 
-	outWriter := color.NewWriter(os.Stdout, color.BlueFmt)
+	outWriter := color.NewWriter(os.Stdout, color.Blue)
 	cmd.Stdout = io.MultiWriter(outWriter, logFile)
 
-	errWriter := color.NewWriter(os.Stdout, color.RedFmt)
+	errWriter := color.NewWriter(os.Stdout, color.Red)
 	cmd.Stderr = io.MultiWriter(errWriter, logFile)
 
 	if err := cmd.Run(); err != nil {
-		color.Println(color.RedFmt, fmt.Sprintf("Error execute command: %s", err.Error()))
+		color.Println(color.Red, fmt.Sprintf("Error execute command: %s", err.Error()))
 		return err
 	}
 

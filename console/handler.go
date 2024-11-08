@@ -16,11 +16,7 @@ func (p platformCallbacks) OnCreatePlatform(platformName string) error {
 		return fmt.Errorf("platform name is empty")
 	}
 
-	// Check if same platform exists.
 	platformPath := filepath.Join(config.Dirs.PlatformDir, platformName+".json")
-	if pathExists(platformPath) {
-		return fmt.Errorf("[%s] already exists", platformPath)
-	}
 
 	// Create platform file.
 	var platform config.Platform

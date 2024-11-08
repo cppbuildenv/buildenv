@@ -68,11 +68,11 @@ func (p platformCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (p platformCreateModel) View() string {
 	if p.created {
-		return p.styles.resultTextStyle.Render(fmt.Sprintf(console.PlatformCreated, p.textInput.Value()))
+		return console.PlatformCreated(p.textInput.Value())
 	}
 
 	if p.err != nil {
-		return p.styles.resultTextStyle.Render(fmt.Sprintf(console.PlatformCreateFailed, p.textInput.Value(), p.err))
+		return console.PlatformCreateFailed(p.textInput.Value(), p.err)
 	}
 
 	return fmt.Sprintf("\n%s\n\n%s\n\n%s\n",

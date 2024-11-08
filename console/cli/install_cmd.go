@@ -28,13 +28,15 @@ func (c *installCmd) listen() (handled bool) {
 
 	exePath, err := os.Executable()
 	if err != nil {
-		panic(fmt.Sprintf(console.InstallFailed, err))
+		fmt.Print(console.InstallFailed(err))
+		os.Exit(1)
 	}
 
 	if err := env.UpdateRunPath(filepath.Dir(exePath)); err != nil {
-		panic(fmt.Sprintf(console.InstallFailed, err))
+		fmt.Print(console.InstallFailed(err))
+		os.Exit(1)
 	}
 
-	fmt.Printf(console.InstallSuccess)
+	fmt.Print(console.InstallSuccess())
 	return true
 }

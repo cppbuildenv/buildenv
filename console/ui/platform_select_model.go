@@ -105,11 +105,11 @@ func (p platformSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (p platformSelectModel) View() string {
 	if p.err != nil {
-		return p.styles.resultTextStyle.Render(fmt.Sprintf(console.PlatformSelectedFailed, p.trySelected, p.err))
+		return console.PlatformSelectedFailed(p.trySelected, p.err)
 	}
 
 	if p.selected != "" {
-		return p.styles.resultTextStyle.Render(fmt.Sprintf(console.PlatformSelected, p.selected))
+		return console.PlatformSelected(p.selected)
 	}
 
 	return "\n" + p.list.View()

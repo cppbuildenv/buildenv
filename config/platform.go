@@ -44,7 +44,7 @@ func (p *Platform) Read(platformPath string) error {
 	return nil
 }
 
-func (p Platform) Write(filePath string) error {
+func (p Platform) Write(platformPath string) error {
 	// Create empty array for empty field.
 	p.RootFS = new(RootFS)
 	p.Toolchain = new(Toolchain)
@@ -65,16 +65,16 @@ func (p Platform) Write(filePath string) error {
 	}
 
 	// Check if conf/buildenv.json exists.
-	if pathExists(filePath) {
-		return fmt.Errorf("[%s] is already exists", filePath)
+	if pathExists(platformPath) {
+		return fmt.Errorf("[%s] is already exists", platformPath)
 	}
 
 	// Make sure the parent directory exists.
-	parentDir := filepath.Dir(filePath)
+	parentDir := filepath.Dir(platformPath)
 	if err := os.MkdirAll(parentDir, 0755); err != nil {
 		return err
 	}
-	return os.WriteFile(filePath, bytes, os.ModePerm)
+	return os.WriteFile(platformPath, bytes, os.ModePerm)
 }
 
 func (p Platform) Verify(args VerifyArgs) error {

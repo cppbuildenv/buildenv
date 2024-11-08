@@ -21,7 +21,7 @@ type uiCmd struct {
 }
 
 func (u *uiCmd) register() {
-	flag.BoolVar(&u.interactive, "gui", false, "run in gui mode")
+	flag.BoolVar(&u.interactive, "ui", false, "run in gui mode")
 }
 
 func (u *uiCmd) listen() (handled bool) {

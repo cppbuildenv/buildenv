@@ -5,6 +5,7 @@ import (
 	"buildenv/console"
 	"flag"
 	"fmt"
+	"path/filepath"
 )
 
 func newCreatePlatformCmd() *createPlatformCmd {
@@ -25,17 +26,19 @@ func (c *createPlatformCmd) listen() (handled bool) {
 	}
 
 	if err := c.doCreate(c.platformName); err != nil {
-		fmt.Printf(console.PlatformCreateFailed, c.platformName, err)
+		fmt.Print(console.PlatformCreateFailed(c.platformName, err))
 		return true
 	}
 
-	fmt.Printf(console.PlatformCreated, c.platformName)
+	fmt.Print(console.PlatformCreated(c.platformName))
 	return true
 }
 
 func (c *createPlatformCmd) doCreate(platformName string) error {
-	platform := config.Platform{}
-	if err := platform.Write(platformName); err != nil {
+	platformPath := filepath.Join(config.Dirs.PlatformDir, platformName+".json")
+
+	var platform config.Platform
+	if err := platform.Write(platformPath); err != nil {
 		return err
 	}
 

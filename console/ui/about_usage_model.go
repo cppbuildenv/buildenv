@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"buildenv/pkg/color"
 	"fmt"
 	"path/filepath"
 
@@ -15,14 +16,14 @@ func createUsageModel(goback func()) usageModel {
 		"-----------------------------------\n"+
 		"This is a simple tool to manage your cross build environment.\n\n"+
 		"1. How to use in cmake project: \n"+
-		"option1: \033[34mset(CMAKE_TOOLCHAIN_FILE \"%s\")\033[0m\n"+
-		"option2: \033[34mcmake .. -DCMAKE_TOOLCHAIN_FILE=%s\033[0m\n\n"+
+		"option1: %s\n"+
+		"option2: %s\n\n"+
 		"2. How to use in makefile project: \n"+
-		"\033[34msource %s\033[0m\n\n"+
+		"%s\n\n"+
 		"[press ctrl+c or q to quit]",
-		toolchainPath,
-		toolchainPath,
-		environmentPath,
+		color.Sprintf(color.Blue, "set(CMAKE_TOOLCHAIN_FILE \"%s\")", toolchainPath),
+		color.Sprintf(color.Blue, "cmake .. -DCMAKE_TOOLCHAIN_FILE=%s", toolchainPath),
+		color.Sprintf(color.Blue, "source %s", environmentPath),
 	)
 	return usageModel{content: content, goback: goback}
 }

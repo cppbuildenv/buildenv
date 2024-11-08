@@ -28,10 +28,10 @@ func (s *selectPlatformCmd) listen() (handled bool) {
 	}
 
 	if err := s.callbacks.OnSelectPlatform(s.platformName); err != nil {
-		fmt.Printf(console.PlatformSelectedFailed, s.platformName, err)
+		fmt.Print(console.PlatformSelectedFailed(s.platformName, err))
 		return true
 	}
 
-	fmt.Printf(console.PlatformSelected, s.platformName)
+	fmt.Print(console.PlatformSelected(s.platformName))
 	return true
 }
