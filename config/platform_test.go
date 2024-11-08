@@ -3,7 +3,7 @@ package config
 import "testing"
 
 func TestCreateToolchainFile(t *testing.T) {
-	var buildenv BuildEnv
+	var buildenv Platform
 	if err := buildenv.Read("testdata/conf/platforms/aarch64-linux-test.json"); err != nil {
 		t.Fatal(err)
 	}

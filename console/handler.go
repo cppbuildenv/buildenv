@@ -23,8 +23,8 @@ func (p platformCallbacks) OnCreatePlatform(platformName string) error {
 	}
 
 	// Create platform file.
-	var buildenv config.BuildEnv
-	if err := buildenv.Write(platformPath); err != nil {
+	var platform config.Platform
+	if err := platform.Write(platformPath); err != nil {
 		return err
 	}
 
@@ -38,23 +38,23 @@ func (p platformCallbacks) OnSelectPlatform(platformName string) error {
 		BuildType:      "Release",
 	}
 
-	var buildenvConf config.BuildEnvConf
+	var buildenvConf config.BuildEnv
 	if err := buildenvConf.Verify(args); err != nil {
 		return err
 	}
 
-	var buildenv config.BuildEnv
+	var platform config.Platform
 	platformPath := filepath.Join(config.Dirs.PlatformDir, platformName+".json")
-	if err := buildenv.Read(platformPath); err != nil {
+	if err := platform.Read(platformPath); err != nil {
 		return err
 	}
 
-	if err := buildenv.Verify(args); err != nil {
+	if err := platform.Verify(args); err != nil {
 		return err
 	}
 
 	scriptDir := filepath.Join(config.Dirs.WorkspaceDir, "script")
-	if _, err := buildenv.CreateToolchainFile(scriptDir); err != nil {
+	if _, err := platform.CreateToolchainFile(scriptDir); err != nil {
 		return err
 	}
 

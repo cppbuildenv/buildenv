@@ -32,7 +32,7 @@ func (v *verifyCmd) listen() (handled bool) {
 		BuildType:      buildType.buildType,
 	}
 
-	var buildEnvConf config.BuildEnvConf
+	var buildEnvConf config.BuildEnv
 	if err := buildEnvConf.Verify(args); err != nil {
 		platformName := strings.TrimSuffix(buildEnvConf.Platform, ".json")
 		fmt.Printf(console.PlatformSelectedFailed, platformName, err)
