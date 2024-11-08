@@ -22,6 +22,7 @@ type Port struct {
 	portName     string `json:"-"`
 	platformName string `json:"-"`
 	buildType    string `json:"-"`
+	infoPath     string `json:"-"`
 }
 
 func (p *Port) Init(portPath, platformName, buildType string) error {
@@ -45,10 +46,15 @@ func (p *Port) Init(portPath, platformName, buildType string) error {
 	p.portName = portName
 	p.platformName = platformName
 	p.buildType = buildType
+
+	// Info file: used to record installed state.
+	fileName := fmt.Sprintf("%s-%s.list", p.platformName, p.buildType)
+	p.infoPath = filepath.Join(Dirs.InstalledDir, "buildenv", fileName)
+
 	return nil
 }
 
-func (p *Port) Verify(checkAndRepair bool) error {
+func (p *Port) Verify(args VerifyArgs) error {
 	if p.Repo == "" {
 		return fmt.Errorf("port.repo is empty")
 	}
@@ -61,7 +67,7 @@ func (p *Port) Verify(checkAndRepair bool) error {
 		return fmt.Errorf("port.build_tool is empty")
 	}
 
-	if !checkAndRepair {
+	if !args.CheckAndRepair {
 		return nil
 	}
 
@@ -73,15 +79,12 @@ func (p *Port) Verify(checkAndRepair bool) error {
 }
 
 func (p Port) Installed() bool {
-	// Check if the info list is exist.
-	fileName := fmt.Sprintf("%s-%s.list", p.platformName, p.buildType)
-	infoPath := filepath.Join(Dirs.InstalledDir, "buildenv", fileName)
-	if !pathExists(infoPath) {
+	if !pathExists(p.infoPath) {
 		return false
 	}
 
 	// Open the file and read its content.
-	file, err := os.OpenFile(infoPath, os.O_RDWR, os.ModePerm)
+	file, err := os.OpenFile(p.infoPath, os.O_RDWR, os.ModePerm)
 	if err != nil {
 		return false
 	}
@@ -136,6 +139,16 @@ func (p Port) checkAndRepair() error {
 	}
 
 	if err := buildSystem.Install(); err != nil {
+		return err
+	}
+
+	if !pathExists(p.infoPath) {
+		if err := os.MkdirAll(filepath.Dir(p.infoPath), os.ModePerm); err != nil {
+			return err
+		}
+	}
+
+	if err := os.WriteFile(p.infoPath, []byte(p.portName+"\n"), os.ModeAppend|os.ModePerm); err != nil {
 		return err
 	}
 

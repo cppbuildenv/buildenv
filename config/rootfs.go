@@ -19,7 +19,7 @@ type RootFSEnv struct {
 	PKG_CONFIG_PATH        []string `json:"PKG_CONFIG_PATH"`
 }
 
-func (r RootFS) Verify(checkAndRepair bool) error {
+func (r RootFS) Verify(args VerifyArgs) error {
 	if r.Url == "" {
 		return fmt.Errorf("rootfs.url is empty")
 	}
@@ -40,7 +40,7 @@ func (r RootFS) Verify(checkAndRepair bool) error {
 		return fmt.Errorf("rootfs.env.PKG_CONFIG_PATH is empty")
 	}
 
-	if !checkAndRepair {
+	if !args.CheckAndRepair {
 		return nil
 	}
 

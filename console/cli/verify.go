@@ -26,8 +26,14 @@ func (v *verifyCmd) listen() (handled bool) {
 		return false
 	}
 
+	args := config.VerifyArgs{
+		Silent:         silent.silent,
+		CheckAndRepair: true,
+		BuildType:      buildType.buildType,
+	}
+
 	var buildEnvConf config.BuildEnvConf
-	if err := buildEnvConf.Verify(true, buildType.buildType); err != nil {
+	if err := buildEnvConf.Verify(args); err != nil {
 		platformName := strings.TrimSuffix(buildEnvConf.Platform, ".json")
 		fmt.Printf(console.PlatformSelectedFailed, platformName, err)
 		os.Exit(1)

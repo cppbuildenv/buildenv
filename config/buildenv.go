@@ -72,17 +72,17 @@ func (b BuildEnv) Write(filePath string) error {
 	return os.WriteFile(filePath, bytes, os.ModePerm)
 }
 
-func (b BuildEnv) Verify(checkAndRepair bool, buildType string) error {
+func (b BuildEnv) Verify(args VerifyArgs) error {
 	// RootFS maybe nil when platform is native.
 	if b.RootFS != nil {
-		if err := b.RootFS.Verify(checkAndRepair); err != nil {
+		if err := b.RootFS.Verify(args); err != nil {
 			return fmt.Errorf("buildenv.rootfs error: %w", err)
 		}
 	}
 
 	// Toolchain maybe nil when platform is native.
 	if b.Toolchain != nil {
-		if err := b.Toolchain.Verify(checkAndRepair); err != nil {
+		if err := b.Toolchain.Verify(args); err != nil {
 			return fmt.Errorf("buildenv.toolchain error: %w", err)
 		}
 	}
@@ -96,7 +96,7 @@ func (b BuildEnv) Verify(checkAndRepair bool, buildType string) error {
 			return fmt.Errorf("buildenv.tools[%s] read error: %w", item, err)
 		}
 
-		if err := tool.Verify(checkAndRepair); err != nil {
+		if err := tool.Verify(args); err != nil {
 			return fmt.Errorf("buildenv.tools[%s] verify error: %w", item, err)
 		}
 	}
@@ -105,11 +105,11 @@ func (b BuildEnv) Verify(checkAndRepair bool, buildType string) error {
 	for _, item := range b.Dependencies {
 		portPath := filepath.Join(Dirs.PortDir, item+".json")
 		var port Port
-		if err := port.Init(portPath, b.platformName, buildType); err != nil {
+		if err := port.Init(portPath, b.platformName, args.BuildType); err != nil {
 			return fmt.Errorf("buildenv.dependencies[%s] read error: %w", item, err)
 		}
 
-		if err := port.Verify(checkAndRepair); err != nil {
+		if err := port.Verify(args); err != nil {
 			return fmt.Errorf("buildenv.dependencies[%s] verify error: %w", item, err)
 		}
 	}

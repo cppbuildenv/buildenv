@@ -14,7 +14,7 @@ type BuildEnvConf struct {
 	JobNum   int    `json:"job_num"`
 }
 
-func (b *BuildEnvConf) Verify(checkAndRepair bool, buildType string) error {
+func (b *BuildEnvConf) Verify(args VerifyArgs) error {
 	currentDir, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("cannot get current directory: %w", err)
@@ -65,7 +65,7 @@ func (b *BuildEnvConf) Verify(checkAndRepair bool, buildType string) error {
 		return err
 	}
 
-	if err := buildenv.Verify(checkAndRepair, buildType); err != nil {
+	if err := buildenv.Verify(args); err != nil {
 		return err
 	}
 
