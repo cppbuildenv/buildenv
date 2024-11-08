@@ -20,3 +20,4 @@
 - cli未提供create_platform的支持
 - go内部拼装PATH环境路径，估计是有问题的，可能不该这么用
 - 支持 buildenv -upgrade 升级
+- toolchain里定义CC和CXX时候后面拼上 "--sysroot=xxx"

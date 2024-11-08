@@ -1,6 +1,7 @@
 package buildsystem
 
 import (
+	"buildenv/pkg/color"
 	"fmt"
 	"io"
 	"os"
@@ -25,20 +26,6 @@ type BuildConfig struct {
 	BuildDir     string `json:"-"`
 	InstalledDir string `json:"-"`
 	JobNum       int    `json:"-"`
-}
-
-type ColorWriter struct {
-	Writer io.Writer
-}
-
-func (cw *ColorWriter) Write(p []byte) (n int, err error) {
-	coloredOutput := fmt.Sprintf("\033[34m%s\033[0m", string(p))
-	_, err = cw.Writer.Write([]byte(coloredOutput))
-	if err != nil {
-		return 0, err
-	}
-
-	return len(p), nil
 }
 
 func (b BuildConfig) Clone(repo, ref string) error {
@@ -84,35 +71,18 @@ func (b BuildConfig) execute(command, logPath string) error {
 	}
 	defer logFile.Close()
 
-	colorWriter := ColorWriter{Writer: os.Stdout}
-	multiWriter := io.MultiWriter(&colorWriter, logFile)
+	outWriter := color.NewWriter(os.Stdout, color.BlueFmt)
+	cmd.Stdout = io.MultiWriter(outWriter, logFile)
 
-	cmd.Stdout = multiWriter
-	cmd.Stderr = multiWriter
+	errWriter := color.NewWriter(os.Stdout, color.RedFmt)
+	cmd.Stderr = io.MultiWriter(errWriter, logFile)
 
 	if err := cmd.Run(); err != nil {
-		b.printError(fmt.Sprintf("Error execute command: %s", err.Error()))
+		color.Println(color.RedFmt, fmt.Sprintf("Error execute command: %s", err.Error()))
 		return err
 	}
 
 	return nil
-}
-
-const (
-	redFmt     string = "\033[31m%s\033[0m"
-	greenFmt   string = "\033[32m%s\033[0m"
-	yellowFmt  string = "\033[33m%s\033[0m"
-	blueFmt    string = "\033[34m%s\033[0m"
-	magentaFmt string = "\033[35m%s\033[0m"
-	cyanFmt    string = "\033[36m%s\033[0m"
-)
-
-func (b BuildConfig) printSuccess(message string) {
-	fmt.Printf(blueFmt, message)
-}
-
-func (b BuildConfig) printError(message string) {
-	fmt.Printf(redFmt, message)
 }
 
 func pathExists(path string) bool {

@@ -2,34 +2,34 @@ package cli
 
 import (
 	"buildenv/config"
-	"buildenv/console/ui"
+	uipkg "buildenv/console/ui"
 	"flag"
 	"log"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func newGUICmd(platformCallbacks config.PlatformCallbacks) *guiCmd {
-	return &guiCmd{
+func newUICmd(platformCallbacks config.PlatformCallbacks) *uiCmd {
+	return &uiCmd{
 		platformCallbacks: platformCallbacks,
 	}
 }
 
-type guiCmd struct {
+type uiCmd struct {
 	interactive       bool
 	platformCallbacks config.PlatformCallbacks
 }
 
-func (g *guiCmd) register() {
-	flag.BoolVar(&g.interactive, "gui", false, "run in gui mode")
+func (u *uiCmd) register() {
+	flag.BoolVar(&u.interactive, "gui", false, "run in gui mode")
 }
 
-func (g *guiCmd) listen() (handled bool) {
-	if !g.interactive {
+func (u *uiCmd) listen() (handled bool) {
+	if !u.interactive {
 		return false
 	}
 
-	model := ui.CreateMainModel(g.platformCallbacks)
+	model := uipkg.CreateMainModel(u.platformCallbacks)
 	if _, err := tea.NewProgram(model).Run(); err != nil {
 		log.Fatalf("Running cli in gui mode error: %s", err)
 	}
