@@ -24,7 +24,7 @@ type Platform struct {
 	platformName string `json:"-"`
 }
 
-func (b *Platform) Read(platformPath string) error {
+func (p *Platform) Read(platformPath string) error {
 	// Check if platform file exists.
 	if !pathExists(platformPath) {
 		return fmt.Errorf("platform file not exists: %s", platformPath)
@@ -35,31 +35,31 @@ func (b *Platform) Read(platformPath string) error {
 	if err != nil {
 		return err
 	}
-	if err := json.Unmarshal(bytes, b); err != nil {
+	if err := json.Unmarshal(bytes, p); err != nil {
 		return fmt.Errorf("read error: %w", err)
 	}
 
 	// Set values of internal fields.
-	b.platformName = strings.TrimSuffix(filepath.Base(platformPath), ".json")
+	p.platformName = strings.TrimSuffix(filepath.Base(platformPath), ".json")
 	return nil
 }
 
-func (b Platform) Write(filePath string) error {
+func (p Platform) Write(filePath string) error {
 	// Create empty array for empty field.
-	b.RootFS = new(RootFS)
-	b.Toolchain = new(Toolchain)
+	p.RootFS = new(RootFS)
+	p.Toolchain = new(Toolchain)
 
-	if len(b.RootFS.EnvVars.PKG_CONFIG_PATH) == 0 {
-		b.RootFS.EnvVars.PKG_CONFIG_PATH = []string{}
+	if len(p.RootFS.EnvVars.PKG_CONFIG_PATH) == 0 {
+		p.RootFS.EnvVars.PKG_CONFIG_PATH = []string{}
 	}
-	if len(b.Tools) == 0 {
-		b.Tools = []string{}
+	if len(p.Tools) == 0 {
+		p.Tools = []string{}
 	}
-	if len(b.Dependencies) == 0 {
-		b.Dependencies = []string{}
+	if len(p.Dependencies) == 0 {
+		p.Dependencies = []string{}
 	}
 
-	bytes, err := json.MarshalIndent(b, "", "    ")
+	bytes, err := json.MarshalIndent(p, "", "    ")
 	if err != nil {
 		return err
 	}
@@ -77,23 +77,23 @@ func (b Platform) Write(filePath string) error {
 	return os.WriteFile(filePath, bytes, os.ModePerm)
 }
 
-func (b Platform) Verify(args VerifyArgs) error {
+func (p Platform) Verify(args VerifyArgs) error {
 	// RootFS maybe nil when platform is native.
-	if b.RootFS != nil {
-		if err := b.RootFS.Verify(args); err != nil {
+	if p.RootFS != nil {
+		if err := p.RootFS.Verify(args); err != nil {
 			return fmt.Errorf("buildenv.rootfs error: %w", err)
 		}
 	}
 
 	// Toolchain maybe nil when platform is native.
-	if b.Toolchain != nil {
-		if err := b.Toolchain.Verify(args); err != nil {
+	if p.Toolchain != nil {
+		if err := p.Toolchain.Verify(args); err != nil {
 			return fmt.Errorf("buildenv.toolchain error: %w", err)
 		}
 	}
 
 	// Verify tools.
-	for _, item := range b.Tools {
+	for _, item := range p.Tools {
 		toolpath := filepath.Join(Dirs.ToolDir, item+".json")
 		var tool Tool
 
@@ -107,10 +107,10 @@ func (b Platform) Verify(args VerifyArgs) error {
 	}
 
 	// Verify dependencies.
-	for _, item := range b.Dependencies {
+	for _, item := range p.Dependencies {
 		portPath := filepath.Join(Dirs.PortDir, item+".json")
 		var port Port
-		if err := port.Init(portPath, b.platformName, args.BuildType); err != nil {
+		if err := port.Init(portPath, p.platformName, args.BuildType); err != nil {
 			return fmt.Errorf("buildenv.dependencies[%s] read error: %w", item, err)
 		}
 
@@ -122,7 +122,7 @@ func (b Platform) Verify(args VerifyArgs) error {
 	return nil
 }
 
-func (b Platform) CreateToolchainFile(scriptDir string) (string, error) {
+func (p Platform) CreateToolchainFile(scriptDir string) (string, error) {
 	var toolchain, environment strings.Builder
 
 	// Set default CMAKE_BUILD_TYPE.
@@ -141,24 +141,28 @@ func (b Platform) CreateToolchainFile(scriptDir string) (string, error) {
 	toolchain.WriteString(")\n")
 
 	// Set toolchain platform infos.
-	if b.Toolchain != nil {
+	if p.Toolchain != nil {
 		toolchain.WriteString("\n# Set toolchain platform infos.\n")
-		toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSTEM_NAME \"%s\")\n", b.Toolchain.SystemName))
-		toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSTEM_PROCESSOR \"%s\")\n", b.Toolchain.SystemProcessor))
+		toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSTEM_NAME \"%s\")\n", p.Toolchain.SystemName))
+		toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSTEM_PROCESSOR \"%s\")\n", p.Toolchain.SystemProcessor))
 	}
 
 	// Set sysroot for cross-compile.
-	if err := b.writeRootFS(&toolchain, &environment); err != nil {
-		return "", err
+	if p.RootFS != nil {
+		if err := p.RootFS.generate(&toolchain, &environment); err != nil {
+			return "", err
+		}
 	}
 
 	// Set toolchain for cross-compile.
-	if err := b.writeToolchain(&toolchain, &environment); err != nil {
-		return "", err
+	if p.Toolchain != nil {
+		if err := p.Toolchain.generate(&toolchain, &environment); err != nil {
+			return "", err
+		}
 	}
 
 	// Set tools for cross-compile.
-	if err := b.writeTools(&toolchain, &environment); err != nil {
+	if err := p.writeTools(&toolchain, &environment); err != nil {
 		return "", err
 	}
 
@@ -185,114 +189,6 @@ func (b Platform) CreateToolchainFile(scriptDir string) (string, error) {
 	}
 
 	return toolchainPath, nil
-}
-
-func (b *Platform) writeRootFS(toolchain, environment *strings.Builder) error {
-	// Skip if rootfs is nil.
-	if b.RootFS == nil {
-		return nil
-	}
-
-	// Generate rootfs description.
-	rootfsPath := filepath.Join(Dirs.DownloadDir, b.RootFS.RunPath)
-	absRootFSPath, err := filepath.Abs(rootfsPath)
-	if err != nil {
-		panic(fmt.Sprintf("cannot get absolute path: %s", rootfsPath))
-	}
-
-	toolchain.WriteString("\n# Set sysroot for cross-compile.\n")
-	toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSROOT \"%s\")\n", absRootFSPath))
-	toolchain.WriteString("list(APPEND CMAKE_FIND_ROOT_PATH \"${CMAKE_SYSROOT}\")\n")
-	toolchain.WriteString("list(APPEND CMAKE_PREFIX_PATH \"${CMAKE_SYSROOT}\")\n")
-
-	// Search programs in the host environment.
-	toolchain.WriteString("\n# Search programs in the host environment.\n")
-	toolchain.WriteString("set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)\n")
-
-	// Search libraries and headers in the target environment.
-	toolchain.WriteString("\n# Search libraries and headers in the target environment.\n")
-	toolchain.WriteString("set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)\n")
-	toolchain.WriteString("set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)\n")
-	toolchain.WriteString("set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)\n")
-
-	toolchain.WriteString("\n# Set pkg-config path for cross-compile.\n")
-	toolchain.WriteString("set(ENV{PKG_CONFIG_SYSROOT_DIR} \"${CMAKE_SYSROOT}\")\n")
-
-	// Replace the path with the workspace directory.
-	for i, path := range b.RootFS.EnvVars.PKG_CONFIG_PATH {
-		fullPath := filepath.Join(Dirs.DownloadDir, path)
-		absPath, err := filepath.Abs(fullPath)
-		if err != nil {
-			return fmt.Errorf("cannot get absolute path: %s", fullPath)
-		}
-
-		b.RootFS.EnvVars.PKG_CONFIG_PATH[i] = absPath
-	}
-	toolchain.WriteString(fmt.Sprintf("set(ENV{PKG_CONFIG_PATH} \"%s\")\n", strings.Join(b.RootFS.EnvVars.PKG_CONFIG_PATH, ":")))
-
-	// Set environment variables for makefile project.
-	environment.WriteString("\n# Set rootfs for cross compile.\n")
-	environment.WriteString(fmt.Sprintf("export SYSROOT=%s\n", absRootFSPath))
-	environment.WriteString("export PATH=${SYSROOT}:${PATH}\n")
-	environment.WriteString("export PKG_CONFIG_SYSROOT_DIR=${SYSROOT}\n")
-	environment.WriteString(fmt.Sprintf("export PKG_CONFIG_PATH=%s\n\n", strings.Join(b.RootFS.EnvVars.PKG_CONFIG_PATH, ":")))
-
-	// Make sure the toolchain is in the PATH of current process.
-	os.Setenv("SYSROOT", absRootFSPath)
-	os.Setenv("PKG_CONFIG_SYSROOT_DIR", absRootFSPath)
-	os.Setenv("PKG_CONFIG_PATH", strings.Join(b.RootFS.EnvVars.PKG_CONFIG_PATH, ":"))
-	os.Setenv("PATH", fmt.Sprintf("%s%c%s", absRootFSPath, os.PathListSeparator, os.Getenv("PATH")))
-
-	return nil
-}
-
-func (b *Platform) writeToolchain(toolchain, environment *strings.Builder) error {
-	// Skip if toolchain is nil.
-	if b.Toolchain == nil {
-		return nil
-	}
-
-	// Generate toolchain description.
-	toolchain.WriteString("\n# Set toolchain for cross-compile.\n")
-	toolchainPath := filepath.Join(Dirs.DownloadDir, b.Toolchain.RunPath)
-	absToolchainPath, err := filepath.Abs(toolchainPath)
-	if err != nil {
-		return fmt.Errorf("cannot get absolute path of toolchain path: %s", toolchainPath)
-	}
-
-	toolchain.WriteString(fmt.Sprintf("set(ENV{PATH} \"%s:$ENV{PATH}\")\n", absToolchainPath))
-
-	writeIfNotEmpty := func(content, env, value string) {
-		if value != "" {
-			// Set toolchain variables.
-			toolchain.WriteString(fmt.Sprintf("set(%s\"%s\")\n", content, value))
-
-			// Set environment variables for makefile project.
-			environment.WriteString(fmt.Sprintf("export %s=%s\n", env, value))
-
-			// Make sure the tool is in the PATH of current process.
-			os.Setenv(strings.TrimSpace(env), value)
-		}
-	}
-
-	environment.WriteString("# Set toolchain for cross compile.\n")
-	environment.WriteString(fmt.Sprintf("export TOOLCHAIN_PATH=%s\n", absToolchainPath))
-	environment.WriteString("export PATH=${TOOLCHAIN_PATH}:${PATH}\n\n")
-
-	// Make sure the toolchain is in the PATH of current process.
-	os.Setenv("PATH", fmt.Sprintf("%s%c%s", absToolchainPath, os.PathListSeparator, os.Getenv("PATH")))
-
-	writeIfNotEmpty("CMAKE_C_COMPILER 		", "CC", b.Toolchain.EnvVars.CC)
-	writeIfNotEmpty("CMAKE_CXX_COMPILER		", "CXX", b.Toolchain.EnvVars.CXX)
-	writeIfNotEmpty("CMAKE_Fortran_COMPILER	", "FC", b.Toolchain.EnvVars.FC)
-	writeIfNotEmpty("CMAKE_RANLIB 			", "RANLIB", b.Toolchain.EnvVars.RANLIB)
-	writeIfNotEmpty("CMAKE_AR 				", "AR", b.Toolchain.EnvVars.AR)
-	writeIfNotEmpty("CMAKE_LINKER 			", "LD", b.Toolchain.EnvVars.LD)
-	writeIfNotEmpty("CMAKE_NM 				", "NM", b.Toolchain.EnvVars.NM)
-	writeIfNotEmpty("CMAKE_OBJDUMP 			", "OBJDUMP", b.Toolchain.EnvVars.OBJDUMP)
-	writeIfNotEmpty("CMAKE_STRIP 			", "STRIP", b.Toolchain.EnvVars.STRIP)
-
-	return nil
 }
 
 func (b *Platform) writeTools(toolchain, environment *strings.Builder) error {

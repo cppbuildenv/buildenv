@@ -3,6 +3,7 @@ package config
 import (
 	"buildenv/pkg/io"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -57,6 +58,49 @@ func (t Toolchain) Verify(args VerifyArgs) error {
 	}
 
 	return t.checkAndRepair()
+}
+
+func (t Toolchain) generate(toolchain, environment *strings.Builder) error {
+	toolchain.WriteString("\n# Set toolchain for cross-compile.\n")
+	toolchainPath := filepath.Join(Dirs.DownloadDir, t.RunPath)
+	absToolchainPath, err := filepath.Abs(toolchainPath)
+	if err != nil {
+		return fmt.Errorf("cannot get absolute path of toolchain path: %s", toolchainPath)
+	}
+
+	toolchain.WriteString(fmt.Sprintf("set(ENV{PATH} \"%s:$ENV{PATH}\")\n", absToolchainPath))
+
+	writeIfNotEmpty := func(content, env, value string) {
+		if value != "" {
+			// Set toolchain variables.
+			toolchain.WriteString(fmt.Sprintf("set(%s\"%s\")\n", content, value))
+
+			// Set environment variables for makefile project.
+			environment.WriteString(fmt.Sprintf("export %s=%s\n", env, value))
+
+			// Make sure the tool is in the PATH of current process.
+			os.Setenv(strings.TrimSpace(env), value)
+		}
+	}
+
+	environment.WriteString("# Set toolchain for cross compile.\n")
+	environment.WriteString(fmt.Sprintf("export TOOLCHAIN_PATH=%s\n", absToolchainPath))
+	environment.WriteString("export PATH=${TOOLCHAIN_PATH}:${PATH}\n\n")
+
+	// Make sure the toolchain is in the PATH of current process.
+	os.Setenv("PATH", fmt.Sprintf("%s%c%s", absToolchainPath, os.PathListSeparator, os.Getenv("PATH")))
+
+	writeIfNotEmpty("CMAKE_C_COMPILER 		", "CC", t.EnvVars.CC)
+	writeIfNotEmpty("CMAKE_CXX_COMPILER		", "CXX", t.EnvVars.CXX)
+	writeIfNotEmpty("CMAKE_Fortran_COMPILER	", "FC", t.EnvVars.FC)
+	writeIfNotEmpty("CMAKE_RANLIB 			", "RANLIB", t.EnvVars.RANLIB)
+	writeIfNotEmpty("CMAKE_AR 				", "AR", t.EnvVars.AR)
+	writeIfNotEmpty("CMAKE_LINKER 			", "LD", t.EnvVars.LD)
+	writeIfNotEmpty("CMAKE_NM 				", "NM", t.EnvVars.NM)
+	writeIfNotEmpty("CMAKE_OBJDUMP 			", "OBJDUMP", t.EnvVars.OBJDUMP)
+	writeIfNotEmpty("CMAKE_STRIP 			", "STRIP", t.EnvVars.STRIP)
+
+	return nil
 }
 
 func (t Toolchain) checkAndRepair() error {

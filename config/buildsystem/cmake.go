@@ -3,6 +3,7 @@ package buildsystem
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 )
@@ -16,12 +17,13 @@ type cmake struct {
 }
 
 func (c cmake) Configure(buildType string) error {
-	// mkdir customed build.
+	// Remove build dir and create it for configure.
+	if err := os.RemoveAll(c.BuildDir); err != nil {
+		return err
+	}
 	if err := os.MkdirAll(c.BuildDir, os.ModeDir|os.ModePerm); err != nil {
 		return err
 	}
-
-	buildType = c.formatBuildType(buildType)
 
 	// Assemble script.
 	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_PREFIX_PATH=%s", c.InstalledDir))
@@ -32,6 +34,7 @@ func (c cmake) Configure(buildType string) error {
 		return strings.Contains(arg, "CMAKE_BUILD_TYPE")
 	})
 	if !containBuildType {
+		buildType = c.formatBuildType(buildType)
 		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_BUILD_TYPE=%s", buildType))
 	}
 
@@ -43,7 +46,8 @@ func (c cmake) Configure(buildType string) error {
 	fmt.Printf("%s\n\n", command)
 
 	// Execute configure.
-	if err := c.execute(command); err != nil {
+	configureLogPath := filepath.Join(filepath.Dir(c.BuildDir), filepath.Base(c.BuildDir)+"-configure.log")
+	if err := c.execute(command, configureLogPath); err != nil {
 		return err
 	}
 
@@ -58,7 +62,8 @@ func (c cmake) Build() error {
 	fmt.Printf("%s\n\n", command)
 
 	// Execute build.
-	if err := c.execute(command); err != nil {
+	buildLogPath := filepath.Join(filepath.Dir(c.BuildDir), filepath.Base(c.BuildDir)+"-build.log")
+	if err := c.execute(command, buildLogPath); err != nil {
 		return err
 	}
 
@@ -73,7 +78,8 @@ func (c cmake) Install() error {
 	fmt.Printf("%s\n\n", command)
 
 	// Execute install.
-	if err := c.execute(command); err != nil {
+	installLogPath := filepath.Join(filepath.Dir(c.BuildDir), filepath.Base(c.BuildDir)+"-install.log")
+	if err := c.execute(command, installLogPath); err != nil {
 		return err
 	}
 
