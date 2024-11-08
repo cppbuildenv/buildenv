@@ -37,9 +37,9 @@ func (p *Port) Init(portPath, platformName, buildType string) error {
 	portName := strings.TrimSuffix(filepath.Base(p.Repo), ".git") + "-" + p.Ref
 
 	// Set default build dir and installed dir and also can be changed during units tests.
-	p.BuildConfig.BuildDir = filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, platformName, buildType)
 	p.BuildConfig.SourceDir = filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, "src")
-	p.BuildConfig.InstalledDir = filepath.Join(Dirs.WorkspaceDir, "installed", platformName, buildType)
+	p.BuildConfig.BuildDir = filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, platformName+"-"+buildType)
+	p.BuildConfig.InstalledDir = filepath.Join(Dirs.WorkspaceDir, "installed", platformName+"-"+buildType)
 	p.BuildConfig.JobNum = 8 // TODO: make it configurable.
 
 	p.portName = portName
