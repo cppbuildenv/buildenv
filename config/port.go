@@ -152,6 +152,6 @@ func (p Port) checkAndRepair() error {
 		return err
 	}
 
-	fmt.Printf("[✔] -------- %s (port: %s).\n\n", p.portName, p.BuildConfig.InstalledDir)
+	fmt.Printf("[✔] -------- %s (port: %s)\n\n", p.portName, p.BuildConfig.InstalledDir)
 	return nil
 }

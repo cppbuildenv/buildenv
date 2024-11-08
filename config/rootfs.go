@@ -67,6 +67,6 @@ func (b RootFS) checkAndRepair() error {
 		return fmt.Errorf("%s: extract rootfs failed: %w", downloaded, err)
 	}
 
-	fmt.Printf("[✔] -------- %s (rootfs: %s).\n\n", filepath.Base(b.Url), extractPath)
+	fmt.Printf("[✔] -------- %s (rootfs: %s)\n\n", filepath.Base(b.Url), extractPath)
 	return nil
 }

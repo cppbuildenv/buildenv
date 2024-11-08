@@ -79,6 +79,6 @@ func (t Toolchain) checkAndRepair() error {
 		return fmt.Errorf("%s: extract toolchain failed: %w", downloaded, err)
 	}
 
-	fmt.Printf("[✔] -------- %s (toolchain: %s).\n\n", filepath.Base(t.Url), extractPath)
+	fmt.Printf("[✔] -------- %s (toolchain: %s)\n\n", filepath.Base(t.Url), extractPath)
 	return nil
 }

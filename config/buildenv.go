@@ -9,6 +9,11 @@ import (
 	"strings"
 )
 
+type PlatformCallbacks interface {
+	OnCreatePlatform(platformName string) error
+	OnSelectPlatform(platformName string) error
+}
+
 type BuildEnv struct {
 	RootFS       *RootFS    `json:"rootfs"`
 	Toolchain    *Toolchain `json:"toolchain"`

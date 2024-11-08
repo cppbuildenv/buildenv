@@ -37,10 +37,13 @@ func (c cmake) Configure(buildType string) error {
 
 	// Assemble args into a string.
 	joinedArgs := strings.Join(c.Arguments, " ")
-	configure := fmt.Sprintf("cmake -S %s -B %s %s", c.SourceDir, c.BuildDir, joinedArgs)
+	command := fmt.Sprintf("cmake -S %s -B %s %s", c.SourceDir, c.BuildDir, joinedArgs)
+
+	// Print process log.
+	fmt.Printf("%s\n\n", command)
 
 	// Execute configure.
-	if err := c.execute(configure); err != nil {
+	if err := c.execute(command); err != nil {
 		return err
 	}
 
@@ -49,10 +52,13 @@ func (c cmake) Configure(buildType string) error {
 
 func (c cmake) Build() error {
 	// Assemble script.
-	build := fmt.Sprintf("cmake --build %s --parallel %d", c.BuildDir, c.JobNum)
+	command := fmt.Sprintf("cmake --build %s --parallel %d", c.BuildDir, c.JobNum)
+
+	// Print process log.
+	fmt.Printf("%s\n\n", command)
 
 	// Execute build.
-	if err := c.execute(build); err != nil {
+	if err := c.execute(command); err != nil {
 		return err
 	}
 
@@ -61,10 +67,13 @@ func (c cmake) Build() error {
 
 func (c cmake) Install() error {
 	// Assemble script.
-	build := fmt.Sprintf("cmake --install %s", c.BuildDir)
+	command := fmt.Sprintf("cmake --install %s", c.BuildDir)
+
+	// Print process log.
+	fmt.Printf("%s\n\n", command)
 
 	// Execute install.
-	if err := c.execute(build); err != nil {
+	if err := c.execute(command); err != nil {
 		return err
 	}
 

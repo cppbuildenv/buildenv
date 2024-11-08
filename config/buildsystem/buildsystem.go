@@ -61,10 +61,36 @@ func (b BuildConfig) execute(command string) error {
 	cmd.Stderr = &errput
 
 	if err := cmd.Run(); err != nil {
+		b.printError(fmt.Sprintf("Error execute command: %s", err.Error()))
 		return err
 	}
 
+	if output.Len() > 0 {
+		b.printSuccess(fmt.Sprintf("%s\n\n", output.String()))
+	}
+
+	if errput.Len() > 0 {
+		b.printError(fmt.Sprintf("%s\n\n", errput.String()))
+	}
+
 	return nil
+}
+
+const (
+	redFmt     string = "\033[31m%s\033[0m"
+	greenFmt   string = "\033[32m%s\033[0m"
+	yellowFmt  string = "\033[33m%s\033[0m"
+	blueFmt    string = "\033[34m%s\033[0m"
+	magentaFmt string = "\033[35m%s\033[0m"
+	cyanFmt    string = "\033[36m%s\033[0m"
+)
+
+func (b BuildConfig) printSuccess(message string) {
+	fmt.Printf(blueFmt, message)
+}
+
+func (b BuildConfig) printError(message string) {
+	fmt.Printf(redFmt, message)
 }
 
 func pathExists(path string) bool {
