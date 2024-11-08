@@ -74,6 +74,6 @@ func (t Tool) checkAndRepair() error {
 		return fmt.Errorf("%s: extract failed: %w", fileName, err)
 	}
 
-	fmt.Printf("[✔] -------- %s.\n\n", fileName)
+	fmt.Printf("[✔] -------- %s (tool: %s).\n\n", fileName, extractPath)
 	return nil
 }
