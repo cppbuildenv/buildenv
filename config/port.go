@@ -23,6 +23,7 @@ type Port struct {
 	platformName string `json:"-"`
 	buildType    string `json:"-"`
 	infoPath     string `json:"-"`
+	portDir      string `json:"-"`
 }
 
 func (p *Port) Init(portPath, platformName, buildType string) error {
@@ -46,6 +47,7 @@ func (p *Port) Init(portPath, platformName, buildType string) error {
 	p.portName = portName
 	p.platformName = platformName
 	p.buildType = buildType
+	p.portDir = filepath.Dir(portPath)
 
 	// Info file: used to record installed state.
 	fileName := fmt.Sprintf("%s-%s.list", p.platformName, p.buildType)
@@ -109,6 +111,20 @@ func (p Port) checkAndRepair() error {
 		return nil
 	}
 
+	// Check and repair dependencies.
+	for _, item := range p.Depedencies {
+		portPath := filepath.Join(p.portDir, item+".json")
+
+		var port Port
+		if err := port.Init(portPath, p.platformName, p.buildType); err != nil {
+			return err
+		}
+
+		if err := port.checkAndRepair(); err != nil {
+			return err
+		}
+	}
+
 	var buildSystem buildsystem.BuildSystem
 
 	switch p.BuildConfig.BuildTool {
@@ -148,8 +164,14 @@ func (p Port) checkAndRepair() error {
 		}
 	}
 
-	if err := os.WriteFile(p.infoPath, []byte(p.portName+"\n"), os.ModeAppend|os.ModePerm); err != nil {
+	// Write info list file in append mode.
+	f, err := os.OpenFile(p.infoPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, os.ModePerm)
+	if err != nil {
 		return err
+	}
+	_, err = f.Write([]byte(p.portName + "\n"))
+	if err1 := f.Close(); err1 != nil && err == nil {
+		return err1
 	}
 
 	fmt.Printf("[✔] -------- %s (port: %s)\n\n", p.portName, p.BuildConfig.InstalledDir)

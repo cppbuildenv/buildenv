@@ -32,6 +32,6 @@
         "cmake-3.30.5-linux-x86_64"
     ],
     "dependencies": [
-        "gflags-v2.2.2"
+        "glog-v0.6.0"
     ]
 }
