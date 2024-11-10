@@ -1,9 +1,9 @@
 # buildenv
 
 #### 介绍
-{**以下是 Gitee 平台说明，您可以替换此简介**
-Gitee 是 OSCHINA 推出的基于 Git 的代码托管平台（同时支持 SVN）。专为开发者提供稳定、高效、安全的云端软件开发协作平台
-无论是个人、团队、或是企业，都能够用 Gitee 实现代码托管、项目管理、协作开发。企业项目请看 [https://gitee.com/enterprises](https://gitee.com/enterprises)}
+
+C/C++一直缺少一个官方的包管理，虽然比较流行的有conan和vcpkg，但使用起来都不如java都maven、gradle、go的module、rust的cargo等那么方便，主要原因是conan严重依赖python脚本，而且及不容易上手，vcpkg上手倒是比较容易，但是国内的网络环境下vcpkg几乎是无法正常使用的。  
+其实，不管是conan还是vcpkg，都缺失了对交叉编译环境的管理支持，对于多平台的交叉编译环境管理，依然没有现成的解决方案。
 
 #### 软件架构
 软件架构说明
