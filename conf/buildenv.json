@@ -1,5 +1,5 @@
 {
-    "platform": "aarch64-linux-d100-j721e.json",
+    "platform": "aarch64-linux-d100-j721e",
     "conf_repo": "",
     "job_num": 8
 }

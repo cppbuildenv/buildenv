@@ -22,9 +22,10 @@ type Platform struct {
 
 	// Internal fields.
 	platformName string `json:"-"`
+	installedDir string `json:"-"`
 }
 
-func (p *Platform) Read(platformPath string) error {
+func (p *Platform) Init(platformPath, installedDir string) error {
 	// Check if platform file exists.
 	if !pathExists(platformPath) {
 		return fmt.Errorf("platform file not exists: %s", platformPath)
@@ -41,6 +42,7 @@ func (p *Platform) Read(platformPath string) error {
 
 	// Set values of internal fields.
 	p.platformName = strings.TrimSuffix(filepath.Base(platformPath), ".json")
+	p.installedDir = installedDir
 	return nil
 }
 
@@ -110,7 +112,7 @@ func (p Platform) Verify(args VerifyArgs) error {
 	for _, item := range p.Dependencies {
 		portPath := filepath.Join(Dirs.PortDir, item+".json")
 		var port Port
-		if err := port.Init(portPath, p.platformName, args.BuildType); err != nil {
+		if err := port.Init(portPath, p.platformName, args.BuildType, p.installedDir); err != nil {
 			return fmt.Errorf("buildenv.dependencies[%s] read error: %w", item, err)
 		}
 

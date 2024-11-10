@@ -2,7 +2,9 @@ package config
 
 import (
 	"bufio"
-	"buildenv/config/buildsystem"
+	"buildenv/config/build"
+	"buildenv/config/deploy"
+	"buildenv/pkg/color"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -13,10 +15,10 @@ import (
 type BuildTool int
 
 type Port struct {
-	Repo        string                  `json:"repo"`
-	Ref         string                  `json:"ref"`
-	Depedencies []string                `json:"dependencies"`
-	BuildConfig buildsystem.BuildConfig `json:"build_config"`
+	Url          string               `json:"url"`
+	Version      string               `json:"version"`
+	BuildConfig  *build.BuildConfig   `json:"build_config"`
+	DeployConfig *deploy.DeployConfig `json:"deploy_config"`
 
 	// Internal fields.
 	portName     string `json:"-"`
@@ -24,9 +26,10 @@ type Port struct {
 	buildType    string `json:"-"`
 	infoPath     string `json:"-"`
 	portDir      string `json:"-"`
+	installedDir string `json:"-"`
 }
 
-func (p *Port) Init(portPath, platformName, buildType string) error {
+func (p *Port) Init(portPath, platformName, buildType, installedDir string) error {
 	bytes, err := os.ReadFile(portPath)
 	if err != nil {
 		return err
@@ -36,33 +39,36 @@ func (p *Port) Init(portPath, platformName, buildType string) error {
 		return err
 	}
 
-	portName := strings.TrimSuffix(filepath.Base(p.Repo), ".git") + "-" + p.Ref
-
-	// Set default build dir and installed dir and also can be changed during units tests.
-	p.BuildConfig.SourceDir = filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, "src")
-	p.BuildConfig.BuildDir = filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, platformName+"-"+buildType)
-	p.BuildConfig.InstalledDir = filepath.Join(Dirs.WorkspaceDir, "installed", platformName+"-"+buildType)
-	p.BuildConfig.JobNum = 8 // TODO: make it configurable.
+	portName := strings.TrimSuffix(filepath.Base(p.Url), ".git") + "-" + p.Version
 
 	p.portName = portName
 	p.platformName = platformName
 	p.buildType = buildType
 	p.portDir = filepath.Dir(portPath)
+	p.installedDir = installedDir
 
 	// Info file: used to record installed state.
 	fileName := fmt.Sprintf("%s-%s.list", p.platformName, p.buildType)
-	p.infoPath = filepath.Join(Dirs.InstalledDir, "buildenv", fileName)
+	p.infoPath = filepath.Join(Dirs.InstalledRootDir, "buildenv", fileName)
+
+	// Set default build dir and installed dir and also can be changed during units tests.
+	if p.BuildConfig != nil {
+		p.BuildConfig.SourceDir = filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, "src")
+		p.BuildConfig.BuildDir = filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, platformName+"-"+buildType)
+		p.BuildConfig.InstalledDir = installedDir
+		p.BuildConfig.JobNum = 8 // TODO: make it configurable.
+	}
 
 	return nil
 }
 
 func (p *Port) Verify(args VerifyArgs) error {
-	if p.Repo == "" {
-		return fmt.Errorf("port.repo is empty")
+	if p.Url == "" {
+		return fmt.Errorf("port.url is empty")
 	}
 
-	if p.Ref == "" {
-		return fmt.Errorf("port.ref is empty")
+	if p.Version == "" {
+		return fmt.Errorf("port.version is empty")
 	}
 
 	if p.BuildConfig.BuildTool == "" {
@@ -112,11 +118,15 @@ func (p Port) checkAndRepair() error {
 	}
 
 	// Check and repair dependencies.
-	for _, item := range p.Depedencies {
+	for _, item := range p.BuildConfig.Depedencies {
+		if item == p.portName {
+			return fmt.Errorf("port.dependencies contains circular dependency: %s", item)
+		}
+
 		portPath := filepath.Join(p.portDir, item+".json")
 
 		var port Port
-		if err := port.Init(portPath, p.platformName, p.buildType); err != nil {
+		if err := port.Init(portPath, p.platformName, p.buildType, p.installedDir); err != nil {
 			return err
 		}
 
@@ -125,55 +135,33 @@ func (p Port) checkAndRepair() error {
 		}
 	}
 
-	var buildSystem buildsystem.BuildSystem
-
-	switch p.BuildConfig.BuildTool {
-	case "cmake":
-		buildSystem = buildsystem.NewCMake(p.BuildConfig)
-	case "ninja":
-		buildSystem = buildsystem.NewNinja(p.BuildConfig)
-	case "make":
-		buildSystem = buildsystem.NewMake(p.BuildConfig)
-	case "autotools":
-		buildSystem = buildsystem.NewAutoTool(p.BuildConfig)
-	case "meson":
-		buildSystem = buildsystem.NewMeson(p.BuildConfig)
-	default:
-		return fmt.Errorf("unsupported build system: %s", p.BuildConfig.BuildTool)
-	}
-
-	if err := buildSystem.Clone(p.Repo, p.Ref); err != nil {
-		return err
-	}
-
-	if err := buildSystem.Configure(p.buildType); err != nil {
-		return err
-	}
-
-	if err := buildSystem.Build(); err != nil {
-		return err
-	}
-
-	if err := buildSystem.Install(); err != nil {
-		return err
-	}
-
-	if !pathExists(p.infoPath) {
-		if err := os.MkdirAll(filepath.Dir(p.infoPath), os.ModePerm); err != nil {
+	if p.BuildConfig != nil {
+		if err := p.BuildConfig.CheckAndRepair(p.Url, p.Version, p.buildType); err != nil {
 			return err
 		}
+	} else if p.DeployConfig != nil {
+		// TODO: implement deploy.
+	} else {
+		return fmt.Errorf("port.build_config and port.deploy_config are both empty")
+	}
+
+	// Mkdir if not exists.
+	if err := os.MkdirAll(filepath.Dir(p.infoPath), os.ModePerm); err != nil {
+		return err
 	}
 
 	// Write info list file in append mode.
-	f, err := os.OpenFile(p.infoPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, os.ModePerm)
+	file, err := os.OpenFile(p.infoPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, os.ModePerm)
 	if err != nil {
 		return err
 	}
-	_, err = f.Write([]byte(p.portName + "\n"))
-	if err1 := f.Close(); err1 != nil && err == nil {
-		return err1
+	if _, err := file.Write([]byte(p.portName + "\n")); err != nil {
+		return err
+	}
+	if err := file.Close(); err != nil {
+		return err
 	}
 
-	fmt.Printf("[✔] -------- %s (port: %s)\n\n", p.portName, p.BuildConfig.InstalledDir)
+	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- %s (port: %s)\n\n", p.portName, p.installedDir))
 	return nil
 }

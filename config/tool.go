@@ -1,6 +1,7 @@
 package config
 
 import (
+	"buildenv/pkg/color"
 	"buildenv/pkg/io"
 	"encoding/json"
 	"fmt"
@@ -55,7 +56,7 @@ func (t *Tool) Verify(args VerifyArgs) error {
 }
 
 func (t Tool) checkAndRepair() error {
-	toolPath := filepath.Join(Dirs.DownloadDir, t.RunPath)
+	toolPath := filepath.Join(Dirs.DownloadRootDir, t.RunPath)
 	if pathExists(toolPath) {
 		return nil
 	}
@@ -63,17 +64,17 @@ func (t Tool) checkAndRepair() error {
 	fileName := filepath.Base(t.Url)
 
 	// Download to fixed dir.
-	downloaded, err := io.Download(t.Url, Dirs.DownloadDir)
+	downloaded, err := io.Download(t.Url, Dirs.DownloadRootDir)
 	if err != nil {
 		return fmt.Errorf("%s: download failed: %w", fileName, err)
 	}
 
 	// Extract archive file.
-	extractPath := filepath.Join(Dirs.DownloadDir, t.toolName)
+	extractPath := filepath.Join(Dirs.DownloadRootDir, t.toolName)
 	if err := io.Extract(downloaded, extractPath); err != nil {
 		return fmt.Errorf("%s: extract failed: %w", fileName, err)
 	}
 
-	fmt.Printf("[✔] -------- %s (tool: %s)\n\n", fileName, extractPath)
+	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- %s (tool: %s)\n\n", fileName, extractPath))
 	return nil
 }

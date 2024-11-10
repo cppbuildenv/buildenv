@@ -3,7 +3,6 @@ package console
 import (
 	"buildenv/config"
 	"fmt"
-	"os"
 	"path/filepath"
 )
 
@@ -28,23 +27,22 @@ func (p platformCallbacks) OnCreatePlatform(platformName string) error {
 }
 
 func (p platformCallbacks) OnSelectPlatform(platformName string) error {
-	args := config.VerifyArgs{
-		Silent:         false,
-		CheckAndRepair: false,
-		BuildType:      "Release",
-	}
-
-	var buildenvConf config.BuildEnv
-	if err := buildenvConf.Verify(args); err != nil {
+	var buildenv config.BuildEnv
+	if err := buildenv.ChangePlatform(platformName); err != nil {
 		return err
 	}
 
 	var platform config.Platform
 	platformPath := filepath.Join(config.Dirs.PlatformDir, platformName+".json")
-	if err := platform.Read(platformPath); err != nil {
+	if err := platform.Init(platformPath, buildenv.InstalledDir); err != nil {
 		return err
 	}
 
+	args := config.VerifyArgs{
+		Silent:         false,
+		CheckAndRepair: false,
+		BuildType:      "Release",
+	}
 	if err := platform.Verify(args); err != nil {
 		return err
 	}
@@ -55,13 +53,4 @@ func (p platformCallbacks) OnSelectPlatform(platformName string) error {
 	}
 
 	return nil
-}
-
-func pathExists(path string) bool {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true
-	}
-
-	return !os.IsNotExist(err)
 }

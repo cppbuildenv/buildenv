@@ -1,6 +1,7 @@
 package config
 
 import (
+	"buildenv/pkg/color"
 	"buildenv/pkg/io"
 	"fmt"
 	"os"
@@ -49,13 +50,13 @@ func (r RootFS) Verify(args VerifyArgs) error {
 }
 
 func (b RootFS) checkAndRepair() error {
-	rootfsPath := filepath.Join(Dirs.DownloadDir, b.RunPath)
+	rootfsPath := filepath.Join(Dirs.DownloadRootDir, b.RunPath)
 	if pathExists(rootfsPath) {
 		return nil
 	}
 
 	// Download to fixed dir.
-	downloaded, err := io.Download(b.Url, Dirs.DownloadDir)
+	downloaded, err := io.Download(b.Url, Dirs.DownloadRootDir)
 	if err != nil {
 		return fmt.Errorf("%s: download rootfs failed: %w", b.Url, err)
 	}
@@ -63,17 +64,17 @@ func (b RootFS) checkAndRepair() error {
 	// Extract archive file.
 	fileName := filepath.Base(b.Url)
 	folderName := strings.TrimSuffix(fileName, ".tar.gz")
-	extractPath := filepath.Join(Dirs.DownloadDir, folderName)
+	extractPath := filepath.Join(Dirs.DownloadRootDir, folderName)
 	if err := io.Extract(downloaded, extractPath); err != nil {
 		return fmt.Errorf("%s: extract rootfs failed: %w", downloaded, err)
 	}
 
-	fmt.Printf("[✔] -------- %s (rootfs: %s)\n\n", filepath.Base(b.Url), extractPath)
+	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- %s (rootfs: %s)\n\n", filepath.Base(b.Url), extractPath))
 	return nil
 }
 
 func (r RootFS) generate(toolchain, environment *strings.Builder) error {
-	rootfsPath := filepath.Join(Dirs.DownloadDir, r.RunPath)
+	rootfsPath := filepath.Join(Dirs.DownloadRootDir, r.RunPath)
 	absRootFSPath, err := filepath.Abs(rootfsPath)
 	if err != nil {
 		panic(fmt.Sprintf("cannot get absolute path: %s", rootfsPath))
@@ -99,7 +100,7 @@ func (r RootFS) generate(toolchain, environment *strings.Builder) error {
 
 	// Replace the path with the workspace directory.
 	for i, path := range r.EnvVars.PKG_CONFIG_PATH {
-		fullPath := filepath.Join(Dirs.DownloadDir, path)
+		fullPath := filepath.Join(Dirs.DownloadRootDir, path)
 		absPath, err := filepath.Abs(fullPath)
 		if err != nil {
 			return fmt.Errorf("cannot get absolute path: %s", fullPath)

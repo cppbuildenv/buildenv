@@ -12,19 +12,59 @@ type BuildEnv struct {
 	Platform string `json:"platform"`
 	ConfRepo string `json:"conf_repo"`
 	JobNum   int    `json:"job_num"`
+
+	InstalledDir string `json:"-"`
+}
+
+func (b *BuildEnv) ChangePlatform(platform string) error {
+	buildEnvPath := filepath.Join(Dirs.WorkspaceDir, "conf", "buildenv.json")
+	if !pathExists(buildEnvPath) {
+		// Create conf directory.
+		if err := os.MkdirAll(filepath.Dir(buildEnvPath), os.ModeDir|os.ModePerm); err != nil {
+			return err
+		}
+
+		b.Platform = platform
+		b.JobNum = runtime.NumCPU()
+
+		// Create buildenv conf file with default values.
+		bytes, err := json.MarshalIndent(b, "", "    ")
+		if err != nil {
+			return fmt.Errorf("cannot marshal buildenv conf: %w", err)
+		}
+		if err := os.WriteFile(buildEnvPath, bytes, os.ModePerm); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	// Rewrite buildenv file with new platform.
+	bytes, err := os.ReadFile(buildEnvPath)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(bytes, b); err != nil {
+		return err
+	}
+	b.Platform = platform
+	bytes, err = json.MarshalIndent(b, "", "    ")
+	if err != nil {
+		return fmt.Errorf("cannot marshal buildenv conf: %w", err)
+	}
+	if err := os.WriteFile(buildEnvPath, bytes, os.ModePerm); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (b *BuildEnv) Verify(args VerifyArgs) error {
-	currentDir, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("cannot get current directory: %w", err)
-	}
+	buildEnvPath := filepath.Join(Dirs.WorkspaceDir, "conf", "buildenv.json")
 
-	// Check if buildenv conf file exists.
-	buildEnvConfPath := filepath.Join(currentDir, "conf/buildenv.json")
-	if !pathExists(buildEnvConfPath) {
+	if !pathExists(buildEnvPath) {
 		// Create conf directory.
-		if err := os.MkdirAll(filepath.Dir(buildEnvConfPath), os.ModeDir|os.ModePerm); err != nil {
+		if err := os.MkdirAll(filepath.Dir(buildEnvPath), os.ModeDir|os.ModePerm); err != nil {
 			return err
 		}
 
@@ -36,36 +76,41 @@ func (b *BuildEnv) Verify(args VerifyArgs) error {
 		if err != nil {
 			return fmt.Errorf("cannot marshal buildenv conf: %w", err)
 		}
-		if err := os.WriteFile(buildEnvConfPath, bytes, os.ModePerm); err != nil {
+		if err := os.WriteFile(buildEnvPath, bytes, os.ModePerm); err != nil {
 			return err
 		}
 
 		return fmt.Errorf("no platform has been selected for buildenv")
 	}
 
-	bytes, err := os.ReadFile(filepath.Join(currentDir, "conf/buildenv.json"))
+	// Read buildenv conf file.
+	bytes, err := os.ReadFile(buildEnvPath)
 	if err != nil {
 		return err
 	}
 	if err := json.Unmarshal(bytes, b); err != nil {
 		return err
 	}
-
 	if b.Platform == "" {
 		return fmt.Errorf("no platform has been selected for buildenv")
 	}
 
-	platformPath := filepath.Join(Dirs.PlatformDir, b.Platform)
+	// Set values of internal fields.
+	b.InstalledDir = filepath.Join(Dirs.InstalledRootDir, b.Platform+"-"+args.BuildType)
+
+	// Check if platform file exists and read it.
+	platformPath := filepath.Join(Dirs.PlatformDir, b.Platform+".json")
 	if !pathExists(platformPath) {
 		return fmt.Errorf("platform file not exists: %s", platformPath)
 	}
 
-	var buildenv Platform
-	if err := buildenv.Read(platformPath); err != nil {
+	var platform Platform
+	if err := platform.Init(platformPath, b.InstalledDir); err != nil {
 		return err
 	}
 
-	if err := buildenv.Verify(args); err != nil {
+	// Verify buildenv, it'll verify toolchain, tools and dependencies inside.
+	if err := platform.Verify(args); err != nil {
 		return err
 	}
 

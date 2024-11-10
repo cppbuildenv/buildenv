@@ -1,7 +1,6 @@
 {
-    "repo": "ssh://git@192.168.12.18:7999/thdpty/gflags.git",
-    "ref": "v2.2.2",
-    "dependencies": [],
+    "url": "ssh://git@192.168.12.18:7999/thdpty/gflags.git",
+    "version": "v2.2.2",
     "build_config": {
         "build_tool": "cmake",
         "arguments": [
@@ -9,6 +8,7 @@
             "-DBUILD_STATIC_LIBS=OFF",
             "-DBUILD_TESTING=OFF",
             "-DCMAKE_BUILD_TYPE=Release"
-        ]
+        ],
+        "dependencies": []
     }
 }

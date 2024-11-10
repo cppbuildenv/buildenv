@@ -5,8 +5,13 @@ import (
 )
 
 func TestBuildGFlags(t *testing.T) {
+	portPath := "testdata/conf/ports/gflags-v2.2.2.json"
+	installedDir := "testdata/installed/x86_64-linux-Release"
+	platformName := "aarch64-linux-test"
+	buildType := "Release"
+
 	var port Port
-	if err := port.Init("testdata/conf/ports/gflags-v2.2.2.json", "aarch64-linux-test", "Release"); err != nil {
+	if err := port.Init(portPath, platformName, buildType, installedDir); err != nil {
 		t.Fatal(err)
 	}
 

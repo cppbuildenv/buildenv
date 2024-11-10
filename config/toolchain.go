@@ -1,6 +1,7 @@
 package config
 
 import (
+	"buildenv/pkg/color"
 	"buildenv/pkg/io"
 	"fmt"
 	"os"
@@ -62,7 +63,7 @@ func (t Toolchain) Verify(args VerifyArgs) error {
 
 func (t Toolchain) generate(toolchain, environment *strings.Builder) error {
 	toolchain.WriteString("\n# Set toolchain for cross-compile.\n")
-	toolchainPath := filepath.Join(Dirs.DownloadDir, t.RunPath)
+	toolchainPath := filepath.Join(Dirs.DownloadRootDir, t.RunPath)
 	absToolchainPath, err := filepath.Abs(toolchainPath)
 	if err != nil {
 		return fmt.Errorf("cannot get absolute path of toolchain path: %s", toolchainPath)
@@ -104,13 +105,13 @@ func (t Toolchain) generate(toolchain, environment *strings.Builder) error {
 }
 
 func (t Toolchain) checkAndRepair() error {
-	toolchainPath := filepath.Join(Dirs.DownloadDir, t.RunPath)
+	toolchainPath := filepath.Join(Dirs.DownloadRootDir, t.RunPath)
 	if pathExists(toolchainPath) {
 		return nil
 	}
 
 	// Download to fixed dir.
-	downloaded, err := io.Download(t.Url, Dirs.DownloadDir)
+	downloaded, err := io.Download(t.Url, Dirs.DownloadRootDir)
 	if err != nil {
 		return fmt.Errorf("%s: download toolchain failed: %w", t.Url, err)
 	}
@@ -118,11 +119,11 @@ func (t Toolchain) checkAndRepair() error {
 	// Extract archive file.
 	fileName := filepath.Base(t.Url)
 	folderName := strings.TrimSuffix(fileName, ".tar.gz")
-	extractPath := filepath.Join(Dirs.DownloadDir, folderName)
+	extractPath := filepath.Join(Dirs.DownloadRootDir, folderName)
 	if err := io.Extract(downloaded, extractPath); err != nil {
 		return fmt.Errorf("%s: extract toolchain failed: %w", downloaded, err)
 	}
 
-	fmt.Printf("[✔] -------- %s (toolchain: %s)\n\n", filepath.Base(t.Url), extractPath)
+	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- %s (toolchain: %s)\n\n", filepath.Base(t.Url), extractPath))
 	return nil
 }

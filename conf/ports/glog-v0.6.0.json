@@ -1,9 +1,6 @@
 {
-    "repo": "http://192.168.12.18:7990/scm/thdpty/glog.git",
-    "ref": "v0.6.0",
-    "dependencies": [
-        "gflags-v2.2.2"
-    ],
+    "url": "http://192.168.12.18:7990/scm/thdpty/glog.git",
+    "version": "v0.6.0",
     "build_config": {
         "build_tool": "cmake",
         "arguments": [
@@ -13,6 +10,8 @@
             "-DWITH_GTEST=OFF",
             "-DBUILD_EXAMPLES=OFF",
             "-DCMAKE_EXPORT_NO_PACKAGE_REGISTRY=ON"
+        ],
+        "dependencies": [
         ]
     }
 }
