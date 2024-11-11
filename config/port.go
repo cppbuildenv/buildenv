@@ -26,10 +26,9 @@ type Port struct {
 	buildType    string `json:"-"`
 	infoPath     string `json:"-"`
 	portDir      string `json:"-"`
-	installedDir string `json:"-"`
 }
 
-func (p *Port) Init(portPath, platformName, buildType, installedDir string) error {
+func (p *Port) Init(portPath, platformName, buildType string) error {
 	bytes, err := os.ReadFile(portPath)
 	if err != nil {
 		return err
@@ -45,7 +44,6 @@ func (p *Port) Init(portPath, platformName, buildType, installedDir string) erro
 	p.platformName = platformName
 	p.buildType = buildType
 	p.portDir = filepath.Dir(portPath)
-	p.installedDir = installedDir
 
 	// Info file: used to record installed state.
 	fileName := fmt.Sprintf("%s-%s.list", p.platformName, p.buildType)
@@ -55,7 +53,7 @@ func (p *Port) Init(portPath, platformName, buildType, installedDir string) erro
 	if p.BuildConfig != nil {
 		p.BuildConfig.SourceDir = filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, "src")
 		p.BuildConfig.BuildDir = filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, platformName+"-"+buildType)
-		p.BuildConfig.InstalledDir = installedDir
+		p.BuildConfig.InstalledDir = filepath.Join(Dirs.WorkspaceDir, "installed", platformName+"-"+buildType)
 		p.BuildConfig.JobNum = 8 // TODO: make it configurable.
 	}
 
@@ -126,7 +124,7 @@ func (p Port) checkAndRepair() error {
 		portPath := filepath.Join(p.portDir, item+".json")
 
 		var port Port
-		if err := port.Init(portPath, p.platformName, p.buildType, p.installedDir); err != nil {
+		if err := port.Init(portPath, p.platformName, p.buildType); err != nil {
 			return err
 		}
 
@@ -162,6 +160,7 @@ func (p Port) checkAndRepair() error {
 		return err
 	}
 
-	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- %s (port: %s)\n\n", p.portName, p.installedDir))
+	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.platformName+"-"+p.buildType)
+	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- %s (port: %s)\n\n", p.portName, installedDir))
 	return nil
 }

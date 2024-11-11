@@ -83,7 +83,6 @@ func (r RootFS) generate(toolchain, environment *strings.Builder) error {
 	toolchain.WriteString("\n# Set sysroot for cross-compile.\n")
 	toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSROOT \"%s\")\n", absRootFSPath))
 	toolchain.WriteString("list(APPEND CMAKE_FIND_ROOT_PATH \"${CMAKE_SYSROOT}\")\n")
-	toolchain.WriteString("list(APPEND CMAKE_PREFIX_PATH \"${CMAKE_SYSROOT}\")\n")
 
 	// Search programs in the host environment.
 	toolchain.WriteString("\n# Search programs in the host environment.\n")

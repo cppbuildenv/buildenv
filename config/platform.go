@@ -22,7 +22,6 @@ type Platform struct {
 
 	// Internal fields.
 	platformName string `json:"-"`
-	installedDir string `json:"-"`
 }
 
 func (p *Platform) Init(platformPath, installedDir string) error {
@@ -42,7 +41,6 @@ func (p *Platform) Init(platformPath, installedDir string) error {
 
 	// Set values of internal fields.
 	p.platformName = strings.TrimSuffix(filepath.Base(platformPath), ".json")
-	p.installedDir = installedDir
 	return nil
 }
 
@@ -112,7 +110,7 @@ func (p Platform) Verify(args VerifyArgs) error {
 	for _, item := range p.Dependencies {
 		portPath := filepath.Join(Dirs.PortDir, item+".json")
 		var port Port
-		if err := port.Init(portPath, p.platformName, args.BuildType, p.installedDir); err != nil {
+		if err := port.Init(portPath, p.platformName, args.BuildType); err != nil {
 			return fmt.Errorf("buildenv.dependencies[%s] read error: %w", item, err)
 		}
 
@@ -167,6 +165,10 @@ func (p Platform) CreateToolchainFile(scriptDir string) (string, error) {
 	if err := p.writeTools(&toolchain, &environment); err != nil {
 		return "", err
 	}
+
+	toolchain.WriteString("\n# Append `installed dir` into CMAKE_PREFIX_PATH.\n")
+	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.platformName+"-${CMAKE_BUILD_TYPE}")
+	toolchain.WriteString(fmt.Sprintf("list(APPEND CMAKE_PREFIX_PATH \"%s\")\n", installedDir))
 
 	// Create the output directory if it doesn't exist.
 	if err := os.MkdirAll(scriptDir, os.ModeDir|os.ModePerm); err != nil {
