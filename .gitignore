@@ -1,11 +1,10 @@
-build
+/build
 buildenv
 temp
-buildtrees
-downloads
-installed
-script
+/buildtrees
+/downloads
+/installed
+/script
 *.exe
-cmake/buildenv.cmake
 **/testdata/buildtrees/
 **/testdata/installed/
