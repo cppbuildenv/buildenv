@@ -11,7 +11,7 @@ import (
 
 type RootFS struct {
 	Url     string    `json:"url"`
-	RunPath string    `json:"run_path"`
+	Path    string    `json:"path"`
 	EnvVars RootFSEnv `json:"env_vars"`
 }
 
@@ -26,8 +26,8 @@ func (r RootFS) Verify(args VerifyArgs) error {
 		return fmt.Errorf("rootfs.url is empty")
 	}
 
-	if r.RunPath == "" {
-		return fmt.Errorf("rootfs.run_path is empty")
+	if r.Path == "" {
+		return fmt.Errorf("rootfs.path is empty")
 	}
 
 	if r.EnvVars.SYSROOT == "" {
@@ -50,7 +50,7 @@ func (r RootFS) Verify(args VerifyArgs) error {
 }
 
 func (b RootFS) checkAndRepair() error {
-	rootfsPath := filepath.Join(Dirs.DownloadRootDir, b.RunPath)
+	rootfsPath := filepath.Join(Dirs.DownloadRootDir, b.Path)
 	if pathExists(rootfsPath) {
 		return nil
 	}
@@ -74,7 +74,7 @@ func (b RootFS) checkAndRepair() error {
 }
 
 func (r RootFS) generate(toolchain, environment *strings.Builder) error {
-	rootfsPath := filepath.Join(Dirs.DownloadRootDir, r.RunPath)
+	rootfsPath := filepath.Join(Dirs.DownloadRootDir, r.Path)
 	absRootFSPath, err := filepath.Abs(rootfsPath)
 	if err != nil {
 		panic(fmt.Sprintf("cannot get absolute path: %s", rootfsPath))

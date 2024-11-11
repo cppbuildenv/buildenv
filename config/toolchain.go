@@ -11,7 +11,7 @@ import (
 
 type Toolchain struct {
 	Url             string          `json:"url"`
-	RunPath         string          `json:"run_path"`
+	Path            string          `json:"path"`
 	SystemName      string          `json:"system_name"`
 	SystemProcessor string          `json:"system_processor"`
 	EnvVars         ToolchainEnvVar `json:"env_vars"`
@@ -34,8 +34,8 @@ func (t Toolchain) Verify(args VerifyArgs) error {
 		return fmt.Errorf("toolchain.url is empty")
 	}
 
-	if t.RunPath == "" {
-		return fmt.Errorf("toolchain.run_path is empty")
+	if t.Path == "" {
+		return fmt.Errorf("toolchain.path is empty")
 	}
 
 	if t.SystemName == "" {
@@ -63,7 +63,7 @@ func (t Toolchain) Verify(args VerifyArgs) error {
 
 func (t Toolchain) generate(toolchain, environment *strings.Builder) error {
 	toolchain.WriteString("\n# Set toolchain for cross-compile.\n")
-	toolchainPath := filepath.Join(Dirs.DownloadRootDir, t.RunPath)
+	toolchainPath := filepath.Join(Dirs.DownloadRootDir, t.Path)
 	absToolchainPath, err := filepath.Abs(toolchainPath)
 	if err != nil {
 		return fmt.Errorf("cannot get absolute path of toolchain path: %s", toolchainPath)
@@ -105,7 +105,7 @@ func (t Toolchain) generate(toolchain, environment *strings.Builder) error {
 }
 
 func (t Toolchain) checkAndRepair() error {
-	toolchainPath := filepath.Join(Dirs.DownloadRootDir, t.RunPath)
+	toolchainPath := filepath.Join(Dirs.DownloadRootDir, t.Path)
 	if pathExists(toolchainPath) {
 		return nil
 	}

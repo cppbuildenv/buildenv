@@ -15,10 +15,10 @@ type PlatformCallbacks interface {
 }
 
 type Platform struct {
-	RootFS       *RootFS    `json:"rootfs"`
-	Toolchain    *Toolchain `json:"toolchain"`
-	Tools        []string   `json:"tools"`
-	Dependencies []string   `json:"dependencies"`
+	RootFS    *RootFS    `json:"rootfs"`
+	Toolchain *Toolchain `json:"toolchain"`
+	Tools     []string   `json:"tools"`
+	Packages  []string   `json:"packages"`
 
 	// Internal fields.
 	platformName string `json:"-"`
@@ -55,8 +55,8 @@ func (p Platform) Write(platformPath string) error {
 	if len(p.Tools) == 0 {
 		p.Tools = []string{}
 	}
-	if len(p.Dependencies) == 0 {
-		p.Dependencies = []string{}
+	if len(p.Packages) == 0 {
+		p.Packages = []string{}
 	}
 
 	bytes, err := json.MarshalIndent(p, "", "    ")
@@ -107,15 +107,15 @@ func (p Platform) Verify(args VerifyArgs) error {
 	}
 
 	// Verify dependencies.
-	for _, item := range p.Dependencies {
+	for _, item := range p.Packages {
 		portPath := filepath.Join(Dirs.PortDir, item+".json")
 		var port Port
 		if err := port.Init(portPath, p.platformName, args.BuildType); err != nil {
-			return fmt.Errorf("buildenv.dependencies[%s] read error: %w", item, err)
+			return fmt.Errorf("buildenv.packages[%s] read error: %w", item, err)
 		}
 
 		if err := port.Verify(args); err != nil {
-			return fmt.Errorf("buildenv.dependencies[%s] verify error: %w", item, err)
+			return fmt.Errorf("buildenv.packages[%s] verify error: %w", item, err)
 		}
 	}
 
@@ -196,8 +196,8 @@ func (p Platform) CreateToolchainFile(scriptDir string) (string, error) {
 }
 
 func (b *Platform) writeTools(toolchain, environment *strings.Builder) error {
-	toolchain.WriteString("\n# Append `run_path` of tools into $PATH.\n")
-	environment.WriteString("\n# Append `run_path` of tools into $PATH.\n")
+	toolchain.WriteString("\n# Append `path` of tools into $PATH.\n")
+	environment.WriteString("\n# Append `path` of tools into $PATH.\n")
 
 	for _, item := range b.Tools {
 		toolPath := filepath.Join(Dirs.ToolDir, item+".json")
@@ -206,7 +206,7 @@ func (b *Platform) writeTools(toolchain, environment *strings.Builder) error {
 			return fmt.Errorf("cannot read tool: %s", toolPath)
 		}
 
-		absToolPath, err := filepath.Abs(tool.RunPath)
+		absToolPath, err := filepath.Abs(tool.Path)
 		if err != nil {
 			return fmt.Errorf("cannot get absolute path of tool path: %s", toolPath)
 		}

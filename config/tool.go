@@ -11,9 +11,9 @@ import (
 )
 
 type Tool struct {
-	Url     string `json:"url"`
-	RunPath string `json:"run_path"`
-	Md5     string `json:"md5"`
+	Url  string `json:"url"`
+	Path string `json:"path"`
+	Md5  string `json:"md5"`
 
 	// Internal fields.
 	toolName string `json:"-"`
@@ -44,7 +44,7 @@ func (t *Tool) Verify(args VerifyArgs) error {
 		return fmt.Errorf("url of %s is empty", t.toolName)
 	}
 
-	if t.RunPath == "" {
+	if t.Path == "" {
 		return fmt.Errorf("path of %s is empty", t.toolName)
 	}
 
@@ -56,7 +56,7 @@ func (t *Tool) Verify(args VerifyArgs) error {
 }
 
 func (t Tool) checkAndRepair() error {
-	toolPath := filepath.Join(Dirs.DownloadRootDir, t.RunPath)
+	toolPath := filepath.Join(Dirs.DownloadRootDir, t.Path)
 	if pathExists(toolPath) {
 		return nil
 	}

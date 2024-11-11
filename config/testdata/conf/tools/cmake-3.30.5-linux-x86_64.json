@@ -1,6 +1,6 @@
 {
     "url": "http://192.168.100.25:8083/repository/build_resource/package/tools/cmake/cmake-3.30.5-linux-x86_64.tar.gz",
     "extract_path": "tools",
-    "run_path": "tools/cmake-3.30.5-linux-x86_64/bin",
+    "path": "tools/cmake-3.30.5-linux-x86_64/bin",
     "md5": ""
 }
