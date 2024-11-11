@@ -2,18 +2,15 @@
 
 #### 介绍
 
-C/C++一直缺少一个官方的包管理，虽然比较流行的有conan和vcpkg，但使用起来都不如java都maven、gradle、go的module、rust的cargo等那么方便，主要原因是conan严重依赖python脚本，而且及不容易上手，vcpkg上手倒是比较容易，但是国内的网络环境下vcpkg几乎是无法正常使用的。  
-其实，不管是conan还是vcpkg，都缺失了对交叉编译环境的管理支持，对于多平台的交叉编译环境管理，依然没有现成的解决方案。
-
-#### 软件架构
-软件架构说明
-
+&emsp;&emsp;这是一个用Go语言实现的C/C++的包管理器，依托于CMake，作为对CMake的一个补充，主要解决CMake在多平台交叉编译环境下的包管理问题。
+&emsp;&emsp;向来CMake提供了包寻找包的能力，但是如何提供一个统一的包管理工具，让用户可以方便的管理自己的包，是一个比较大的问题。  
+&emsp;&emsp;无需掌握额外的脚本语言，只要懂JSON就可以轻松的管理自己的包。
+&emsp;&emsp;C/C++一直缺少一个官方的包管理，虽然比较流行的第三方包管理有conan和vcpkg，为什么还要搞一个新的呢？主要原因是conan严重依赖python脚本，而且及不容易上手，vcpkg上手倒是比较容易，但是国内的网络环境下vcpkg几乎是无法正常使用的。  
+&emsp;&emsp;其实，不管是conan还是vcpkg，都缺失了对交叉编译环境的管理支持，对于多平台的交叉编译环境管理，往往需要自己手动放置toolchain和rootfs到本地目录，然后再手动写一个toolchain.cmake, 然后将toolchain和root路径配置到toolchain.cmake里，这个过程对于维护多个平台的工程项目来说比较繁琐，还容易出错。又或者把多个平台的toolchain、rootfs等全部提交到一个代码仓库并提供写死路径的toolchain.cmake, 时间久了仓库十分臃肿。
 
 #### 安装教程
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+下载`golang sdk`，然后直接`go build`，即可编译成功。
 
 #### 使用说明
 
@@ -27,13 +24,3 @@ C/C++一直缺少一个官方的包管理，虽然比较流行的有conan和vcpk
 2.  新建 Feat_xxx 分支
 3.  提交代码
 4.  新建 Pull Request
-
-
-#### 特技
-
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)

@@ -11,5 +11,5 @@ type silentCmd struct {
 }
 
 func (s *silentCmd) register() {
-	flag.BoolVar(&s.silent, "silent", false, "run silent mode")
+	flag.BoolVar(&s.silent, "silent", false, "run in silent mode")
 }
