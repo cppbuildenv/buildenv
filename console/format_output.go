@@ -15,7 +15,11 @@ func PlatformSelected(platform string) string {
 }
 
 func PlatformSelectedFailed(platform string, err error) string {
-	return color.Sprintf(color.Red, "[✘] ======== %s is invalid: %s.\n", platform, err)
+	if platform == "" {
+		return color.Sprintf(color.Red, "[✘] ======== %s.\n", err)
+	} else {
+		return color.Sprintf(color.Red, "[✘] ======== %s is invalid: %s.\n", platform, err)
+	}
 }
 
 func InstallSuccess() string {
