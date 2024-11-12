@@ -114,7 +114,7 @@ func (r RootFS) generate(toolchain, environment *strings.Builder) error {
 	environment.WriteString(fmt.Sprintf("export SYSROOT=%s\n", absRootFSPath))
 	environment.WriteString("export PATH=${SYSROOT}:${PATH}\n")
 	environment.WriteString("export PKG_CONFIG_SYSROOT_DIR=${SYSROOT}\n")
-	environment.WriteString(fmt.Sprintf("export PKG_CONFIG_PATH=%s\n\n", strings.Join(r.EnvVars.PKG_CONFIG_PATH, ":")))
+	environment.WriteString(fmt.Sprintf("export PKG_CONFIG_PATH=%s\n", strings.Join(r.EnvVars.PKG_CONFIG_PATH, ":")))
 
 	// Make sure the toolchain is in the PATH of current process.
 	os.Setenv("SYSROOT", absRootFSPath)

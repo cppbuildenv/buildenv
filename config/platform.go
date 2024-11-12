@@ -147,16 +147,16 @@ func (p Platform) CreateToolchainFile(scriptDir string) (string, error) {
 		toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSTEM_PROCESSOR \"%s\")\n", p.Toolchain.SystemProcessor))
 	}
 
-	// Set sysroot for cross-compile.
-	if p.RootFS != nil {
-		if err := p.RootFS.generate(&toolchain, &environment); err != nil {
+	// Set toolchain for cross-compile.
+	if p.Toolchain != nil {
+		if err := p.Toolchain.generate(&toolchain, &environment); err != nil {
 			return "", err
 		}
 	}
 
-	// Set toolchain for cross-compile.
-	if p.Toolchain != nil {
-		if err := p.Toolchain.generate(&toolchain, &environment); err != nil {
+	// Set sysroot for cross-compile.
+	if p.RootFS != nil {
+		if err := p.RootFS.generate(&toolchain, &environment); err != nil {
 			return "", err
 		}
 	}
@@ -166,8 +166,9 @@ func (p Platform) CreateToolchainFile(scriptDir string) (string, error) {
 		return "", err
 	}
 
-	toolchain.WriteString("\n# Append `installed dir` into CMAKE_PREFIX_PATH.\n")
+	toolchain.WriteString("\n# Add `installed dir` into library search paths.\n")
 	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.platformName+"-${CMAKE_BUILD_TYPE}")
+	toolchain.WriteString(fmt.Sprintf("list(APPEND CMAKE_FIND_ROOT_PATH \"%s\")\n", installedDir))
 	toolchain.WriteString(fmt.Sprintf("list(APPEND CMAKE_PREFIX_PATH \"%s\")\n", installedDir))
 
 	// Create the output directory if it doesn't exist.
