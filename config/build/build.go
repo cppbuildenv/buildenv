@@ -25,8 +25,16 @@ type BuildConfig struct {
 	// Internal fields
 	SourceDir    string `json:"-"`
 	BuildDir     string `json:"-"`
-	JobNum       int    `json:"-"`
 	InstalledDir string `json:"-"`
+	JobNum       int    `json:"-"`
+}
+
+func (b BuildConfig) Verify() error {
+	if b.BuildTool == "" {
+		return fmt.Errorf("build_tool is empty")
+	}
+
+	return nil
 }
 
 func (b BuildConfig) Clone(repo, ref string) error {

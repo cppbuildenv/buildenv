@@ -128,7 +128,7 @@ func extractTarGz(tarGzFile string, destDir string) error {
 			}
 
 		default:
-			fmt.Printf("Unknown file type: %c\n", header.Typeflag)
+			fmt.Printf("unknown file type: %c\n", header.Typeflag)
 		}
 
 		// Update progress.

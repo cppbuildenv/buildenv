@@ -38,9 +38,11 @@ func (p *Port) Init(portPath, platformName, buildType string) error {
 		return err
 	}
 
-	portName := strings.TrimSuffix(filepath.Base(p.Url), ".git") + "-" + p.Version
+	portName := strings.TrimSuffix(filepath.Base(p.Url), ".git")
+	portName = strings.TrimSuffix(portName, ".tar.gz")
+	portName = strings.TrimSuffix(portName, ".tar.xz")
 
-	p.portName = portName
+	p.portName = portName + "-" + p.Version
 	p.platformName = platformName
 	p.buildType = buildType
 	p.portDir = filepath.Dir(portPath)
@@ -49,12 +51,15 @@ func (p *Port) Init(portPath, platformName, buildType string) error {
 	fileName := fmt.Sprintf("%s-%s.list", p.platformName, p.buildType)
 	p.infoPath = filepath.Join(Dirs.InstalledRootDir, "buildenv", fileName)
 
-	// Set default build dir and installed dir and also can be changed during units tests.
 	if p.BuildConfig != nil {
 		p.BuildConfig.SourceDir = filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, "src")
 		p.BuildConfig.BuildDir = filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, platformName+"-"+buildType)
 		p.BuildConfig.InstalledDir = filepath.Join(Dirs.WorkspaceDir, "installed", platformName+"-"+buildType)
 		p.BuildConfig.JobNum = 8 // TODO: make it configurable.
+	} else {
+		p.DeployConfig = &deploy.DeployConfig{}
+		p.DeployConfig.InstalledDir = filepath.Join(Dirs.WorkspaceDir, "installed", platformName+"-"+buildType)
+		p.DeployConfig.DownloadDir = filepath.Join(Dirs.WorkspaceDir, "downloads")
 	}
 
 	return nil
@@ -69,8 +74,10 @@ func (p *Port) Verify(args VerifyArgs) error {
 		return fmt.Errorf("port.version is empty")
 	}
 
-	if p.BuildConfig.BuildTool == "" {
-		return fmt.Errorf("port.build_tool is empty")
+	if p.BuildConfig != nil {
+		if err := p.BuildConfig.Verify(); err != nil {
+			return err
+		}
 	}
 
 	if !args.CheckAndRepair {
@@ -115,32 +122,32 @@ func (p Port) checkAndRepair() error {
 		return nil
 	}
 
-	// Check and repair dependencies.
-	for _, item := range p.BuildConfig.Depedencies {
-		if item == p.portName {
-			return fmt.Errorf("port.dependencies contains circular dependency: %s", item)
-		}
-
-		portPath := filepath.Join(p.portDir, item+".json")
-
-		var port Port
-		if err := port.Init(portPath, p.platformName, p.buildType); err != nil {
-			return err
-		}
-
-		if err := port.checkAndRepair(); err != nil {
-			return err
-		}
-	}
-
 	if p.BuildConfig != nil {
+		// Check and repair dependencies.
+		for _, item := range p.BuildConfig.Depedencies {
+			if item == p.portName {
+				return fmt.Errorf("port.dependencies contains circular dependency: %s", item)
+			}
+
+			portPath := filepath.Join(p.portDir, item+".json")
+
+			var port Port
+			if err := port.Init(portPath, p.platformName, p.buildType); err != nil {
+				return err
+			}
+
+			if err := port.checkAndRepair(); err != nil {
+				return err
+			}
+		}
+
 		if err := p.BuildConfig.CheckAndRepair(p.Url, p.Version, p.buildType); err != nil {
 			return err
 		}
-	} else if p.DeployConfig != nil {
-		// TODO: implement deploy.
 	} else {
-		return fmt.Errorf("port.build_config and port.deploy_config are both empty")
+		if err := p.DeployConfig.CheckAndRepair(p.Url); err != nil {
+			return err
+		}
 	}
 
 	// Mkdir if not exists.

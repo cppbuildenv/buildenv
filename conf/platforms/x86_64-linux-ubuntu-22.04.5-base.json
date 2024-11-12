@@ -1,0 +1,29 @@
+{
+    "rootfs": {
+        "url": "http://192.168.100.25:8083/repository/build_resource/rootfs/ubuntu-base-22.04.5-base-amd64.tar.gz",
+        "path": "ubuntu-base-22.04.5-base-amd64",
+        "env_vars": {
+            "SYSROOT": "ubuntu-base-22.04.5-base-amd64",
+            "PKG_CONFIG_SYSROOT_DIR": "ubuntu-base-22.04.5-base-amd64",
+            "PKG_CONFIG_PATH": [
+                "ubuntu-base-22.04.5-base-amd64/usr/lib/x86_64-linux-gnu/pkgconfig"
+            ]
+        }
+    },
+    "toolchain": {
+        "url": "http://192.168.100.25:8083/repository/build_resource/toolchain/x86_64/gcc-11.5.0.tar.gz",
+        "path": "gcc-11.5.0/bin",
+        "system_name": "Linux",
+        "system_processor": "x86_64",
+        "env_vars": {
+            "CC": "x86_64-linux-gnu-gcc",
+            "CXX": "x86_64-linux-gnu-g++"
+        }
+    },
+    "tools": [
+        "cmake-3.30.5-linux-x86_64"
+    ],
+    "packages": [
+        "qt5-v5.15-x86_64-linux"
+    ]
+}
