@@ -34,7 +34,7 @@ func (p platformCallbacks) OnSelectPlatform(platformName string) error {
 
 	var platform config.Platform
 	platformPath := filepath.Join(config.Dirs.PlatformDir, platformName+".json")
-	if err := platform.Init(platformPath, buildenv.InstalledDir); err != nil {
+	if err := platform.Init(platformPath); err != nil {
 		return err
 	}
 

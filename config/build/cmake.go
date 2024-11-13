@@ -40,14 +40,14 @@ func (c cmake) Configure(buildType string) error {
 
 	// Assemble args into a string.
 	joinedArgs := strings.Join(c.Arguments, " ")
-	command := fmt.Sprintf("cmake -S %s -B %s %s", c.SourceDir, c.BuildDir, joinedArgs)
+	configure := fmt.Sprintf("cmake -S %s -B %s %s", c.SourceDir, c.BuildDir, joinedArgs)
 
 	// Print process log.
-	fmt.Printf("\n[BuildEnv]: %s\n", command)
+	fmt.Printf("\n[BuildEnv]: %s\n", configure)
 
 	// Execute configure.
 	configureLogPath := filepath.Join(filepath.Dir(c.BuildDir), filepath.Base(c.BuildDir)+"-configure.log")
-	if err := c.execute(command, configureLogPath); err != nil {
+	if err := c.execute(configure, configureLogPath); err != nil {
 		return err
 	}
 

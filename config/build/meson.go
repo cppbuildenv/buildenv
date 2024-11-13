@@ -1,7 +1,7 @@
 package build
 
-func NewMeson(config BuildConfig) *cmake {
-	return &cmake{BuildConfig: config}
+func NewMeson(config BuildConfig) *meson {
+	return &meson{BuildConfig: config}
 }
 
 type meson struct {

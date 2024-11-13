@@ -1,7 +1,7 @@
 package build
 
-func NewNinja(config BuildConfig) *cmake {
-	return &cmake{BuildConfig: config}
+func NewNinja(config BuildConfig) *meson {
+	return &meson{BuildConfig: config}
 }
 
 type ninja struct {

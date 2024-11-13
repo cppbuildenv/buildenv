@@ -6,8 +6,7 @@ func TestCreateToolchainFile(t *testing.T) {
 	var buildenv Platform
 
 	platformPath := "testdata/conf/platforms/aarch64-linux-test.json"
-	installedDir := "testdata/installed"
-	if err := buildenv.Init(platformPath, installedDir); err != nil {
+	if err := buildenv.Init(platformPath); err != nil {
 		t.Fatal(err)
 	}
 

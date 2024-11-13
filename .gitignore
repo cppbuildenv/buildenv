@@ -1,5 +1,7 @@
 /build
+/conf
 buildenv
+buildenv.json
 temp
 /buildtrees
 /downloads

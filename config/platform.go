@@ -24,7 +24,7 @@ type Platform struct {
 	platformName string `json:"-"`
 }
 
-func (p *Platform) Init(platformPath, installedDir string) error {
+func (p *Platform) Init(platformPath string) error {
 	// Check if platform file exists.
 	if !pathExists(platformPath) {
 		return fmt.Errorf("platform file not exists: %s", platformPath)
@@ -219,13 +219,4 @@ func (b *Platform) writeTools(toolchain, environment *strings.Builder) error {
 		os.Setenv("PATH", fmt.Sprintf("%s%c%s", absToolPath, os.PathListSeparator, os.Getenv("PATH")))
 	}
 	return nil
-}
-
-func pathExists(path string) bool {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true
-	}
-
-	return !os.IsNotExist(err)
 }

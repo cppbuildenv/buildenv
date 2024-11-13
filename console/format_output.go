@@ -2,6 +2,18 @@ package console
 
 import "buildenv/pkg/color"
 
+func SyncSuccess(repoUrlInside bool) string {
+	if repoUrlInside {
+		return color.Sprintf(color.Blue, "[✔] ======== conf repo is synchronized.\n")
+	} else {
+		return color.Sprintf(color.Blue, "[✔] ======== buildenv.json is created but no repo_url inside.\n")
+	}
+}
+
+func SyncFailed(err error) string {
+	return color.Sprintf(color.Red, "[✘] ======== buildenv.json is invalid: %s.\n", err)
+}
+
 func PlatformCreated(platform string) string {
 	return color.Sprintf(color.Blue, "[✔] ======== %s is created but still need to config it later.\n", platform)
 }

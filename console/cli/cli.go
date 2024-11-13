@@ -3,6 +3,7 @@ package cli
 import (
 	"buildenv/console"
 	"flag"
+	"os"
 	"runtime"
 )
 
@@ -20,6 +21,7 @@ var (
 	buildType      = newBuildTypeCmd()
 	ui             = newUICmd(console.PlatformCallbacks)
 	version        = newVersionCmd()
+	sync           = newSyncCmd()
 	createPlatform = newCreatePlatformCmd()
 	selectPlatform = newSelectPlatformCmd(console.PlatformCallbacks)
 	verify         = newVerifyCmd()
@@ -29,6 +31,7 @@ var commands = []reisterable{
 	buildType,
 	ui,
 	version,
+	sync,
 	createPlatform,
 	selectPlatform,
 	verify,
@@ -58,4 +61,13 @@ func Listen() bool {
 	}
 
 	return false
+}
+
+func pathExists(path string) bool {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true
+	}
+
+	return !os.IsNotExist(err)
 }

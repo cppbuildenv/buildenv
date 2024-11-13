@@ -1,7 +1,7 @@
 package build
 
-func NewAutoTool(config BuildConfig) *cmake {
-	return &cmake{BuildConfig: config}
+func NewAutoTool(config BuildConfig) *autoTool {
+	return &autoTool{BuildConfig: config}
 }
 
 type autoTool struct {
