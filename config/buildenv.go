@@ -74,14 +74,24 @@ func (b BuildEnv) SyncRepo(repo, ref string) error {
 
 	var commands []string
 
-	sourceDir := filepath.Join(Dirs.WorkspaceDir, "conf")
+	// Clone or git checkout repo.
+	confDir := filepath.Join(Dirs.WorkspaceDir, "conf")
+	if pathExists(confDir) {
+		if pathExists(filepath.Join(confDir, ".git")) { // clean up and checkout to ref.
+			// cd [conf] to git checkout repo.
+			if err := os.Chdir(confDir); err != nil {
+				return err
+			}
 
-	// Clone repo or sync repo.
-	if pathExists(sourceDir) {
-		commands = append(commands, fmt.Sprintf("git -C %s fetch", sourceDir))
-		commands = append(commands, fmt.Sprintf("git -C %s checkout %s", sourceDir, ref))
+			commands = append(commands, "git reset --hard && git clean -xfd")
+			commands = append(commands, fmt.Sprintf("git -C %s fetch", confDir))
+			commands = append(commands, fmt.Sprintf("git -C %s checkout %s", confDir, ref))
+		} else { // clean up and clone.
+			commands = append(commands, fmt.Sprintf("rm -rf %s", confDir))
+			commands = append(commands, fmt.Sprintf("git clone --branch %s --single-branch %s %s", ref, repo, confDir))
+		}
 	} else {
-		commands = append(commands, fmt.Sprintf("git clone --branch %s --single-branch %s %s", ref, repo, sourceDir))
+		commands = append(commands, fmt.Sprintf("git clone --branch %s --single-branch %s %s", ref, repo, confDir))
 	}
 
 	// Execute clone command.
