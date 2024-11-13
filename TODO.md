@@ -21,3 +21,5 @@
 - go内部拼装PATH环境路径，估计是有问题的，可能不该这么用
 - 支持 buildenv -upgrade 升级
 - toolchain里定义CC和CXX时候后面拼上 "--sysroot=xxx"
+- 运行tools需要将内部lib路径加入到LD_LIBRARY_PATH
+- 三方库如果编译后产生pkg-config文件，需要加入系统变量（ffmpeg在通过pkg-config寻找libx265）

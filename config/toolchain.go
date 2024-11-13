@@ -4,7 +4,6 @@ import (
 	"buildenv/pkg/color"
 	"buildenv/pkg/io"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 )
@@ -78,18 +77,12 @@ func (t Toolchain) generate(toolchain, environment *strings.Builder) error {
 
 			// Set environment variables for makefile project.
 			environment.WriteString(fmt.Sprintf("export %s=%s\n", env, value))
-
-			// Make sure the tool is in the PATH of current process.
-			os.Setenv(strings.TrimSpace(env), value)
 		}
 	}
 
 	environment.WriteString("# Set toolchain for cross compile.\n")
 	environment.WriteString(fmt.Sprintf("export TOOLCHAIN_PATH=%s\n", absToolchainPath))
 	environment.WriteString("export PATH=${TOOLCHAIN_PATH}:${PATH}\n\n")
-
-	// Make sure the toolchain is in the PATH of current process.
-	os.Setenv("PATH", fmt.Sprintf("%s%c%s", absToolchainPath, os.PathListSeparator, os.Getenv("PATH")))
 
 	writeIfNotEmpty("CMAKE_C_COMPILER 		", "CC", t.EnvVars.CC)
 	writeIfNotEmpty("CMAKE_CXX_COMPILER		", "CXX", t.EnvVars.CXX)

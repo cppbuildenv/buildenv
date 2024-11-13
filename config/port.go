@@ -17,6 +17,7 @@ type BuildTool int
 type Port struct {
 	Url          string               `json:"url"`
 	Version      string               `json:"version"`
+	SourceDir    string               `json:"source_dir,omitempty"`
 	BuildConfig  *build.BuildConfig   `json:"build_config"`
 	DeployConfig *deploy.DeployConfig `json:"deploy_config"`
 
@@ -52,7 +53,7 @@ func (p *Port) Init(portPath, platformName, buildType string) error {
 	p.infoPath = filepath.Join(Dirs.InstalledRootDir, "buildenv", fileName)
 
 	if p.BuildConfig != nil {
-		p.BuildConfig.SourceDir = filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, "src")
+		p.BuildConfig.SourceDir = filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, "src", p.SourceDir)
 		p.BuildConfig.BuildDir = filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, platformName+"-"+buildType)
 		p.BuildConfig.InstalledDir = filepath.Join(Dirs.WorkspaceDir, "installed", platformName+"-"+buildType)
 		p.BuildConfig.JobNum = 8 // TODO: make it configurable.

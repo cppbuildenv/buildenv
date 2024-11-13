@@ -48,6 +48,9 @@ func (t *Tool) Verify(args VerifyArgs) error {
 		return fmt.Errorf("path of %s is empty", t.toolName)
 	}
 
+	// Append tool path to PATH.
+	os.Setenv("PATH", fmt.Sprintf("%s:%s", t.Path, os.Getenv("PATH")))
+
 	if !args.CheckAndRepair {
 		return nil
 	}

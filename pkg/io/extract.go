@@ -96,7 +96,7 @@ func extractTarGz(tarGzFile string, destDir string) error {
 		// Determine the file path:
 		// If the first layer directory exists and matches the tar.gz file name, remove it from the path.
 		var target string
-		if firstLayerDir != "" && strings.HasPrefix(header.Name, firstLayerDir+"/") {
+		if firstLayerDir != "" && strings.HasPrefix(fileName, firstLayerDir) {
 			target = filepath.Join(destDir, strings.TrimPrefix(header.Name, firstLayerDir+"/"))
 		} else {
 			target = filepath.Join(destDir, header.Name)
