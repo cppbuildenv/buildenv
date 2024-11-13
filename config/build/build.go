@@ -80,7 +80,7 @@ func (b BuildConfig) execute(command, logPath string) error {
 	}
 	defer logFile.Close()
 
-	outWriter := color.NewWriter(os.Stdout, color.Blue)
+	outWriter := color.NewWriter(os.Stdout, color.Green)
 	cmd.Stdout = io.MultiWriter(outWriter, logFile)
 
 	errWriter := color.NewWriter(os.Stdout, color.Red)
