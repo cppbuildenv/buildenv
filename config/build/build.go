@@ -44,6 +44,11 @@ func (b BuildConfig) Clone(repo, ref string) error {
 
 	// Clone repo or sync repo.
 	if pkgio.PathExists(b.SourceDir) {
+		// Change to source dir to execute git command.
+		if err := os.Chdir(b.SourceDir); err != nil {
+			return err
+		}
+
 		commands = append(commands, "git reset --hard && git clean -xfd")
 		commands = append(commands, fmt.Sprintf("git -C %s fetch", b.SourceDir))
 		commands = append(commands, fmt.Sprintf("git -C %s checkout %s", b.SourceDir, ref))
