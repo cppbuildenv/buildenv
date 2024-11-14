@@ -106,7 +106,7 @@ func (p Platform) Verify(args VerifyArgs) error {
 		}
 	}
 
-	// Append PKG_CONFIG_PATH for install dir.
+	// Append $PKG_CONFIG_PATH with pkgconfig path that in installed dir.
 	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.platformName+"-"+args.BuildType)
 	os.Setenv("PKG_CONFIG_PATH", fmt.Sprintf("%s/lib/pkgconfig:%s", installedDir, os.Getenv("PKG_CONFIG_PATH")))
 
@@ -220,7 +220,7 @@ func (b *Platform) writeTools(toolchain, environment *strings.Builder) error {
 		toolchain.WriteString(fmt.Sprintf("list(APPEND ENV{PATH} \"%s\")\n", absToolPath))
 		environment.WriteString(fmt.Sprintf("export PATH=%s:$PATH\n", absToolPath))
 
-		// Make sure the tool is in the PATH of current process.
+		// Append $PATH with tool path.
 		os.Setenv("PATH", fmt.Sprintf("%s%c%s", absToolPath, os.PathListSeparator, os.Getenv("PATH")))
 	}
 	return nil

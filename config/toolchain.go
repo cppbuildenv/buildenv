@@ -54,7 +54,7 @@ func (t Toolchain) Verify(args VerifyArgs) error {
 		return fmt.Errorf("toolchain.env.CXX is empty")
 	}
 
-	// Append toolchain path to PATH.
+	// Append $PATH with toolchain path.
 	os.Setenv("PATH", fmt.Sprintf("%s:%s", t.Path, os.Getenv("PATH")))
 
 	if !args.CheckAndRepair {

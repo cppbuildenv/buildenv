@@ -42,7 +42,7 @@ func (r RootFS) Verify(args VerifyArgs) error {
 		return fmt.Errorf("rootfs.env.PKG_CONFIG_PATH is empty")
 	}
 
-	// Set PKG_CONFIG_SYSROOT_DIR in Env.
+	// Set $PKG_CONFIG_SYSROOT_DIR with rootfs path.
 	rootfsPath := filepath.Join(Dirs.DownloadRootDir, r.Path)
 	absRootFSPath, err := filepath.Abs(rootfsPath)
 	if err != nil {
@@ -127,14 +127,14 @@ func (r RootFS) generate(toolchain, environment *strings.Builder) error {
 		toolchain.WriteString(fmt.Sprintf("list(APPEND ENV{PKG_CONFIG_PATH} \"%s\")\n", absPath))
 	}
 
-	// Set environment variables for makefile project.
+	// Write variables to buildenv.sh
 	environment.WriteString("\n# Set rootfs for cross compile.\n")
 	environment.WriteString(fmt.Sprintf("export SYSROOT=%s\n", absRootFSPath))
 	environment.WriteString("export PATH=${SYSROOT}:${PATH}\n")
 	environment.WriteString("export PKG_CONFIG_SYSROOT_DIR=${SYSROOT}\n")
 	environment.WriteString(fmt.Sprintf("export PKG_CONFIG_PATH=%s:$PKG_CONFIG_PATH\n", strings.Join(r.EnvVars.PKG_CONFIG_PATH, ":")))
 
-	// Make sure the toolchain is in the PATH of current process.
+	// Set the environment variables.
 	os.Setenv("SYSROOT", absRootFSPath)
 	os.Setenv("PKG_CONFIG_SYSROOT_DIR", absRootFSPath)
 	os.Setenv("PKG_CONFIG_PATH", strings.Join(r.EnvVars.PKG_CONFIG_PATH, ":"))
