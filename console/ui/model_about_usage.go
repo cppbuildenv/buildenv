@@ -8,7 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func createUsageModel(goback func()) usageModel {
+func newUsageModel(goback func()) *usageModel {
 	toolchainPath, _ := filepath.Abs("script/buildenv.cmake")
 	environmentPath, _ := filepath.Abs("script/buildenv.sh")
 
@@ -25,7 +25,7 @@ func createUsageModel(goback func()) usageModel {
 		color.Sprintf(color.Blue, "cmake .. -DCMAKE_TOOLCHAIN_FILE=%s", toolchainPath),
 		color.Sprintf(color.Blue, "source %s", environmentPath),
 	)
-	return usageModel{content: content, goback: goback}
+	return &usageModel{content: content, goback: goback}
 }
 
 type usageModel struct {

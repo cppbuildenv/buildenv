@@ -9,7 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func createPlatformCreateModel(callbacks config.PlatformCallbacks, goback func(this *platformCreateModel)) platformCreateModel {
+func newPlatformCreateModel(callbacks config.PlatformCallbacks, goback func(this *platformCreateModel)) *platformCreateModel {
 	ti := textinput.New()
 	ti.Placeholder = "for example: x86_64-linux-ubuntu-20.04..."
 	ti.Focus()
@@ -19,7 +19,7 @@ func createPlatformCreateModel(callbacks config.PlatformCallbacks, goback func(t
 	ti.PromptStyle = styleImpl.focusedStyle
 	ti.Cursor.Style = styleImpl.focusedStyle
 
-	return platformCreateModel{
+	return &platformCreateModel{
 		textInput: ti,
 		callbacks: callbacks,
 		goback:    goback,

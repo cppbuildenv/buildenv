@@ -11,7 +11,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func createPlatformSelectModel(callbacks config.PlatformCallbacks, goback func()) platformSelectModel {
+func newPlatformSelectModel(callbacks config.PlatformCallbacks, goback func()) *platformSelectModel {
 	const defaultWidth = 80
 	const defaultHeight = 10
 
@@ -47,7 +47,7 @@ func createPlatformSelectModel(callbacks config.PlatformCallbacks, goback func()
 	l.Styles.PaginationStyle = styleImpl.paginationStyle
 	l.Styles.HelpStyle = styleImpl.helpStyle
 
-	return platformSelectModel{
+	return &platformSelectModel{
 		list:      l,
 		styles:    styleImpl,
 		callbacks: callbacks,

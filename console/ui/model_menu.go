@@ -6,23 +6,23 @@ import (
 )
 
 const (
-	menuCreatePlatform string = "Create a new platform."
-	menuChoosePlatform string = "Choose a platform as your build target."
-	menuUsage          string = "About & Usage."
+	menuChoosePlatform string = "Choose a platform as your build target platform."
+	menuCreatePlatform string = "Create a new platform, it requires completion later."
+	menuUsage          string = "About and Usage."
 )
 
 type mode = int
 
 const (
 	modeMenu mode = iota
-	modePlatformEdit
-	modePlatformList
+	modePlatformChoose
+	modePlatformCreate
 	modeAbout
 )
 
 var menus = []string{
-	menuCreatePlatform,
 	menuChoosePlatform,
+	menuCreatePlatform,
 	menuUsage,
 }
 
@@ -38,7 +38,7 @@ func createMenuModel(modeChanged func(mode mode)) menuModel {
 	styles := createStyles()
 
 	l := list.New(items, listDelegate{styles}, defaultWidth, defaultHeight)
-	l.Title = "Please choose one item from the menus..."
+	l.Title = "Please choose one from the menu..."
 
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
@@ -77,11 +77,11 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if i, ok := m.list.SelectedItem().(listItem); ok {
 				if m.modeChanged != nil {
 					switch string(i) {
-					case menuCreatePlatform:
-						m.modeChanged(modePlatformEdit)
-
 					case menuChoosePlatform:
-						m.modeChanged(modePlatformList)
+						m.modeChanged(modePlatformChoose)
+
+					case menuCreatePlatform:
+						m.modeChanged(modePlatformCreate)
 
 					case menuUsage:
 						m.modeChanged(modeAbout)

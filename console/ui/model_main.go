@@ -15,14 +15,14 @@ func CreateMainModel(callabcks config.PlatformCallbacks) MainModel {
 		menuMode: createMenuModel(func(mode mode) {
 			currentMode = mode
 		}),
-		platformCreateModel: createPlatformCreateModel(callabcks, func(this *platformCreateModel) {
+		platformCreateModel: newPlatformCreateModel(callabcks, func(this *platformCreateModel) {
 			this.Reset()
 			currentMode = modeMenu
 		}),
-		platformSelectModel: createPlatformSelectModel(callabcks, func() {
+		platformSelectModel: newPlatformSelectModel(callabcks, func() {
 			currentMode = modeMenu
 		}),
-		aboutModel: createUsageModel(func() {
+		aboutModel: newUsageModel(func() {
 			currentMode = modeMenu
 		}),
 	}
@@ -48,12 +48,12 @@ func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.menuMode = updatedModel
 			return m, cmd
 
-		case modePlatformEdit:
+		case modePlatformCreate:
 			updatedModel, cmd := m.platformCreateModel.Update(msg)
 			m.platformCreateModel = updatedModel
 			return m, cmd
 
-		case modePlatformList:
+		case modePlatformChoose:
 			updatedModel, cmd := m.platformSelectModel.Update(msg)
 			m.platformSelectModel = updatedModel
 			return m, cmd
@@ -73,10 +73,10 @@ func (m MainModel) View() string {
 	case modeMenu:
 		return m.menuMode.View()
 
-	case modePlatformEdit:
+	case modePlatformCreate:
 		return m.platformCreateModel.View()
 
-	case modePlatformList:
+	case modePlatformChoose:
 		return m.platformSelectModel.View()
 
 	case modeAbout:

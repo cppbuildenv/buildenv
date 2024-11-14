@@ -12,7 +12,7 @@ import (
 	"runtime"
 )
 
-func newSyncCmd() *syncCmd {
+func newSyncConfigCmd() *syncCmd {
 	return &syncCmd{}
 }
 

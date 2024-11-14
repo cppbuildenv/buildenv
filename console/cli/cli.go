@@ -21,7 +21,7 @@ var (
 	buildType      = newBuildTypeCmd()
 	ui             = newUICmd(console.PlatformCallbacks)
 	version        = newVersionCmd()
-	sync           = newSyncCmd()
+	sync           = newSyncConfigCmd()
 	createPlatform = newCreatePlatformCmd()
 	selectPlatform = newSelectPlatformCmd(console.PlatformCallbacks)
 	verify         = newVerifyCmd()
