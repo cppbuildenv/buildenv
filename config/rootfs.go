@@ -42,6 +42,25 @@ func (r RootFS) Verify(args VerifyArgs) error {
 		return fmt.Errorf("rootfs.env.PKG_CONFIG_PATH is empty")
 	}
 
+	// Set PKG_CONFIG_SYSROOT_DIR in Env.
+	rootfsPath := filepath.Join(Dirs.DownloadRootDir, r.Path)
+	absRootFSPath, err := filepath.Abs(rootfsPath)
+	if err != nil {
+		return fmt.Errorf("cannot get absolute path: %s", rootfsPath)
+	}
+	os.Setenv("PKG_CONFIG_SYSROOT_DIR", absRootFSPath)
+
+	// Append PKG_CONFIG_PATH with paths that defined in sysroot.
+	for _, path := range r.EnvVars.PKG_CONFIG_PATH {
+		fullPath := filepath.Join(Dirs.DownloadRootDir, path)
+		absPath, err := filepath.Abs(fullPath)
+		if err != nil {
+			return fmt.Errorf("cannot get absolute path: %s", fullPath)
+		}
+
+		os.Setenv("PKG_CONFIG_PATH", fmt.Sprintf("%s:%s", absPath, os.Getenv("PKG_CONFIG_PATH")))
+	}
+
 	if !args.CheckAndRepair {
 		return nil
 	}
@@ -77,7 +96,7 @@ func (r RootFS) generate(toolchain, environment *strings.Builder) error {
 	rootfsPath := filepath.Join(Dirs.DownloadRootDir, r.Path)
 	absRootFSPath, err := filepath.Abs(rootfsPath)
 	if err != nil {
-		panic(fmt.Sprintf("cannot get absolute path: %s", rootfsPath))
+		return fmt.Errorf("cannot get absolute path: %s", rootfsPath)
 	}
 
 	toolchain.WriteString("\n# Set sysroot for cross-compile.\n")
@@ -98,23 +117,22 @@ func (r RootFS) generate(toolchain, environment *strings.Builder) error {
 	toolchain.WriteString("set(ENV{PKG_CONFIG_SYSROOT_DIR} \"${CMAKE_SYSROOT}\")\n")
 
 	// Replace the path with the workspace directory.
-	for i, path := range r.EnvVars.PKG_CONFIG_PATH {
+	for _, path := range r.EnvVars.PKG_CONFIG_PATH {
 		fullPath := filepath.Join(Dirs.DownloadRootDir, path)
 		absPath, err := filepath.Abs(fullPath)
 		if err != nil {
 			return fmt.Errorf("cannot get absolute path: %s", fullPath)
 		}
 
-		r.EnvVars.PKG_CONFIG_PATH[i] = absPath
+		toolchain.WriteString(fmt.Sprintf("list(APPEND ENV{PKG_CONFIG_PATH} \"%s\")\n", absPath))
 	}
-	toolchain.WriteString(fmt.Sprintf("set(ENV{PKG_CONFIG_PATH} \"%s\")\n", strings.Join(r.EnvVars.PKG_CONFIG_PATH, ":")))
 
 	// Set environment variables for makefile project.
 	environment.WriteString("\n# Set rootfs for cross compile.\n")
 	environment.WriteString(fmt.Sprintf("export SYSROOT=%s\n", absRootFSPath))
 	environment.WriteString("export PATH=${SYSROOT}:${PATH}\n")
 	environment.WriteString("export PKG_CONFIG_SYSROOT_DIR=${SYSROOT}\n")
-	environment.WriteString(fmt.Sprintf("export PKG_CONFIG_PATH=%s\n", strings.Join(r.EnvVars.PKG_CONFIG_PATH, ":")))
+	environment.WriteString(fmt.Sprintf("export PKG_CONFIG_PATH=%s:$PKG_CONFIG_PATH\n", strings.Join(r.EnvVars.PKG_CONFIG_PATH, ":")))
 
 	// Make sure the toolchain is in the PATH of current process.
 	os.Setenv("SYSROOT", absRootFSPath)

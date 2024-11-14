@@ -40,7 +40,7 @@ func (c cmake) Configure(buildType string) error {
 
 	// Assemble args into a string.
 	joinedArgs := strings.Join(c.Arguments, " ")
-	configure := fmt.Sprintf("cmake -S %s -B %s %s", c.SourceDir, c.BuildDir, joinedArgs)
+	configure := fmt.Sprintf("cmake -S %s -B %s %s", filepath.Join(c.SourceDir, c.SourceFolder), c.BuildDir, joinedArgs)
 
 	// Print process log.
 	fmt.Printf("\n[BuildEnv]: %s\n", configure)

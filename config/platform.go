@@ -106,6 +106,10 @@ func (p Platform) Verify(args VerifyArgs) error {
 		}
 	}
 
+	// Append PKG_CONFIG_PATH for install dir.
+	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.platformName+"-"+args.BuildType)
+	os.Setenv("PKG_CONFIG_PATH", fmt.Sprintf("%s/lib/pkg-config:%s", installedDir, os.Getenv("PKG_CONFIG_PATH")))
+
 	// Verify dependencies.
 	for _, item := range p.Packages {
 		portPath := filepath.Join(Dirs.PortDir, item+".json")
@@ -170,6 +174,7 @@ func (p Platform) CreateToolchainFile(scriptDir string) (string, error) {
 	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.platformName+"-${CMAKE_BUILD_TYPE}")
 	toolchain.WriteString(fmt.Sprintf("list(APPEND CMAKE_FIND_ROOT_PATH \"%s\")\n", installedDir))
 	toolchain.WriteString(fmt.Sprintf("list(APPEND CMAKE_PREFIX_PATH \"%s\")\n", installedDir))
+	toolchain.WriteString(fmt.Sprintf("list(APPEND ENV{PKG_CONFIG_PATH} \"%s/lib/pkgconfig\")\n", installedDir))
 
 	// Create the output directory if it doesn't exist.
 	if err := os.MkdirAll(scriptDir, os.ModeDir|os.ModePerm); err != nil {
@@ -212,7 +217,7 @@ func (b *Platform) writeTools(toolchain, environment *strings.Builder) error {
 			return fmt.Errorf("cannot get absolute path of tool path: %s", toolPath)
 		}
 
-		toolchain.WriteString(fmt.Sprintf("set(ENV{PATH} \"%s:$ENV{PATH}\")\n", absToolPath))
+		toolchain.WriteString(fmt.Sprintf("list(APPEND ENV{PATH} \"%s\")\n", absToolPath))
 		environment.WriteString(fmt.Sprintf("export PATH=%s:$PATH\n", absToolPath))
 
 		// Make sure the tool is in the PATH of current process.

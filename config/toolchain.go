@@ -4,6 +4,7 @@ import (
 	"buildenv/pkg/color"
 	"buildenv/pkg/io"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -53,6 +54,9 @@ func (t Toolchain) Verify(args VerifyArgs) error {
 		return fmt.Errorf("toolchain.env.CXX is empty")
 	}
 
+	// Append toolchain path to PATH.
+	os.Setenv("PATH", fmt.Sprintf("%s:%s", t.Path, os.Getenv("PATH")))
+
 	if !args.CheckAndRepair {
 		return nil
 	}
@@ -68,7 +72,7 @@ func (t Toolchain) generate(toolchain, environment *strings.Builder) error {
 		return fmt.Errorf("cannot get absolute path of toolchain path: %s", toolchainPath)
 	}
 
-	toolchain.WriteString(fmt.Sprintf("set(ENV{PATH} \"%s:$ENV{PATH}\")\n", absToolchainPath))
+	toolchain.WriteString(fmt.Sprintf("list(APPEND ENV{PATH} \"%s\")\n", absToolchainPath))
 
 	writeIfNotEmpty := func(content, env, value string) {
 		if value != "" {

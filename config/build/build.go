@@ -24,6 +24,7 @@ type BuildConfig struct {
 
 	// Internal fields
 	SourceDir    string `json:"-"`
+	SourceFolder string `json:"-"` // Some thirdpartys' source code is not in the root folder, so we need to specify it.
 	BuildDir     string `json:"-"`
 	InstalledDir string `json:"-"`
 	JobNum       int    `json:"-"`
