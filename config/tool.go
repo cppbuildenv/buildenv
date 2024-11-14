@@ -49,7 +49,8 @@ func (t *Tool) Verify(args VerifyArgs) error {
 	}
 
 	// Append $PATH with tool path.
-	os.Setenv("PATH", fmt.Sprintf("%s:%s", t.Path, os.Getenv("PATH")))
+	path := filepath.Join(Dirs.DownloadRootDir, t.Path)
+	os.Setenv("PATH", fmt.Sprintf("%s:%s", path, os.Getenv("PATH")))
 
 	if !args.CheckAndRepair {
 		return nil
