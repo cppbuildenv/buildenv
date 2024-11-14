@@ -108,7 +108,7 @@ func (p Platform) Verify(args VerifyArgs) error {
 
 	// Append PKG_CONFIG_PATH for install dir.
 	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.platformName+"-"+args.BuildType)
-	os.Setenv("PKG_CONFIG_PATH", fmt.Sprintf("%s/lib/pkg-config:%s", installedDir, os.Getenv("PKG_CONFIG_PATH")))
+	os.Setenv("PKG_CONFIG_PATH", fmt.Sprintf("%s/lib/pkgconfig:%s", installedDir, os.Getenv("PKG_CONFIG_PATH")))
 
 	// Verify dependencies.
 	for _, item := range p.Packages {
