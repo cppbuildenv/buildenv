@@ -12,6 +12,7 @@ const (
 	Blue    string = "\033[34m%s\033[0m"
 	Magenta string = "\033[35m%s\033[0m"
 	Cyan    string = "\033[36m%s\033[0m"
+	Gray    string = "\033[90m%s\033[0m"
 )
 
 func NewWriter(w io.Writer, colorFmt string) *Writer {

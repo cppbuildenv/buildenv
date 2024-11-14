@@ -1,6 +1,7 @@
 package config
 
 import (
+	"buildenv/pkg/io"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -26,7 +27,7 @@ type Platform struct {
 
 func (p *Platform) Init(platformPath string) error {
 	// Check if platform file exists.
-	if !pathExists(platformPath) {
+	if !io.PathExists(platformPath) {
 		return fmt.Errorf("platform file not exists: %s", platformPath)
 	}
 
@@ -65,7 +66,7 @@ func (p Platform) Write(platformPath string) error {
 	}
 
 	// Check if conf/buildenv.json exists.
-	if pathExists(platformPath) {
+	if io.PathExists(platformPath) {
 		return fmt.Errorf("[%s] is already exists", platformPath)
 	}
 

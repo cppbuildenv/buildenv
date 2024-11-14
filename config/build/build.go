@@ -2,6 +2,7 @@ package build
 
 import (
 	"buildenv/pkg/color"
+	pkgio "buildenv/pkg/io"
 	"fmt"
 	"io"
 	"os"
@@ -42,7 +43,7 @@ func (b BuildConfig) Clone(repo, ref string) error {
 	var commands []string
 
 	// Clone repo or sync repo.
-	if pathExists(b.SourceDir) {
+	if pkgio.PathExists(b.SourceDir) {
 		commands = append(commands, fmt.Sprintf("git -C %s fetch", b.SourceDir))
 		commands = append(commands, fmt.Sprintf("git -C %s checkout %s", b.SourceDir, ref))
 	} else {
@@ -130,13 +131,4 @@ func (b BuildConfig) CheckAndRepair(url, version, buildType string) error {
 		return err
 	}
 	return nil
-}
-
-func pathExists(path string) bool {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true
-	}
-
-	return !os.IsNotExist(err)
 }

@@ -2,6 +2,7 @@ package config
 
 import (
 	"buildenv/pkg/color"
+	"buildenv/pkg/io"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -46,7 +47,7 @@ func (b *BuildEnv) Verify(args VerifyArgs) error {
 
 	// Check if platform file exists and read it.
 	platformPath := filepath.Join(Dirs.PlatformDir, b.Platform+".json")
-	if !pathExists(platformPath) {
+	if !io.PathExists(platformPath) {
 		return fmt.Errorf("platform file not exists: %s", platformPath)
 	}
 
@@ -76,8 +77,8 @@ func (b BuildEnv) SyncRepo(repo, ref string) error {
 
 	// Clone or git checkout repo.
 	confDir := filepath.Join(Dirs.WorkspaceDir, "conf")
-	if pathExists(confDir) {
-		if pathExists(filepath.Join(confDir, ".git")) { // clean up and checkout to ref.
+	if io.PathExists(confDir) {
+		if io.PathExists(filepath.Join(confDir, ".git")) { // clean up and checkout to ref.
 			// cd [conf] to git checkout repo.
 			if err := os.Chdir(confDir); err != nil {
 				return err
@@ -105,7 +106,7 @@ func (b BuildEnv) SyncRepo(repo, ref string) error {
 }
 
 func (b *BuildEnv) init(buildEnvPath string) error {
-	if !pathExists(buildEnvPath) {
+	if !io.PathExists(buildEnvPath) {
 		// Create conf directory.
 		if err := os.MkdirAll(filepath.Dir(buildEnvPath), os.ModeDir|os.ModePerm); err != nil {
 			return err

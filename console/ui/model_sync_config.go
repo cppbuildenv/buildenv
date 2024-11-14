@@ -1,35 +1,67 @@
-package cli
+package ui
 
 import (
 	"buildenv/config"
 	"buildenv/console"
+	"buildenv/pkg/color"
 	"buildenv/pkg/io"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"runtime"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
-func newSyncConfigCmd() *syncConfigCmd {
-	return &syncConfigCmd{}
-}
+func newSyncConfigModel(goback func()) *syncConfigModel {
+	content := fmt.Sprintf("\nClone or synch repo of conf.\n"+
+		"-----------------------------------\n"+
+		"%s.\n\n"+
+		"%s",
+		color.Sprintf(color.Blue, "This will create a buildenv.json if not exist, otherwise it'll checkout the latest conf repo with specified repo REF"),
+		color.Sprintf(color.Gray, "[↵ Execute | ctrl+c/q Quit]"))
 
-type syncConfigCmd struct {
-	sync bool
-}
-
-func (s *syncConfigCmd) register() {
-	flag.BoolVar(&s.sync, "sync", false, "create buildenv.json or sync conf repo")
-}
-
-func (s *syncConfigCmd) listen() (handled bool) {
-	if !s.sync {
-		return false
+	return &syncConfigModel{
+		content: content,
+		goback:  goback,
 	}
+}
 
+type syncConfigModel struct {
+	content string
+	goback  func()
+}
+
+func (s syncConfigModel) Init() tea.Cmd {
+	return nil
+}
+
+func (s syncConfigModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c", "q":
+			return s, tea.Quit
+
+		case "enter":
+			s.syncRepo()
+			return s, tea.Quit
+
+		case "esc":
+			s.goback()
+			return s, nil
+		}
+	}
+	return s, nil
+}
+
+func (s syncConfigModel) View() string {
+	return s.content
+}
+
+func (s syncConfigModel) syncRepo() {
 	// Create buildenv.json if not exist.
 	confPath := filepath.Join(config.Dirs.WorkspaceDir, "buildenv.json")
 	if !io.PathExists(confPath) {
@@ -51,7 +83,7 @@ func (s *syncConfigCmd) listen() (handled bool) {
 		}
 
 		fmt.Print(console.SyncSuccess(false))
-		return false
+		return
 	}
 
 	// Sync conf repo with repo url.
@@ -73,6 +105,4 @@ func (s *syncConfigCmd) listen() (handled bool) {
 		fmt.Print(console.SyncFailed(err))
 		os.Exit(1)
 	}
-
-	return true
 }

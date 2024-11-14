@@ -6,6 +6,7 @@ import (
 )
 
 const (
+	menuSyncConfig     string = "Init or sync config."
 	menuChoosePlatform string = "Choose a platform as your build target platform."
 	menuCreatePlatform string = "Create a new platform, it requires completion later."
 	menuUsage          string = "About and Usage."
@@ -15,12 +16,14 @@ type mode = int
 
 const (
 	modeMenu mode = iota
+	modeSyncConfig
 	modePlatformChoose
 	modePlatformCreate
 	modeAbout
 )
 
 var menus = []string{
+	menuSyncConfig,
 	menuChoosePlatform,
 	menuCreatePlatform,
 	menuUsage,
@@ -77,6 +80,9 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if i, ok := m.list.SelectedItem().(listItem); ok {
 				if m.modeChanged != nil {
 					switch string(i) {
+					case menuSyncConfig:
+						m.modeChanged(modeSyncConfig)
+
 					case menuChoosePlatform:
 						m.modeChanged(modePlatformChoose)
 

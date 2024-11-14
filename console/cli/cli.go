@@ -3,7 +3,6 @@ package cli
 import (
 	"buildenv/console"
 	"flag"
-	"os"
 	"runtime"
 )
 
@@ -17,7 +16,7 @@ type responsible interface {
 }
 
 var (
-	silent         = newSilentCmd()
+	silent         = newSilentModeCmd()
 	buildType      = newBuildTypeCmd()
 	ui             = newUICmd(console.PlatformCallbacks)
 	version        = newVersionCmd()
@@ -61,13 +60,4 @@ func Listen() bool {
 	}
 
 	return false
-}
-
-func pathExists(path string) bool {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true
-	}
-
-	return !os.IsNotExist(err)
 }

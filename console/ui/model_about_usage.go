@@ -20,10 +20,11 @@ func newUsageModel(goback func()) *usageModel {
 		"option2: %s\n\n"+
 		"2. How to use in makefile project: \n"+
 		"%s\n\n"+
-		"[press ctrl+c or q to quit]",
+		"%s",
 		color.Sprintf(color.Blue, "set(CMAKE_TOOLCHAIN_FILE \"%s\")", toolchainPath),
 		color.Sprintf(color.Blue, "cmake .. -DCMAKE_TOOLCHAIN_FILE=%s", toolchainPath),
 		color.Sprintf(color.Blue, "source %s", environmentPath),
+		color.Sprintf(color.Gray, "[press ctrl+c or q to quit]"),
 	)
 	return &usageModel{content: content, goback: goback}
 }

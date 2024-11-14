@@ -2,14 +2,14 @@ package cli
 
 import "flag"
 
-func newSilentCmd() *silentCmd {
-	return &silentCmd{}
+func newSilentModeCmd() *silentModeCmd {
+	return &silentModeCmd{}
 }
 
-type silentCmd struct {
+type silentModeCmd struct {
 	silent bool
 }
 
-func (s *silentCmd) register() {
-	flag.BoolVar(&s.silent, "silent", false, "run in silent mode")
+func (s *silentModeCmd) register() {
+	flag.BoolVar(&s.silent, "silent", false, "run cli in silent mode")
 }

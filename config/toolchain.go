@@ -103,7 +103,7 @@ func (t Toolchain) generate(toolchain, environment *strings.Builder) error {
 
 func (t Toolchain) checkAndRepair() error {
 	toolchainPath := filepath.Join(Dirs.DownloadRootDir, t.Path)
-	if pathExists(toolchainPath) {
+	if io.PathExists(toolchainPath) {
 		return nil
 	}
 

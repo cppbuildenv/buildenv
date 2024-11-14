@@ -5,6 +5,7 @@ import (
 	"buildenv/config/build"
 	"buildenv/config/deploy"
 	"buildenv/pkg/color"
+	"buildenv/pkg/io"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -94,7 +95,7 @@ func (p *Port) Verify(args VerifyArgs) error {
 }
 
 func (p Port) Installed() bool {
-	if !pathExists(p.infoPath) {
+	if !io.PathExists(p.infoPath) {
 		return false
 	}
 

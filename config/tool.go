@@ -21,7 +21,7 @@ type Tool struct {
 
 func (t *Tool) Init(toolpath string) error {
 	// Check if tool.json exists.
-	if !pathExists(toolpath) {
+	if !io.PathExists(toolpath) {
 		return fmt.Errorf("%s doesn't exists", toolpath)
 	}
 
@@ -60,7 +60,7 @@ func (t *Tool) Verify(args VerifyArgs) error {
 
 func (t Tool) checkAndRepair() error {
 	toolPath := filepath.Join(Dirs.DownloadRootDir, t.Path)
-	if pathExists(toolPath) {
+	if io.PathExists(toolPath) {
 		return nil
 	}
 

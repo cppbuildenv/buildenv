@@ -15,6 +15,9 @@ func CreateMainModel(callabcks config.PlatformCallbacks) MainModel {
 		menuMode: createMenuModel(func(mode mode) {
 			currentMode = mode
 		}),
+		syncConfigModel: newSyncConfigModel(func() {
+			currentMode = modeMenu
+		}),
 		platformCreateModel: newPlatformCreateModel(callabcks, func(this *platformCreateModel) {
 			this.Reset()
 			currentMode = modeMenu
@@ -30,6 +33,7 @@ func CreateMainModel(callabcks config.PlatformCallbacks) MainModel {
 
 type MainModel struct {
 	menuMode            tea.Model
+	syncConfigModel     tea.Model
 	platformCreateModel tea.Model
 	platformSelectModel tea.Model
 	aboutModel          tea.Model
@@ -46,6 +50,11 @@ func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case modeMenu:
 			updatedModel, cmd := m.menuMode.Update(msg)
 			m.menuMode = updatedModel
+			return m, cmd
+
+		case modeSyncConfig:
+			syncConfigModel, cmd := m.syncConfigModel.Update(msg)
+			m.syncConfigModel = syncConfigModel
 			return m, cmd
 
 		case modePlatformCreate:
@@ -72,6 +81,9 @@ func (m MainModel) View() string {
 	switch currentMode {
 	case modeMenu:
 		return m.menuMode.View()
+
+	case modeSyncConfig:
+		return m.syncConfigModel.View()
 
 	case modePlatformCreate:
 		return m.platformCreateModel.View()

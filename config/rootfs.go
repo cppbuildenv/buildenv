@@ -70,7 +70,7 @@ func (r RootFS) Verify(args VerifyArgs) error {
 
 func (b RootFS) checkAndRepair() error {
 	rootfsPath := filepath.Join(Dirs.DownloadRootDir, b.Path)
-	if pathExists(rootfsPath) {
+	if io.PathExists(rootfsPath) {
 		return nil
 	}
 
