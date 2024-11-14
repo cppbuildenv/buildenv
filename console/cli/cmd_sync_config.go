@@ -3,6 +3,7 @@ package cli
 import (
 	"buildenv/config"
 	"buildenv/console"
+	"buildenv/pkg/color"
 	"buildenv/pkg/io"
 	"encoding/json"
 	"flag"
@@ -11,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 func newSyncConfigCmd() *syncConfigCmd {
@@ -69,10 +71,14 @@ func (s *syncConfigCmd) listen() (handled bool) {
 	}
 
 	// Sync repo.
-	if err := buildenv.SyncRepo(buildenv.ConfRepo, buildenv.ConfRepoRef); err != nil {
+	outputs, err := buildenv.SyncRepo(buildenv.ConfRepo, buildenv.ConfRepoRef)
+	if err != nil {
 		fmt.Print(console.SyncFailed(err))
 		os.Exit(1)
 	}
+
+	fmt.Println(color.Sprintf(color.Blue, strings.Join(outputs, "\n")))
+	fmt.Print(console.SyncSuccess(true))
 
 	return true
 }

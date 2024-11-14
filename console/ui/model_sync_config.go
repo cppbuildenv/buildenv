@@ -7,10 +7,10 @@ import (
 	"buildenv/pkg/io"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -21,7 +21,7 @@ func newSyncConfigModel(goback func()) *syncConfigModel {
 		"%s.\n\n"+
 		"%s",
 		color.Sprintf(color.Blue, "This will create a buildenv.json if not exist, otherwise it'll checkout the latest conf repo with specified repo REF"),
-		color.Sprintf(color.Gray, "[↵ Execute | ctrl+c/q Quit]"))
+		color.Sprintf(color.Gray, "[↵ -> execute | ctrl+c/q -> quit]"))
 
 	return &syncConfigModel{
 		content: content,
@@ -31,6 +31,7 @@ func newSyncConfigModel(goback func()) *syncConfigModel {
 
 type syncConfigModel struct {
 	content string
+	output  string
 	goback  func()
 }
 
@@ -46,7 +47,11 @@ func (s syncConfigModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return s, tea.Quit
 
 		case "enter":
-			s.syncRepo()
+			if output, err := s.syncRepo(); err != nil {
+				s.output = color.Sprintf(color.Red, "Error: %s", err.Error())
+			} else {
+				s.output = color.Sprintf(color.Blue, output) + "\n" + console.SyncSuccess(true)
+			}
 			return s, tea.Quit
 
 		case "esc":
@@ -58,15 +63,19 @@ func (s syncConfigModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (s syncConfigModel) View() string {
+	if s.output != "" {
+		return s.output
+	}
+
 	return s.content
 }
 
-func (s syncConfigModel) syncRepo() {
+func (s syncConfigModel) syncRepo() (string, error) {
 	// Create buildenv.json if not exist.
 	confPath := filepath.Join(config.Dirs.WorkspaceDir, "buildenv.json")
 	if !io.PathExists(confPath) {
 		if err := os.MkdirAll(filepath.Dir(confPath), os.ModePerm); err != nil {
-			log.Fatal(err)
+			return "", err
 		}
 
 		var buildenv config.BuildEnv
@@ -74,35 +83,32 @@ func (s syncConfigModel) syncRepo() {
 
 		bytes, err := json.MarshalIndent(buildenv, "", "    ")
 		if err != nil {
-			fmt.Print(console.SyncFailed(err))
-			os.Exit(1)
+			return "", err
 		}
 		if err := os.WriteFile(confPath, []byte(bytes), os.ModePerm); err != nil {
-			fmt.Print(console.SyncFailed(err))
-			os.Exit(1)
+			return "", err
 		}
 
-		fmt.Print(console.SyncSuccess(false))
-		return
+		return console.SyncSuccess(false), nil
 	}
 
 	// Sync conf repo with repo url.
 	bytes, err := os.ReadFile(confPath)
 	if err != nil {
-		fmt.Print(console.SyncFailed(err))
-		os.Exit(1)
+		return "", err
 	}
 
 	// Unmarshall with buildenv.json.
 	var buildenv config.BuildEnv
 	if err := json.Unmarshal(bytes, &buildenv); err != nil {
-		fmt.Print(console.SyncFailed(err))
-		os.Exit(1)
+		return "", err
 	}
 
 	// Sync repo.
-	if err := buildenv.SyncRepo(buildenv.ConfRepo, buildenv.ConfRepoRef); err != nil {
-		fmt.Print(console.SyncFailed(err))
-		os.Exit(1)
+	outputs, err := buildenv.SyncRepo(buildenv.ConfRepo, buildenv.ConfRepoRef)
+	if err != nil {
+		return "", err
 	}
+
+	return strings.Join(outputs, "\n"), nil
 }

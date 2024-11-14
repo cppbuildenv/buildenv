@@ -6,9 +6,10 @@ import (
 )
 
 const (
-	menuSyncConfig     string = "Init or sync config."
-	menuChoosePlatform string = "Choose a platform as your build target platform."
+	menuSyncConfig     string = "Init or sync buildenv's config repo."
 	menuCreatePlatform string = "Create a new platform, it requires completion later."
+	menuChoosePlatform string = "Choose a platform as your build target platform."
+	menuInstall        string = "Install buildenv."
 	menuUsage          string = "About and Usage."
 )
 
@@ -17,21 +18,23 @@ type mode = int
 const (
 	modeMenu mode = iota
 	modeSyncConfig
-	modePlatformChoose
 	modePlatformCreate
+	modePlatformChoose
+	modelInstall
 	modeAbout
 )
 
 var menus = []string{
 	menuSyncConfig,
-	menuChoosePlatform,
 	menuCreatePlatform,
+	menuChoosePlatform,
+	menuInstall,
 	menuUsage,
 }
 
 func createMenuModel(modeChanged func(mode mode)) menuModel {
 	const defaultWidth = 80
-	const defaultHeight = 10
+	const defaultHeight = 12
 
 	var items []list.Item
 	for _, menu := range menus {
@@ -80,14 +83,17 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if i, ok := m.list.SelectedItem().(listItem); ok {
 				if m.modeChanged != nil {
 					switch string(i) {
-					case menuSyncConfig:
-						m.modeChanged(modeSyncConfig)
-
 					case menuChoosePlatform:
 						m.modeChanged(modePlatformChoose)
 
 					case menuCreatePlatform:
 						m.modeChanged(modePlatformCreate)
+
+					case menuSyncConfig:
+						m.modeChanged(modeSyncConfig)
+
+					case menuInstall:
+						m.modeChanged(modelInstall)
 
 					case menuUsage:
 						m.modeChanged(modeAbout)

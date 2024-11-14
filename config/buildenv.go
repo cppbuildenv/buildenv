@@ -3,12 +3,14 @@ package config
 import (
 	"buildenv/pkg/color"
 	"buildenv/pkg/io"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 type BuildEnv struct {
@@ -64,13 +66,13 @@ func (b *BuildEnv) Verify(args VerifyArgs) error {
 	return nil
 }
 
-func (b BuildEnv) SyncRepo(repo, ref string) error {
+func (b BuildEnv) SyncRepo(repo, ref string) ([]string, error) {
 	if b.ConfRepo == "" {
-		return fmt.Errorf("no conf repo has been provided for buildenv")
+		return nil, fmt.Errorf("no conf repo has been provided for buildenv")
 	}
 
 	if b.ConfRepoRef == "" {
-		return fmt.Errorf("no conf repo ref has been provided for buildenv")
+		return nil, fmt.Errorf("no conf repo ref has been provided for buildenv")
 	}
 
 	var commands []string
@@ -78,16 +80,19 @@ func (b BuildEnv) SyncRepo(repo, ref string) error {
 	// Clone or git checkout repo.
 	confDir := filepath.Join(Dirs.WorkspaceDir, "conf")
 	if io.PathExists(confDir) {
-		if io.PathExists(filepath.Join(confDir, ".git")) { // clean up and checkout to ref.
+		// clean up and checkout to ref.
+		if io.PathExists(filepath.Join(confDir, ".git")) {
 			// cd [conf] to git checkout repo.
 			if err := os.Chdir(confDir); err != nil {
-				return err
+				return nil, err
 			}
 
 			commands = append(commands, "git reset --hard && git clean -xfd")
 			commands = append(commands, fmt.Sprintf("git -C %s fetch", confDir))
 			commands = append(commands, fmt.Sprintf("git -C %s checkout %s", confDir, ref))
-		} else { // clean up and clone.
+			commands = append(commands, "git pull")
+		} else {
+			// clean up and clone.
 			commands = append(commands, fmt.Sprintf("rm -rf %s", confDir))
 			commands = append(commands, fmt.Sprintf("git clone --branch %s --single-branch %s %s", ref, repo, confDir))
 		}
@@ -96,13 +101,21 @@ func (b BuildEnv) SyncRepo(repo, ref string) error {
 	}
 
 	// Execute clone command.
+	var outputs []string
 	for _, command := range commands {
-		if err := b.execute(command); err != nil {
-			return err
+		output, err := b.execute(command)
+		if err != nil {
+			return nil, err
 		}
+
+		// git log may return empty line, skip it.
+		if strings.TrimSpace(output) == "" {
+			continue
+		}
+		outputs = append(outputs, output)
 	}
 
-	return nil
+	return outputs, nil
 }
 
 func (b *BuildEnv) init(buildEnvPath string) error {
@@ -138,7 +151,7 @@ func (b *BuildEnv) init(buildEnvPath string) error {
 	return nil
 }
 
-func (b BuildEnv) execute(command string) error {
+func (b BuildEnv) execute(command string) (string, error) {
 	var cmd *exec.Cmd
 
 	if runtime.GOOS == "windows" {
@@ -147,13 +160,15 @@ func (b BuildEnv) execute(command string) error {
 		cmd = exec.Command("bash", "-c", command)
 	}
 
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stdout
+	var buffer bytes.Buffer
+
+	cmd.Stdout = &buffer
+	cmd.Stderr = &buffer
 
 	if err := cmd.Run(); err != nil {
 		color.Println(color.Red, fmt.Sprintf("Error execute command: %s", err.Error()))
-		return err
+		return "", err
 	}
 
-	return nil
+	return buffer.String(), nil
 }

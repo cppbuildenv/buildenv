@@ -3,6 +3,7 @@ package ui
 import (
 	"buildenv/config"
 	"buildenv/console"
+	"buildenv/pkg/color"
 	"fmt"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -23,13 +24,11 @@ func newPlatformCreateModel(callbacks config.PlatformCallbacks, goback func(this
 		textInput: ti,
 		callbacks: callbacks,
 		goback:    goback,
-		styles:    styleImpl,
 	}
 }
 
 type platformCreateModel struct {
 	textInput textinput.Model
-	styles    styles
 	created   bool
 	err       error
 
@@ -45,7 +44,10 @@ func (p platformCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "esc", "q":
+		case "ctrl+c", "q":
+			return p, tea.Quit
+
+		case "esc":
 			p.goback(&p)
 			return p, nil
 
@@ -76,9 +78,9 @@ func (p platformCreateModel) View() string {
 	}
 
 	return fmt.Sprintf("\n%s\n\n%s\n\n%s\n",
-		p.styles.titleStyle.Render("Please input your platform name: "),
+		color.Sprintf(color.Blue, "Please input your platform name: "),
 		p.textInput.View(),
-		p.styles.helpStyle.Render("[esc/q back · ctrl+c quit]"),
+		color.Sprintf(color.Gray, "[esc -> back | ctrl+c/q -> quit]"),
 	)
 }
 

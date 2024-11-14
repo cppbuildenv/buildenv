@@ -44,8 +44,10 @@ func (b BuildConfig) Clone(repo, ref string) error {
 
 	// Clone repo or sync repo.
 	if pkgio.PathExists(b.SourceDir) {
+		commands = append(commands, "git reset --hard && git clean -xfd")
 		commands = append(commands, fmt.Sprintf("git -C %s fetch", b.SourceDir))
 		commands = append(commands, fmt.Sprintf("git -C %s checkout %s", b.SourceDir, ref))
+		commands = append(commands, "git pull")
 	} else {
 		commands = append(commands, fmt.Sprintf("git clone --branch %s --single-branch %s %s", ref, repo, b.SourceDir))
 	}

@@ -25,6 +25,9 @@ func CreateMainModel(callabcks config.PlatformCallbacks) MainModel {
 		platformSelectModel: newPlatformSelectModel(callabcks, func() {
 			currentMode = modeMenu
 		}),
+		installModel: newInstallModel(func() {
+			currentMode = modeMenu
+		}),
 		aboutModel: newUsageModel(func() {
 			currentMode = modeMenu
 		}),
@@ -36,6 +39,7 @@ type MainModel struct {
 	syncConfigModel     tea.Model
 	platformCreateModel tea.Model
 	platformSelectModel tea.Model
+	installModel        tea.Model
 	aboutModel          tea.Model
 }
 
@@ -48,28 +52,33 @@ func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch currentMode {
 		case modeMenu:
-			updatedModel, cmd := m.menuMode.Update(msg)
-			m.menuMode = updatedModel
+			model, cmd := m.menuMode.Update(msg)
+			m.menuMode = model
 			return m, cmd
 
 		case modeSyncConfig:
-			syncConfigModel, cmd := m.syncConfigModel.Update(msg)
-			m.syncConfigModel = syncConfigModel
+			model, cmd := m.syncConfigModel.Update(msg)
+			m.syncConfigModel = model
 			return m, cmd
 
 		case modePlatformCreate:
-			updatedModel, cmd := m.platformCreateModel.Update(msg)
-			m.platformCreateModel = updatedModel
+			model, cmd := m.platformCreateModel.Update(msg)
+			m.platformCreateModel = model
 			return m, cmd
 
 		case modePlatformChoose:
-			updatedModel, cmd := m.platformSelectModel.Update(msg)
-			m.platformSelectModel = updatedModel
+			model, cmd := m.platformSelectModel.Update(msg)
+			m.platformSelectModel = model
+			return m, cmd
+
+		case modelInstall:
+			model, cmd := m.installModel.Update(msg)
+			m.installModel = model
 			return m, cmd
 
 		case modeAbout:
-			updatedModel, cmd := m.aboutModel.Update(msg)
-			m.aboutModel = updatedModel
+			model, cmd := m.aboutModel.Update(msg)
+			m.aboutModel = model
 			return m, cmd
 		}
 	}
@@ -90,6 +99,9 @@ func (m MainModel) View() string {
 
 	case modePlatformChoose:
 		return m.platformSelectModel.View()
+
+	case modelInstall:
+		return m.installModel.View()
 
 	case modeAbout:
 		return m.aboutModel.View()
