@@ -1,8 +1,8 @@
 package ui
 
 import (
+	"buildenv/command"
 	"buildenv/config"
-	"buildenv/console"
 	"buildenv/pkg/color"
 	"buildenv/pkg/io"
 	"encoding/json"
@@ -48,7 +48,7 @@ func (s syncConfigModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if output, err := s.syncRepo(); err != nil {
 				s.content += "\r" + color.Sprintf(color.Red, err.Error())
 			} else {
-				s.content += "\r" + output + "\n" + console.SyncSuccess(true)
+				s.content += "\r" + output + "\n" + command.SyncSuccess(true)
 			}
 			return s, tea.Quit
 
@@ -83,7 +83,7 @@ func (s syncConfigModel) syncRepo() (string, error) {
 			return "", err
 		}
 
-		return console.SyncSuccess(false), nil
+		return command.SyncSuccess(false), nil
 	}
 
 	// Sync conf repo with repo url.

@@ -1,9 +1,15 @@
 package main
 
-import "buildenv/console/cli"
+import (
+	"buildenv/command/cli"
+	"flag"
+	"os"
+)
 
 func main() {
 	if exit := cli.Listen(); exit {
-		return
+		os.Exit(0)
 	}
+
+	flag.Usage()
 }

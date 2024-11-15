@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"buildenv/console"
+	"buildenv/command"
 	"buildenv/pkg/env"
 	"flag"
 	"fmt"
@@ -28,15 +28,15 @@ func (c *installCmd) listen() (handled bool) {
 
 	exePath, err := os.Executable()
 	if err != nil {
-		fmt.Print(console.InstallFailed(err))
+		fmt.Print(command.InstallFailed(err))
 		os.Exit(1)
 	}
 
 	if err := env.UpdateRunPath(filepath.Dir(exePath)); err != nil {
-		fmt.Print(console.InstallFailed(err))
+		fmt.Print(command.InstallFailed(err))
 		os.Exit(1)
 	}
 
-	fmt.Print(console.InstallSuccess())
+	fmt.Print(command.InstallSuccess())
 	return true
 }

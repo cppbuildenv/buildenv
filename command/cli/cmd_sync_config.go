@@ -1,8 +1,8 @@
 package cli
 
 import (
+	"buildenv/command"
 	"buildenv/config"
-	"buildenv/console"
 	"buildenv/pkg/io"
 	"encoding/json"
 	"flag"
@@ -42,41 +42,41 @@ func (s *syncConfigCmd) listen() (handled bool) {
 
 		bytes, err := json.MarshalIndent(buildenv, "", "    ")
 		if err != nil {
-			fmt.Print(console.SyncFailed(err))
+			fmt.Print(command.SyncFailed(err))
 			os.Exit(1)
 		}
 		if err := os.WriteFile(confPath, []byte(bytes), os.ModePerm); err != nil {
-			fmt.Print(console.SyncFailed(err))
+			fmt.Print(command.SyncFailed(err))
 			os.Exit(1)
 		}
 
-		fmt.Print(console.SyncSuccess(false))
+		fmt.Print(command.SyncSuccess(false))
 		return false
 	}
 
 	// Sync conf repo with repo url.
 	bytes, err := os.ReadFile(confPath)
 	if err != nil {
-		fmt.Print(console.SyncFailed(err))
+		fmt.Print(command.SyncFailed(err))
 		os.Exit(1)
 	}
 
 	// Unmarshall with buildenv.json.
 	var buildenv config.BuildEnv
 	if err := json.Unmarshal(bytes, &buildenv); err != nil {
-		fmt.Print(console.SyncFailed(err))
+		fmt.Print(command.SyncFailed(err))
 		os.Exit(1)
 	}
 
 	// Sync repo.
 	output, err := buildenv.SyncRepo(buildenv.ConfRepo, buildenv.ConfRepoRef)
 	if err != nil {
-		fmt.Print(console.SyncFailed(err))
+		fmt.Print(command.SyncFailed(err))
 		os.Exit(1)
 	}
 
 	fmt.Println(output)
-	fmt.Print(console.SyncSuccess(true))
+	fmt.Print(command.SyncSuccess(true))
 
 	return true
 }

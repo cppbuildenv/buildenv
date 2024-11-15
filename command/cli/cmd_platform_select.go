@@ -1,8 +1,8 @@
 package cli
 
 import (
+	"buildenv/command"
 	"buildenv/config"
-	"buildenv/console"
 	"flag"
 	"fmt"
 )
@@ -28,10 +28,10 @@ func (s *selectPlatformCmd) listen() (handled bool) {
 	}
 
 	if err := s.callbacks.OnSelectPlatform(s.platformName); err != nil {
-		fmt.Print(console.PlatformSelectedFailed(s.platformName, err))
+		fmt.Print(command.PlatformSelectedFailed(s.platformName, err))
 		return true
 	}
 
-	fmt.Print(console.PlatformSelected(s.platformName))
+	fmt.Print(command.PlatformSelected(s.platformName))
 	return true
 }

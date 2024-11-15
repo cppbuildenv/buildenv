@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"buildenv/console"
+	"buildenv/command"
 	"flag"
 	"runtime"
 )
@@ -18,11 +18,11 @@ type responsible interface {
 var (
 	silent         = newSilentModeCmd()
 	buildType      = newBuildTypeCmd()
-	ui             = newUICmd(console.PlatformCallbacks)
+	ui             = newUICmd(command.PlatformCallbacks)
 	version        = newVersionCmd()
 	sync           = newSyncConfigCmd()
 	createPlatform = newCreatePlatformCmd()
-	selectPlatform = newSelectPlatformCmd(console.PlatformCallbacks)
+	selectPlatform = newSelectPlatformCmd(command.PlatformCallbacks)
 	verify         = newVerifyCmd()
 )
 var commands = []reisterable{

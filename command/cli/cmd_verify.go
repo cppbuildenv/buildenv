@@ -1,8 +1,8 @@
 package cli
 
 import (
+	"buildenv/command"
 	"buildenv/config"
-	"buildenv/console"
 	"flag"
 	"fmt"
 	"os"
@@ -35,14 +35,14 @@ func (v *verifyCmd) listen() (handled bool) {
 	var buildEnvConf config.BuildEnv
 	if err := buildEnvConf.Verify(args); err != nil {
 		platformName := strings.TrimSuffix(buildEnvConf.Platform, ".json")
-		fmt.Print(console.PlatformSelectedFailed(platformName, err))
+		fmt.Print(command.PlatformSelectedFailed(platformName, err))
 		os.Exit(1)
 	}
 
 	// Silent mode called from buildenv.cmake
 	if !silent.silent {
 		platformName := strings.TrimSuffix(buildEnvConf.Platform, ".json")
-		fmt.Print(console.PlatformSelected(platformName))
+		fmt.Print(command.PlatformSelected(platformName))
 	}
 
 	return true

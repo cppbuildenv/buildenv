@@ -1,8 +1,8 @@
 package ui
 
 import (
+	"buildenv/command"
 	"buildenv/config"
-	"buildenv/console"
 	"buildenv/pkg/color"
 	"fmt"
 
@@ -70,11 +70,11 @@ func (p platformCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (p platformCreateModel) View() string {
 	if p.created {
-		return console.PlatformCreated(p.textInput.Value())
+		return command.PlatformCreated(p.textInput.Value())
 	}
 
 	if p.err != nil {
-		return console.PlatformCreateFailed(p.textInput.Value(), p.err)
+		return command.PlatformCreateFailed(p.textInput.Value(), p.err)
 	}
 
 	return fmt.Sprintf("\n%s\n\n%s\n\n%s\n",

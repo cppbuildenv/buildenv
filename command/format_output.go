@@ -1,4 +1,4 @@
-package console
+package command
 
 import "buildenv/pkg/color"
 

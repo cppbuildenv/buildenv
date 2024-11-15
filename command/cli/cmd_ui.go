@@ -1,8 +1,8 @@
 package cli
 
 import (
+	uipkg "buildenv/command/ui"
 	"buildenv/config"
-	uipkg "buildenv/console/ui"
 	"flag"
 	"log"
 
