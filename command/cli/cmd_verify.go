@@ -18,7 +18,7 @@ type verifyCmd struct {
 }
 
 func (v *verifyCmd) register() {
-	flag.BoolVar(&v.verify, "verify", false, "verify buildenv")
+	flag.BoolVar(&v.verify, "verify", false, "check and repair toolchain, rootfs, tools and packages for current selected platform.")
 }
 
 func (v *verifyCmd) listen() (handled bool) {

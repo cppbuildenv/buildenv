@@ -22,7 +22,7 @@ type syncConfigCmd struct {
 }
 
 func (s *syncConfigCmd) register() {
-	flag.BoolVar(&s.sync, "sync", false, "create buildenv.json or sync conf repo")
+	flag.BoolVar(&s.sync, "sync", false, "create buildenv.json or sync conf repo defined in buildenv.json.")
 }
 
 func (s *syncConfigCmd) listen() (handled bool) {

@@ -11,5 +11,5 @@ type buildTypeCmd struct {
 }
 
 func (b *buildTypeCmd) register() {
-	flag.StringVar(&b.buildType, "build_type", "Release", "value of CMAKE_BUILD_TYPE")
+	flag.StringVar(&b.buildType, "build_type", "Release", "called by buildenv.cmake to set CMAKE_BUILD_TYPE.")
 }

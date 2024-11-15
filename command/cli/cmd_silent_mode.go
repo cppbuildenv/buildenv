@@ -11,5 +11,5 @@ type silentModeCmd struct {
 }
 
 func (s *silentModeCmd) register() {
-	flag.BoolVar(&s.silent, "silent", false, "run cli in silent mode")
+	flag.BoolVar(&s.silent, "silent", false, "called by buildenv.cmake to run buildenv in silent mode.")
 }
