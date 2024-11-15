@@ -41,8 +41,12 @@ func (t *Toolchain) Verify(args VerifyArgs) error {
 		return rootfsPath, nil
 	}
 
+	// Verify toolchain download url.
 	if t.Url == "" {
 		return fmt.Errorf("toolchain.url is empty")
+	}
+	if err := io.CheckAvailable(t.Url); err != nil {
+		return fmt.Errorf("toolchain.url is not accessible: %w", err)
 	}
 
 	// Verify toolchain path and convert to absolute path.

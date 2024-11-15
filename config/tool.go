@@ -51,8 +51,12 @@ func (t *Tool) Verify(args VerifyArgs) error {
 		return rootfsPath, nil
 	}
 
+	// Verify tool download url.
 	if t.Url == "" {
 		return fmt.Errorf("url of %s is empty", t.toolName)
+	}
+	if err := io.CheckAvailable(t.Url); err != nil {
+		return fmt.Errorf("tool.url of %s is not accessible: %w", t.toolName, err)
 	}
 
 	// Verify tool path and convert to absolute path.
