@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -31,7 +30,6 @@ func newSyncConfigModel(goback func()) *syncConfigModel {
 
 type syncConfigModel struct {
 	content string
-	output  string
 	goback  func()
 }
 
@@ -48,9 +46,9 @@ func (s syncConfigModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "enter":
 			if output, err := s.syncRepo(); err != nil {
-				s.output = color.Sprintf(color.Red, "Error: %s", err.Error())
+				s.content += "\r" + color.Sprintf(color.Red, err.Error())
 			} else {
-				s.output = color.Sprintf(color.Blue, output) + "\n" + console.SyncSuccess(true)
+				s.content += "\r" + output + "\n" + console.SyncSuccess(true)
 			}
 			return s, tea.Quit
 
@@ -63,10 +61,6 @@ func (s syncConfigModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (s syncConfigModel) View() string {
-	if s.output != "" {
-		return s.output
-	}
-
 	return s.content
 }
 
@@ -105,10 +99,5 @@ func (s syncConfigModel) syncRepo() (string, error) {
 	}
 
 	// Sync repo.
-	outputs, err := buildenv.SyncRepo(buildenv.ConfRepo, buildenv.ConfRepoRef)
-	if err != nil {
-		return "", err
-	}
-
-	return strings.Join(outputs, "\n"), nil
+	return buildenv.SyncRepo(buildenv.ConfRepo, buildenv.ConfRepoRef)
 }

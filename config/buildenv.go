@@ -1,7 +1,6 @@
 package config
 
 import (
-	"buildenv/pkg/color"
 	"buildenv/pkg/io"
 	"bytes"
 	"encoding/json"
@@ -66,13 +65,13 @@ func (b *BuildEnv) Verify(args VerifyArgs) error {
 	return nil
 }
 
-func (b BuildEnv) SyncRepo(repo, ref string) ([]string, error) {
+func (b BuildEnv) SyncRepo(repo, ref string) (string, error) {
 	if b.ConfRepo == "" {
-		return nil, fmt.Errorf("no conf repo has been provided for buildenv")
+		return "", fmt.Errorf("no conf repo has been provided for buildenv")
 	}
 
 	if b.ConfRepoRef == "" {
-		return nil, fmt.Errorf("no conf repo ref has been provided for buildenv")
+		return "", fmt.Errorf("no conf repo ref has been provided for buildenv")
 	}
 
 	var commands []string
@@ -84,7 +83,7 @@ func (b BuildEnv) SyncRepo(repo, ref string) ([]string, error) {
 		if io.PathExists(filepath.Join(confDir, ".git")) {
 			// cd [conf] to git checkout repo.
 			if err := os.Chdir(confDir); err != nil {
-				return nil, err
+				return "", err
 			}
 
 			commands = append(commands, "git reset --hard && git clean -xfd")
@@ -100,22 +99,14 @@ func (b BuildEnv) SyncRepo(repo, ref string) ([]string, error) {
 		commands = append(commands, fmt.Sprintf("git clone --branch %s --single-branch %s %s", ref, repo, confDir))
 	}
 
+	commandLine := strings.Join(commands, " && ")
 	// Execute clone command.
-	var outputs []string
-	for _, command := range commands {
-		output, err := b.execute(command)
-		if err != nil {
-			return nil, err
-		}
-
-		// git log may return empty line, skip it.
-		if strings.TrimSpace(output) == "" {
-			continue
-		}
-		outputs = append(outputs, output)
+	output, err := b.execute(commandLine)
+	if err != nil {
+		return "", err
 	}
 
-	return outputs, nil
+	return output, nil
 }
 
 func (b *BuildEnv) init(buildEnvPath string) error {
@@ -166,7 +157,6 @@ func (b BuildEnv) execute(command string) (string, error) {
 	cmd.Stderr = &buffer
 
 	if err := cmd.Run(); err != nil {
-		color.Println(color.Red, fmt.Sprintf("Error execute command: %s", err.Error()))
 		return "", err
 	}
 

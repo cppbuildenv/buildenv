@@ -97,7 +97,6 @@ func (b BuildConfig) execute(command, logPath string) error {
 
 	cmd.Env = append(os.Environ(), os.Getenv("PATH"))
 	if err := cmd.Run(); err != nil {
-		color.Println(color.Red, fmt.Sprintf("Error execute command: %s", err.Error()))
 		return err
 	}
 
