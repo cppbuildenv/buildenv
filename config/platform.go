@@ -50,8 +50,8 @@ func (p Platform) Write(platformPath string) error {
 	p.RootFS = new(RootFS)
 	p.Toolchain = new(Toolchain)
 
-	if len(p.RootFS.EnvVars.PKG_CONFIG_PATH) == 0 {
-		p.RootFS.EnvVars.PKG_CONFIG_PATH = []string{}
+	if len(p.RootFS.PkgConfigPath) == 0 {
+		p.RootFS.PkgConfigPath = []string{}
 	}
 	if len(p.Tools) == 0 {
 		p.Tools = []string{}
@@ -145,23 +145,21 @@ func (p Platform) CreateToolchainFile(scriptDir string) (string, error) {
 	toolchain.WriteString("\tWORKING_DIRECTORY ${HOME_DIR}\n")
 	toolchain.WriteString(")\n")
 
-	// Set toolchain platform infos.
-	if p.Toolchain != nil {
-		toolchain.WriteString("\n# Set toolchain platform infos.\n")
-		toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSTEM_NAME \"%s\")\n", p.Toolchain.SystemName))
-		toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSTEM_PROCESSOR \"%s\")\n", p.Toolchain.SystemProcessor))
-	}
-
-	// Set toolchain for cross-compile.
-	if p.Toolchain != nil {
-		if err := p.Toolchain.generate(&toolchain, &environment); err != nil {
+	// Set sysroot for cross-compile.
+	if p.RootFS != nil {
+		if err := p.RootFS.generate(&toolchain, &environment); err != nil {
 			return "", err
 		}
 	}
 
-	// Set sysroot for cross-compile.
-	if p.RootFS != nil {
-		if err := p.RootFS.generate(&toolchain, &environment); err != nil {
+	// Set toolchain for cross-compile.
+	if p.Toolchain != nil {
+		// Set toolchain platform infos.
+		toolchain.WriteString("\n# Set toolchain platform infos.\n")
+		toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSTEM_NAME \"%s\")\n", p.Toolchain.SystemName))
+		toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSTEM_PROCESSOR \"%s\")\n", p.Toolchain.SystemProcessor))
+
+		if err := p.Toolchain.generate(&toolchain, &environment); err != nil {
 			return "", err
 		}
 	}
@@ -175,7 +173,7 @@ func (p Platform) CreateToolchainFile(scriptDir string) (string, error) {
 	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.platformName+"-${CMAKE_BUILD_TYPE}")
 	toolchain.WriteString(fmt.Sprintf("list(APPEND CMAKE_FIND_ROOT_PATH \"%s\")\n", installedDir))
 	toolchain.WriteString(fmt.Sprintf("list(APPEND CMAKE_PREFIX_PATH \"%s\")\n", installedDir))
-	toolchain.WriteString(fmt.Sprintf("list(APPEND ENV{PKG_CONFIG_PATH} \"%s/lib/pkgconfig\")\n", installedDir))
+	toolchain.WriteString(fmt.Sprintf("set(ENV{PKG_CONFIG_PATH} \"%s/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}\")\n", installedDir))
 
 	// Create the output directory if it doesn't exist.
 	if err := os.MkdirAll(scriptDir, os.ModeDir|os.ModePerm); err != nil {
@@ -218,7 +216,7 @@ func (b *Platform) writeTools(toolchain, environment *strings.Builder) error {
 			return fmt.Errorf("cannot get absolute path of tool path: %s", toolPath)
 		}
 
-		toolchain.WriteString(fmt.Sprintf("list(APPEND ENV{PATH} \"%s\")\n", absToolPath))
+		toolchain.WriteString(fmt.Sprintf("set(ENV{PATH} \"%s:$ENV{PATH}\")\n", absToolPath))
 		environment.WriteString(fmt.Sprintf("export PATH=%s:$PATH\n", absToolPath))
 
 		// Append $PATH with tool path.

@@ -40,17 +40,33 @@ func (t *Tool) Init(toolpath string) error {
 }
 
 func (t *Tool) Verify(args VerifyArgs) error {
+	// Relative path -> Absolute path.
+	var toAbsPath = func(relativePath string) (string, error) {
+		path := filepath.Join(Dirs.DownloadRootDir, relativePath)
+		rootfsPath, err := filepath.Abs(path)
+		if err != nil {
+			return "", err
+		}
+
+		return rootfsPath, nil
+	}
+
 	if t.Url == "" {
 		return fmt.Errorf("url of %s is empty", t.toolName)
 	}
 
+	// Verify tool path and convert to absolute path.
 	if t.Path == "" {
 		return fmt.Errorf("path of %s is empty", t.toolName)
 	}
+	toolPath, err := toAbsPath(t.Path)
+	if err != nil {
+		return fmt.Errorf("cannot get absolute path: %s", t.Path)
+	}
+	t.Path = toolPath
 
-	// Append $PATH with tool path.
-	path := filepath.Join(Dirs.DownloadRootDir, t.Path)
-	os.Setenv("PATH", fmt.Sprintf("%s:%s", path, os.Getenv("PATH")))
+	// This is used to cross-compile other ports by buildenv.
+	os.Setenv("PATH", fmt.Sprintf("%s:%s", t.Path, os.Getenv("PATH")))
 
 	if !args.CheckAndRepair {
 		return nil
@@ -60,8 +76,8 @@ func (t *Tool) Verify(args VerifyArgs) error {
 }
 
 func (t Tool) checkAndRepair() error {
-	toolPath := filepath.Join(Dirs.DownloadRootDir, t.Path)
-	if io.PathExists(toolPath) {
+	// Check if tool exists.
+	if io.PathExists(t.Path) {
 		return nil
 	}
 

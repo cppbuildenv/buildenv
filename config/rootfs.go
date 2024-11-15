@@ -10,9 +10,9 @@ import (
 )
 
 type RootFS struct {
-	Url     string    `json:"url"`
-	Path    string    `json:"path"`
-	EnvVars RootFSEnv `json:"env_vars"`
+	Url           string   `json:"url"`
+	Path          string   `json:"path"`
+	PkgConfigPath []string `json:"pkg_config_path"`
 }
 
 type RootFSEnv struct {
@@ -21,44 +21,50 @@ type RootFSEnv struct {
 	PKG_CONFIG_PATH        []string `json:"PKG_CONFIG_PATH"`
 }
 
-func (r RootFS) Verify(args VerifyArgs) error {
+func (r *RootFS) Verify(args VerifyArgs) error {
+	// Relative path -> Absolute path.
+	var toAbsPath = func(relativePath string) (string, error) {
+		path := filepath.Join(Dirs.DownloadRootDir, relativePath)
+		rootfsPath, err := filepath.Abs(path)
+		if err != nil {
+			return "", err
+		}
+
+		return rootfsPath, nil
+	}
+
 	if r.Url == "" {
 		return fmt.Errorf("rootfs.url is empty")
 	}
 
+	// Verify rootfs path and convert to absolute path.
 	if r.Path == "" {
 		return fmt.Errorf("rootfs.path is empty")
 	}
-
-	if r.EnvVars.SYSROOT == "" {
-		return fmt.Errorf("rootfs.env.SYSROOT is empty")
-	}
-
-	if r.EnvVars.PKG_CONFIG_SYSROOT_DIR == "" {
-		return fmt.Errorf("rootfs.env.PKG_CONFIG_SYSROOT_DIR is empty")
-	}
-
-	if len(r.EnvVars.PKG_CONFIG_PATH) == 0 {
-		return fmt.Errorf("rootfs.env.PKG_CONFIG_PATH is empty")
-	}
-
-	// Set $PKG_CONFIG_SYSROOT_DIR with rootfs path.
-	rootfsPath := filepath.Join(Dirs.DownloadRootDir, r.Path)
-	absRootFSPath, err := filepath.Abs(rootfsPath)
+	rootfsPath, err := toAbsPath(r.Path)
 	if err != nil {
-		return fmt.Errorf("cannot get absolute path: %s", rootfsPath)
+		return fmt.Errorf("cannot get absolute path: %s", r.Path)
 	}
-	os.Setenv("PKG_CONFIG_SYSROOT_DIR", absRootFSPath)
+	r.Path = rootfsPath
 
-	// Append PKG_CONFIG_PATH with paths that defined in sysroot.
-	for _, path := range r.EnvVars.PKG_CONFIG_PATH {
-		fullPath := filepath.Join(Dirs.DownloadRootDir, path)
-		absPath, err := filepath.Abs(fullPath)
-		if err != nil {
-			return fmt.Errorf("cannot get absolute path: %s", fullPath)
+	// This is for cross-compile other ports by buildenv.
+	os.Setenv("SYSROOT", rootfsPath)
+	os.Setenv("PKG_CONFIG_SYSROOT_DIR", rootfsPath)
+
+	// Verify pkg_config_path and convert to absolute path.
+	if len(r.PkgConfigPath) > 0 {
+		var paths []string
+		for _, itemPath := range r.PkgConfigPath {
+			absPath, err := toAbsPath(filepath.Join(r.Path, itemPath))
+			if err != nil {
+				return fmt.Errorf("cannot get absolute path: %s", itemPath)
+			}
+
+			paths = append(paths, absPath)
 		}
 
-		os.Setenv("PKG_CONFIG_PATH", fmt.Sprintf("%s:%s", absPath, os.Getenv("PKG_CONFIG_PATH")))
+		// This is for cross-compile other ports by buildenv.
+		os.Setenv("PKG_CONFIG_PATH", strings.Join(paths, ":"))
 	}
 
 	if !args.CheckAndRepair {
@@ -69,8 +75,8 @@ func (r RootFS) Verify(args VerifyArgs) error {
 }
 
 func (b RootFS) checkAndRepair() error {
-	rootfsPath := filepath.Join(Dirs.DownloadRootDir, b.Path)
-	if io.PathExists(rootfsPath) {
+	// Check if tool exists.
+	if io.PathExists(b.Path) {
 		return nil
 	}
 
@@ -93,14 +99,8 @@ func (b RootFS) checkAndRepair() error {
 }
 
 func (r RootFS) generate(toolchain, environment *strings.Builder) error {
-	rootfsPath := filepath.Join(Dirs.DownloadRootDir, r.Path)
-	absRootFSPath, err := filepath.Abs(rootfsPath)
-	if err != nil {
-		return fmt.Errorf("cannot get absolute path: %s", rootfsPath)
-	}
-
 	toolchain.WriteString("\n# Set sysroot for cross-compile.\n")
-	toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSROOT \"%s\")\n", absRootFSPath))
+	toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSROOT \"%s\")\n", r.Path))
 	toolchain.WriteString("list(APPEND CMAKE_FIND_ROOT_PATH \"${CMAKE_SYSROOT}\")\n")
 
 	// Search programs in the host environment.
@@ -117,28 +117,22 @@ func (r RootFS) generate(toolchain, environment *strings.Builder) error {
 	toolchain.WriteString("set(ENV{PKG_CONFIG_SYSROOT_DIR} \"${CMAKE_SYSROOT}\")\n")
 
 	// Replace the path with the workspace directory.
-	for _, path := range r.EnvVars.PKG_CONFIG_PATH {
-		fullPath := filepath.Join(Dirs.DownloadRootDir, path)
-		absPath, err := filepath.Abs(fullPath)
-		if err != nil {
-			return fmt.Errorf("cannot get absolute path: %s", fullPath)
-		}
-
-		toolchain.WriteString(fmt.Sprintf("list(APPEND ENV{PKG_CONFIG_PATH} \"%s\")\n", absPath))
+	for _, path := range r.PkgConfigPath {
+		toolchain.WriteString(fmt.Sprintf("set(ENV{PKG_CONFIG_PATH} \"${CMAKE_SYSROOT}/%s:$ENV{PKG_CONFIG_PATH}\")\n", path))
 	}
 
 	// Write variables to buildenv.sh
 	environment.WriteString("\n# Set rootfs for cross compile.\n")
-	environment.WriteString(fmt.Sprintf("export SYSROOT=%s\n", absRootFSPath))
+	environment.WriteString(fmt.Sprintf("export SYSROOT=%s\n", r.Path))
 	environment.WriteString("export PATH=${SYSROOT}:${PATH}\n")
 	environment.WriteString("export PKG_CONFIG_SYSROOT_DIR=${SYSROOT}\n")
-	environment.WriteString(fmt.Sprintf("export PKG_CONFIG_PATH=%s:$PKG_CONFIG_PATH\n", strings.Join(r.EnvVars.PKG_CONFIG_PATH, ":")))
+	environment.WriteString(fmt.Sprintf("export PKG_CONFIG_PATH=%s:$PKG_CONFIG_PATH\n", strings.Join(r.PkgConfigPath, ":")))
 
 	// Set the environment variables.
-	os.Setenv("SYSROOT", absRootFSPath)
-	os.Setenv("PKG_CONFIG_SYSROOT_DIR", absRootFSPath)
-	os.Setenv("PKG_CONFIG_PATH", strings.Join(r.EnvVars.PKG_CONFIG_PATH, ":"))
-	os.Setenv("PATH", fmt.Sprintf("%s%c%s", absRootFSPath, os.PathListSeparator, os.Getenv("PATH")))
+	os.Setenv("SYSROOT", r.Path)
+	os.Setenv("PKG_CONFIG_SYSROOT_DIR", r.Path)
+	os.Setenv("PKG_CONFIG_PATH", strings.Join(r.PkgConfigPath, ":"))
+	os.Setenv("PATH", fmt.Sprintf("%s%c%s", r.Path, os.PathListSeparator, os.Getenv("PATH")))
 
 	return nil
 }
