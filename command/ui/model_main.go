@@ -66,7 +66,7 @@ func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.platformCreateModel = model
 			return m, cmd
 
-		case modePlatformChoose:
+		case modePlatformSelect:
 			model, cmd := m.platformSelectModel.Update(msg)
 			m.platformSelectModel = model
 			return m, cmd
@@ -97,7 +97,7 @@ func (m MainModel) View() string {
 	case modePlatformCreate:
 		return m.platformCreateModel.View()
 
-	case modePlatformChoose:
+	case modePlatformSelect:
 		return m.platformSelectModel.View()
 
 	case modelInstall:

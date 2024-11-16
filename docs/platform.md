@@ -1,15 +1,46 @@
 # 如何配置platfomr
 
-`platform`的配置是 `buildenv`编译平台目标，它定义了这个`platform`所需要的`toolchain`、`rootfs`、`tools`以及`ports`。
+**platform**的配置文件存放在**conf/platforms**下，在此文件中定义了这个`platform`所需要的`toolchain`、`rootfs`、`tools`以及`ports`。
 
-## 1. 创建配置文件
+## 1. 创建platform配置文件
 
-执行`./buildenv -create_platform aarch64-linux-jetson-nano`会自动创建一个platform文件，即：`conf/platforms/aarch64-linux-jetson-nano.json`。
+### 1.1 命令行参数创建
 
 ```shell
-$ buildenv -create_platform aarch64-linux-jetson-nano
+$ ./buildenv -create_platform aarch64-linux-jetson-nano
 [✔] ======== aarch64-linux-jetson-nano is created but need to config it later.
 ```
+
+>一个platform文件被创建，即：`conf/platforms/aarch64-linux-jetson-nano.json`。
+
+### 1.2 交互式cli创建
+
+```
+$ ./buildenv -ui
+
+    Please select one from the menu...                     
+                                                           
+    1. Init or sync buildenv's config repo.                
+  > 2. Create a new platform, it requires completion later.
+    3. Select a platform as your build target platform.    
+    4. Install buildenv.                                   
+    5. About and Usage.                                    
+                                                           
+                                                           
+    ↑/k up • ↓/j down • q quit • ? more                    
+```
+
+通过键盘上下键选择，然后回车即可进入创建platform的配置：
+
+```
+Please input your platform name: 
+
+> for example: x86_64-linux-ubuntu-20.04...                                                            
+
+[esc -> back | ctrl+c/q -> quit]
+```
+
+>platform名字一定要体现出平台特性，如：`aarch64-linux-jetson-nano`、`x86_64-linux-ubuntu-20.04`等。
 
 创建的`aarch64-linux-jetson-nano.json`内容如下：
 
@@ -41,8 +72,9 @@ $ buildenv -create_platform aarch64-linux-jetson-nano
 }
 ```
 
->对于交叉编译，`rootfs`和`toolchain`是必须的，`tools`和`packages`是可选的，但如果想要指定版本的CMake需要把cmake配置到tools里。
->一般`toolchain`里`cc`和`cxx`是必须设置的，其它根据项目需要来配置。
+>对于交叉编译，`rootfs`和`toolchain`是必须的，`tools`和`packages`是可选的，但如果想要指定版本的CMake需要把cmake配置到tools里;
+>一般`toolchain`里`cc`和`cxx`是必须设置的，其它根据项目需要来配置;
+>`toolchain`和`rootfs`下载到`workspace`的`downloads`目录里，并会也会解压到`downloads`里。
 
 完整参考如下：
 
@@ -95,5 +127,3 @@ $ buildenv -create_platform aarch64-linux-jetson-nano
     ]
 }
 ```
-
-[下一步：如何配置配置tool.](./tool.md)

@@ -89,12 +89,15 @@ func (p platformSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return p, tea.Quit
 
-		case "ctrl+c", "esc", "q":
+		case "esc":
 			p.goback()
 			p.trySelected = ""
 			p.selected = ""
 			p.err = nil
 			return p, nil
+
+		case "ctrl+c", "q":
+			return p, tea.Quit
 		}
 	}
 
