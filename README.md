@@ -44,25 +44,18 @@
 ## 使用说明
 
 ```
-Usage of ./buildenv:
-  -build_type string
-        called by buildenv.cmake to set CMAKE_BUILD_TYPE. (default "Release")
-  -create_platform string
-        create a new platform
-  -install
-        install buildenv so that can use it everywhere
-  -select_platform string
-        select a platform as build target platform
-  -silent
-        called by buildenv.cmake to run buildenv in silent mode.
-  -sync
-        create buildenv.json or sync conf repo defined in buildenv.json.
-  -ui
-        run buildenv in gui mode.
-  -verify
-        check and repair toolchain, rootfs, tools and packages for current selected platform.
-  -version
-        print version.
+$ ./buildenv -ui
+
+Welcome to buildenv.
+-----------------------------------
+This is a simple tool to manage your cross build environment.
+
+1. How to use in cmake project: 
+option1: set(CMAKE_TOOLCHAIN_FILE "/mnt/data/work_phil/Golang/buildenv/script/buildenv.cmake")
+option2: cmake .. -DCMAKE_TOOLCHAIN_FILE=/home/phil/my_workspace/script/buildenv.cmake
+
+2. How to use in makefile project: 
+source /home/phil/my_workspace/script/buildenv.sh
 ```
 
 详细说明请看[Docs](./docs/home.md)
