@@ -46,6 +46,21 @@
 ```
 $ ./buildenv -ui
 
+Please choose one from the menu...                     
+                                                           
+    1. Init or sync buildenv's config repo.                
+    2. Create a new platform, it requires completion later.
+    3. Choose a platform as your build target platform.    
+    4. Install buildenv.                                   
+  > 5. About and Usage.                                    
+
+
+    ↑/k up • ↓/j down • q quit • ? more  
+```
+
+选择`5`并回车，即可进入使用说明：
+
+```
 Welcome to buildenv.
 -----------------------------------
 This is a simple tool to manage your cross build environment.
