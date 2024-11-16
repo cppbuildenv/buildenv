@@ -25,9 +25,9 @@ $ buildenv -create_platform aarch64-linux-jetson-nano
         "path": "",                # ----- toolchain解压后暴露到PATH里的路径
         "system_name": "",         # ----- 目标系统名, 如：linux, darwin, windows
         "system_processor": "",    # ----- 目标系统架构, 如：aarch64, x86_64, i386
-        "toolchain_prefix": "",    # ------ 编译工具前缀， 如：aarch64-linux-gnu-
-        "cc": "",                  # ------ 编译工具， 如：aarch64-linux-gnu-gcc
-        "cxx": "",                 # ------ 编译工具， 如：aarch64-linux-gnu-g++
+        "toolchain_prefix": "",    # ----- 编译工具前缀， 如：aarch64-linux-gnu-
+        "cc": "",                  # ----- 编译工具， 如：aarch64-linux-gnu-gcc
+        "cxx": "",                 # ----- 编译工具， 如：aarch64-linux-gnu-g++
         "fc": "",
         "randlib": "",
         "ar": "",
@@ -36,8 +36,8 @@ $ buildenv -create_platform aarch64-linux-jetson-nano
         "objdump": "",
         "strip": ""
     },
-    "tools": [],                   # ------ 编译工具， 如：cmake, make, nasm等
-    "packages": []                 # ------ 三方库， 如：gflags, opencv, qt5, ffmpeg等
+    "tools": [],                   # ----- 编译工具， 如：cmake, make, nasm等
+    "packages": []                 # ----- 三方库， 如：gflags, opencv, qt5, ffmpeg等
 }
 ```
 
