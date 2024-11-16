@@ -25,18 +25,16 @@ $ buildenv -create_platform aarch64-linux-jetson-nano
         "path": "",                # ----- toolchain解压后暴露到PATH里的路径
         "system_name": "",         # ----- 目标系统名, 如：linux, darwin, windows
         "system_processor": "",    # ----- 目标系统架构, 如：aarch64, x86_64, i386
-        "env_vars": {
-            "TOOLCHAIN_PREFIX": "",# ------ 编译工具前缀， 如：aarch64-linux-gnu-
-            "CC": "",              # ------ 编译工具， 如：aarch64-linux-gnu-gcc
-            "CXX": "",             # ------ 编译工具， 如：aarch64-linux-gnu-g++
-            "FC": "",
-            "RANLIB": "",
-            "AR": "",
-            "LD": "",
-            "NM": "",
-            "OBJDUMP": "",
-            "STRIP": ""
-        }
+        "toolchain_prefix": "",    # ------ 编译工具前缀， 如：aarch64-linux-gnu-
+        "cc": "",                  # ------ 编译工具， 如：aarch64-linux-gnu-gcc
+        "cxx": "",                 # ------ 编译工具， 如：aarch64-linux-gnu-g++
+        "fc": "",
+        "randlib": "",
+        "ar": "",
+        "ld": "",
+        "nm": "",
+        "objdump": "",
+        "strip": ""
     },
     "tools": [],                   # ------ 编译工具， 如：cmake, make, nasm等
     "packages": []                 # ------ 三方库， 如：gflags, opencv, qt5, ffmpeg等
@@ -44,7 +42,7 @@ $ buildenv -create_platform aarch64-linux-jetson-nano
 ```
 
 >对于交叉编译，`rootfs`和`toolchain`是必须的，`tools`和`packages`是可选的，但如果想要指定版本的CMake需要把cmake配置到tools里。
->一般`toolchain`里`CC`和`CXX`是必须设置的，其它根据项目需要来配置。
+>一般`toolchain`里`cc`和`cxx`是必须设置的，其它根据项目需要来配置。
 
 完整参考如下：
 
@@ -62,18 +60,16 @@ $ buildenv -create_platform aarch64-linux-jetson-nano
         "path": "gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu/bin",
         "system_name": "Linux",
         "system_processor": "aarch64",
-        "env_vars": {
-            "TOOLCHAIN_PREFIX":"aarch64-none-linux-gnu-",
-            "CC": "aarch64-none-linux-gnu-gcc",
-            "CXX": "aarch64-none-linux-gnu-g++",
-            "FC": "aarch64-none-linux-gnu-gfortran",
-            "RANLIB": "aarch64-none-linux-gnu-ranlib",
-            "AR": "aarch64-none-linux-gnu-ar",
-            "LD": "aarch64-none-linux-gnu-ld",
-            "NM": "aarch64-none-linux-gnu-nm",
-            "OBJDUMP": "aarch64-none-linux-gnu-objdump",
-            "STRIP": "aarch64-none-linux-gnu-strip"
-        }
+        "toolchain_prefix": "aarch64-none-linux-gnu-",
+        "cc": "aarch64-none-linux-gnu-gcc",
+        "cxx": "aarch64-none-linux-gnu-g++",
+        "fc": "aarch64-none-linux-gnu-gfortran",
+        "ranlib": "aarch64-none-linux-gnu-ranlib",
+        "ar": "aarch64-none-linux-gnu-ar",
+        "ld": "aarch64-none-linux-gnu-ld",
+        "nm": "aarch64-none-linux-gnu-nm",
+        "objdump": "aarch64-none-linux-gnu-objdump",
+        "strip": "aarch64-none-linux-gnu-strip"
     },
     "tools": [
         "cmake-3.30.5-linux-x86_64",
