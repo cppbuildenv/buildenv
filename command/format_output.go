@@ -6,7 +6,7 @@ func SyncSuccess(repoUrlInside bool) string {
 	if repoUrlInside {
 		return color.Sprintf(color.Blue, "[✔] ======== conf repo is synchronized.\n")
 	} else {
-		return color.Sprintf(color.Blue, "[✔] ======== buildenv.json is created but no repo_url inside.\n")
+		return color.Sprintf(color.Blue, "[✔] ======== buildenv.json is created but need to config it later.\n")
 	}
 }
 
@@ -15,7 +15,7 @@ func SyncFailed(err error) string {
 }
 
 func PlatformCreated(platform string) string {
-	return color.Sprintf(color.Blue, "[✔] ======== %s is created but still need to config it later.\n", platform)
+	return color.Sprintf(color.Blue, "[✔] ======== %s is created but need to config it later.\n", platform)
 }
 
 func PlatformCreateFailed(platform string, err error) string {
