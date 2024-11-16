@@ -3,7 +3,6 @@ package config
 import (
 	"bufio"
 	"buildenv/config/buildsystem"
-	"buildenv/config/deploy"
 	"buildenv/pkg/color"
 	"buildenv/pkg/io"
 	"encoding/json"
@@ -21,7 +20,6 @@ type Port struct {
 	SourceFolder string                    `json:"source_folder,omitempty"`
 	Depedencies  []string                  `json:"dependencies"`
 	BuildConfigs []buildsystem.BuildConfig `json:"build_configs"`
-	DeployConfig *deploy.DeployConfig      `json:"deploy_config"`
 
 	// Internal fields.
 	portName     string `json:"-"`
@@ -62,10 +60,6 @@ func (p *Port) Init(portPath, platformName, buildType string) error {
 			p.BuildConfigs[index].InstalledDir = filepath.Join(Dirs.WorkspaceDir, "installed", platformName+"-"+buildType)
 			p.BuildConfigs[index].JobNum = 8 // TODO: make it configurable.
 		}
-	} else {
-		p.DeployConfig = &deploy.DeployConfig{}
-		p.DeployConfig.InstalledDir = filepath.Join(Dirs.WorkspaceDir, "installed", platformName+"-"+buildType)
-		p.DeployConfig.DownloadDir = filepath.Join(Dirs.WorkspaceDir, "downloads")
 	}
 
 	return nil
@@ -161,7 +155,9 @@ func (p Port) checkAndRepair() error {
 			}
 		}
 	} else {
-		if err := p.DeployConfig.CheckAndRepair(p.Url); err != nil {
+		installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.platformName+"-"+p.buildType)
+		downloadedDir := filepath.Join(Dirs.WorkspaceDir, "downloads")
+		if err := downloadAndDeploy(p.Url, installedDir, downloadedDir); err != nil {
 			return err
 		}
 	}
@@ -188,10 +184,28 @@ func (p Port) checkAndRepair() error {
 	return nil
 }
 
+func downloadAndDeploy(url, installedDir, downloadedDir string) error {
+	// Download to fixed dir.
+	downloaded, err := io.Download(url, downloadedDir)
+	if err != nil {
+		return fmt.Errorf("%s: download port failed: %w", url, err)
+	}
+
+	// Extract archive file.
+	fileName := filepath.Base(url)
+	folderName := strings.TrimSuffix(fileName, ".tar.gz")
+	extractPath := filepath.Join(installedDir, folderName)
+	if err := io.Extract(downloaded, extractPath); err != nil {
+		return fmt.Errorf("%s: extract %s failed: %w", fileName, downloaded, err)
+	}
+
+	return nil
+}
+
 func (p Port) matchPattern(pattern string) bool {
 	pattern = strings.TrimSpace(pattern)
 
-	if pattern == "" {
+	if pattern == "" || pattern == "*" {
 		return true
 	}
 

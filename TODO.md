@@ -9,3 +9,4 @@
 - 运行tools需要将内部lib路径加入到LD_LIBRARY_PATH
 - 三方库如果编译后产生pkg-config文件，需要加入系统变量（ffmpeg在通过pkg-config寻找libx265）----------- ✔
 - cli里添加命令：编译指定的某个port，最好以列表方式呈现，让用户选择
+- 有的toolchain或者tool不是绿色版，不能托管到buildenv里，需要绝对路径指向
