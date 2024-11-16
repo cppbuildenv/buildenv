@@ -1,4 +1,4 @@
-package build
+package buildsystem
 
 func NewNinja(config BuildConfig) *meson {
 	return &meson{BuildConfig: config}

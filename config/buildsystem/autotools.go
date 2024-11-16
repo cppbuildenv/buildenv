@@ -1,4 +1,4 @@
-package build
+package buildsystem
 
 func NewAutoTool(config BuildConfig) *autoTool {
 	return &autoTool{BuildConfig: config}

@@ -2,7 +2,7 @@ package config
 
 import (
 	"bufio"
-	"buildenv/config/build"
+	"buildenv/config/buildsystem"
 	"buildenv/config/deploy"
 	"buildenv/pkg/color"
 	"buildenv/pkg/io"
@@ -16,11 +16,11 @@ import (
 type BuildTool int
 
 type Port struct {
-	Url          string               `json:"url"`
-	Version      string               `json:"version"`
-	SourceFolder string               `json:"source_folder,omitempty"`
-	BuildConfig  *build.BuildConfig   `json:"build_config"`
-	DeployConfig *deploy.DeployConfig `json:"deploy_config"`
+	Url          string                   `json:"url"`
+	Version      string                   `json:"version"`
+	SourceFolder string                   `json:"source_folder,omitempty"`
+	BuildConfig  *buildsystem.BuildConfig `json:"build_config"`
+	DeployConfig *deploy.DeployConfig     `json:"deploy_config"`
 
 	// Internal fields.
 	portName     string `json:"-"`

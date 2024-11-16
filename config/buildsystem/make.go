@@ -1,4 +1,4 @@
-package build
+package buildsystem
 
 import (
 	"fmt"
@@ -28,9 +28,20 @@ func (m make) Configure(buildType string) error {
 		return err
 	}
 
+	// Replace placeholders with real paths.
 	for index, argument := range m.Arguments {
 		if strings.Contains(argument, "${INSTALLED_DIR}") {
 			m.Arguments[index] = strings.ReplaceAll(argument, "${INSTALLED_DIR}", m.InstalledDir)
+		}
+
+		if strings.Contains(argument, "${TOOLCHAIN_PREFIX}") {
+			toolchainPrefix := os.Getenv("TOOLCHAIN_PREFIX")
+			m.Arguments[index] = strings.ReplaceAll(argument, "${TOOLCHAIN_PREFIX}", toolchainPrefix)
+		}
+
+		if strings.Contains(argument, "${SYSROOT}") {
+			sysroot := os.Getenv("SYSROOT")
+			m.Arguments[index] = strings.ReplaceAll(argument, "${SYSROOT}", sysroot)
 		}
 	}
 

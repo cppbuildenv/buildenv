@@ -1,4 +1,4 @@
-package build
+package buildsystem
 
 import (
 	"buildenv/pkg/color"
@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 type BuildSystem interface {
@@ -61,10 +62,9 @@ func (b BuildConfig) Clone(repo, ref string) error {
 	cloneLogPath := filepath.Join(filepath.Dir(b.BuildDir), filepath.Base(b.BuildDir)+"-clone.log")
 
 	// Execute clone command.
-	for _, command := range commands {
-		if err := b.execute(command, cloneLogPath); err != nil {
-			return err
-		}
+	commandLine := strings.Join(commands, " && ")
+	if err := b.execute(commandLine, cloneLogPath); err != nil {
+		return err
 	}
 
 	return nil
@@ -95,7 +95,7 @@ func (b BuildConfig) execute(command, logPath string) error {
 	errWriter := color.NewWriter(os.Stdout, color.Red)
 	cmd.Stderr = io.MultiWriter(errWriter, logFile)
 
-	cmd.Env = append(os.Environ(), os.Getenv("PATH"))
+	cmd.Env = os.Environ()
 	if err := cmd.Run(); err != nil {
 		return err
 	}

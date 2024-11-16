@@ -1,4 +1,4 @@
-package build
+package buildsystem
 
 import (
 	"fmt"

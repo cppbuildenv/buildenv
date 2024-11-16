@@ -18,29 +18,19 @@ type Toolchain struct {
 }
 
 type ToolchainEnvVar struct {
-	CC      string `json:"CC"`
-	CXX     string `json:"CXX"`
-	FC      string `json:"FC"`
-	RANLIB  string `json:"RANLIB"`
-	AR      string `json:"AR"`
-	LD      string `json:"LD"`
-	NM      string `json:"NM"`
-	OBJDUMP string `json:"OBJDUMP"`
-	STRIP   string `json:"STRIP"`
+	TOOLCHAIN_PREFIX string `json:"TOOLCHAIN_PREFIX"`
+	CC               string `json:"CC"`
+	CXX              string `json:"CXX"`
+	FC               string `json:"FC"`
+	RANLIB           string `json:"RANLIB"`
+	AR               string `json:"AR"`
+	LD               string `json:"LD"`
+	NM               string `json:"NM"`
+	OBJDUMP          string `json:"OBJDUMP"`
+	STRIP            string `json:"STRIP"`
 }
 
 func (t *Toolchain) Verify(args VerifyArgs) error {
-	// Relative path -> Absolute path.
-	var toAbsPath = func(relativePath string) (string, error) {
-		path := filepath.Join(Dirs.DownloadRootDir, relativePath)
-		rootfsPath, err := filepath.Abs(path)
-		if err != nil {
-			return "", err
-		}
-
-		return rootfsPath, nil
-	}
-
 	// Verify toolchain download url.
 	if t.Url == "" {
 		return fmt.Errorf("toolchain.url is empty")
@@ -53,7 +43,7 @@ func (t *Toolchain) Verify(args VerifyArgs) error {
 	if t.Path == "" {
 		return fmt.Errorf("toolchain.path is empty")
 	}
-	toolchainPath, err := toAbsPath(t.Path)
+	toolchainPath, err := io.ToAbsPath(Dirs.DownloadRootDir, t.Path)
 	if err != nil {
 		return fmt.Errorf("cannot get absolute path: %s", t.Path)
 	}
@@ -70,12 +60,48 @@ func (t *Toolchain) Verify(args VerifyArgs) error {
 		return fmt.Errorf("toolchain.system_processor is empty")
 	}
 
+	// Verify toolchain prefix path and convert to absolute path.
+	if t.EnvVars.TOOLCHAIN_PREFIX == "" {
+		return fmt.Errorf("toolchain.env.TOOLCHAIN_PREFIX is empty")
+	}
+	toolchainPrefix, err := io.ToAbsPath(t.Path, t.EnvVars.TOOLCHAIN_PREFIX)
+	if err != nil {
+		return fmt.Errorf("cannot get absolute path: %s", t.EnvVars.TOOLCHAIN_PREFIX)
+	}
+	t.EnvVars.TOOLCHAIN_PREFIX = toolchainPrefix
+
 	if t.EnvVars.CC == "" {
 		return fmt.Errorf("toolchain.env.CC is empty")
 	}
 
 	if t.EnvVars.CXX == "" {
 		return fmt.Errorf("toolchain.env.CXX is empty")
+	}
+
+	// This is used to cross-compile other ports by buildenv.
+	os.Setenv("TOOLCHAIN_PREFIX", t.EnvVars.TOOLCHAIN_PREFIX)
+	os.Setenv("CC", t.EnvVars.CC)
+	os.Setenv("CXX", t.EnvVars.CXX)
+	if t.EnvVars.FC != "" {
+		os.Setenv("FC", t.EnvVars.FC)
+	}
+	if t.EnvVars.RANLIB != "" {
+		os.Setenv("RANLIB", t.EnvVars.RANLIB)
+	}
+	if t.EnvVars.AR != "" {
+		os.Setenv("AR", t.EnvVars.AR)
+	}
+	if t.EnvVars.LD != "" {
+		os.Setenv("LD", t.EnvVars.LD)
+	}
+	if t.EnvVars.NM != "" {
+		os.Setenv("NM", t.EnvVars.NM)
+	}
+	if t.EnvVars.OBJDUMP != "" {
+		os.Setenv("OBJDUMP", t.EnvVars.OBJDUMP)
+	}
+	if t.EnvVars.STRIP != "" {
+		os.Setenv("STRIP", t.EnvVars.STRIP)
 	}
 
 	if !args.CheckAndRepair {
