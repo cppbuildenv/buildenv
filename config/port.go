@@ -16,11 +16,12 @@ import (
 type BuildTool int
 
 type Port struct {
-	Url          string                   `json:"url"`
-	Version      string                   `json:"version"`
-	SourceFolder string                   `json:"source_folder,omitempty"`
-	BuildConfig  *buildsystem.BuildConfig `json:"build_config"`
-	DeployConfig *deploy.DeployConfig     `json:"deploy_config"`
+	Url          string                    `json:"url"`
+	Version      string                    `json:"version"`
+	SourceFolder string                    `json:"source_folder,omitempty"`
+	Depedencies  []string                  `json:"dependencies"`
+	BuildConfigs []buildsystem.BuildConfig `json:"build_configs"`
+	DeployConfig *deploy.DeployConfig      `json:"deploy_config"`
 
 	// Internal fields.
 	portName     string `json:"-"`
@@ -53,12 +54,14 @@ func (p *Port) Init(portPath, platformName, buildType string) error {
 	fileName := fmt.Sprintf("%s-%s.list", p.platformName, p.buildType)
 	p.infoPath = filepath.Join(Dirs.InstalledRootDir, "buildenv", fileName)
 
-	if p.BuildConfig != nil {
-		p.BuildConfig.SourceDir = filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, "src")
-		p.BuildConfig.SourceFolder = p.SourceFolder
-		p.BuildConfig.BuildDir = filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, platformName+"-"+buildType)
-		p.BuildConfig.InstalledDir = filepath.Join(Dirs.WorkspaceDir, "installed", platformName+"-"+buildType)
-		p.BuildConfig.JobNum = 8 // TODO: make it configurable.
+	if len(p.BuildConfigs) > 0 {
+		for index := range p.BuildConfigs {
+			p.BuildConfigs[index].SourceDir = filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, "src")
+			p.BuildConfigs[index].SourceFolder = p.SourceFolder
+			p.BuildConfigs[index].BuildDir = filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, platformName+"-"+buildType)
+			p.BuildConfigs[index].InstalledDir = filepath.Join(Dirs.WorkspaceDir, "installed", platformName+"-"+buildType)
+			p.BuildConfigs[index].JobNum = 8 // TODO: make it configurable.
+		}
 	} else {
 		p.DeployConfig = &deploy.DeployConfig{}
 		p.DeployConfig.InstalledDir = filepath.Join(Dirs.WorkspaceDir, "installed", platformName+"-"+buildType)
@@ -77,8 +80,12 @@ func (p *Port) Verify(args VerifyArgs) error {
 		return fmt.Errorf("port.version is empty")
 	}
 
-	if p.BuildConfig != nil {
-		if err := p.BuildConfig.Verify(); err != nil {
+	for _, config := range p.BuildConfigs {
+		if !p.matchPattern(config.Pattern) {
+			continue
+		}
+
+		if err := config.Verify(); err != nil {
 			return err
 		}
 	}
@@ -125,9 +132,9 @@ func (p Port) checkAndRepair() error {
 		return nil
 	}
 
-	if p.BuildConfig != nil {
+	if len(p.BuildConfigs) > 0 {
 		// Check and repair dependencies.
-		for _, item := range p.BuildConfig.Depedencies {
+		for _, item := range p.Depedencies {
 			if item == p.portName {
 				return fmt.Errorf("port.dependencies contains circular dependency: %s", item)
 			}
@@ -144,8 +151,14 @@ func (p Port) checkAndRepair() error {
 			}
 		}
 
-		if err := p.BuildConfig.CheckAndRepair(p.Url, p.Version, p.buildType); err != nil {
-			return err
+		for _, config := range p.BuildConfigs {
+			if !p.matchPattern(config.Pattern) {
+				continue
+			}
+
+			if err := config.CheckAndRepair(p.Url, p.Version, p.buildType); err != nil {
+				return err
+			}
 		}
 	} else {
 		if err := p.DeployConfig.CheckAndRepair(p.Url); err != nil {
@@ -173,4 +186,26 @@ func (p Port) checkAndRepair() error {
 	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.platformName+"-"+p.buildType)
 	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- %s (port: %s)\n\n", p.portName, installedDir))
 	return nil
+}
+
+func (p Port) matchPattern(pattern string) bool {
+	pattern = strings.TrimSpace(pattern)
+
+	if pattern == "" {
+		return true
+	}
+
+	if pattern[0] == '*' && pattern[len(pattern)-1] == '*' {
+		return strings.Contains(p.platformName, pattern[1:len(pattern)-1])
+	}
+
+	if pattern[0] == '*' {
+		return strings.HasSuffix(p.platformName, pattern[1:])
+	}
+
+	if pattern[len(pattern)-1] == '*' {
+		return strings.HasPrefix(p.platformName, pattern[:len(pattern)-1])
+	}
+
+	return p.platformName == pattern
 }

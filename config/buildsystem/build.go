@@ -20,9 +20,9 @@ type BuildSystem interface {
 }
 
 type BuildConfig struct {
-	BuildTool   string   `json:"build_tool"`
-	Arguments   []string `json:"arguments"`
-	Depedencies []string `json:"dependencies"`
+	Pattern   string   `json:"pattern"`
+	BuildTool string   `json:"build_tool"`
+	Arguments []string `json:"arguments"`
 
 	// Internal fields
 	SourceDir    string `json:"-"`

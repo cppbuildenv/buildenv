@@ -15,9 +15,9 @@ func TestBuildGFlags(t *testing.T) {
 	}
 
 	// Change for unit tests.
-	port.BuildConfig.SourceDir = "testdata/buildtrees/gflags-v2.2.2/src"
-	port.BuildConfig.BuildDir = "testdata/buildtrees/gflags-v2.2.2/x86_64-linux-Release"
-	port.BuildConfig.InstalledDir = "testdata/installed/x86_64-linux-Release"
+	port.BuildConfigs[0].SourceDir = "testdata/buildtrees/gflags-v2.2.2/src"
+	port.BuildConfigs[0].BuildDir = "testdata/buildtrees/gflags-v2.2.2/x86_64-linux-Release"
+	port.BuildConfigs[0].InstalledDir = "testdata/installed/x86_64-linux-Release"
 
 	args := VerifyArgs{
 		Silent:         false,
