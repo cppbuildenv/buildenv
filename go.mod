@@ -2,12 +2,14 @@ module buildenv
 
 go 1.22.1
 
-require github.com/charmbracelet/bubbletea v1.1.2
+require (
+	github.com/charmbracelet/bubbletea v1.1.2
+	golang.org/x/term v0.25.0
+)
 
 require (
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/sahilm/fuzzy v0.1.1 // indirect
-	golang.org/x/term v0.25.0 // indirect
 )
 
 require (
@@ -25,7 +27,6 @@ require (
 	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/muesli/termenv v0.15.2 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
-	golang.org/x/crypto v0.28.0
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.26.0 // indirect
 	golang.org/x/text v0.19.0 // indirect

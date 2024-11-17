@@ -78,27 +78,27 @@ func (r *RootFS) Verify(args VerifyArgs) error {
 	return r.checkAndRepair()
 }
 
-func (b RootFS) checkAndRepair() error {
+func (r RootFS) checkAndRepair() error {
 	// Check if tool exists.
-	if io.PathExists(b.Path) {
+	if io.PathExists(r.Path) {
 		return nil
 	}
 
 	// Download to fixed dir.
-	downloaded, err := io.Download(b.Url, Dirs.DownloadRootDir)
+	downloaded, err := io.Download(r.Url, Dirs.DownloadRootDir)
 	if err != nil {
-		return fmt.Errorf("%s: download rootfs failed: %w", b.Url, err)
+		return fmt.Errorf("%s: download rootfs failed: %w", r.Url, err)
 	}
 
 	// Extract archive file.
-	fileName := filepath.Base(b.Url)
-	folderName := strings.TrimSuffix(fileName, ".tar.gz")
-	extractPath := filepath.Join(Dirs.DownloadRootDir, folderName)
-	if err := io.Extract(downloaded, extractPath); err != nil {
+	if err := io.Extract(downloaded, Dirs.DownloadRootDir); err != nil {
 		return fmt.Errorf("%s: extract rootfs failed: %w", downloaded, err)
 	}
 
-	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- %s (rootfs: %s)\n\n", filepath.Base(b.Url), extractPath))
+	// Print download & extract info.
+	fileName := filepath.Base(r.Url)
+	extractPath := filepath.Join(Dirs.DownloadRootDir, io.FileBaseName(fileName))
+	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- %s (rootfs: %s)\n\n", filepath.Base(r.Url), extractPath))
 	return nil
 }
 

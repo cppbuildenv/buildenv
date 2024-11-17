@@ -94,11 +94,12 @@ func (t Tool) checkAndRepair() error {
 	}
 
 	// Extract archive file.
-	extractPath := filepath.Join(Dirs.DownloadRootDir, t.toolName)
-	if err := io.Extract(downloaded, extractPath); err != nil {
+	if err := io.Extract(downloaded, Dirs.DownloadRootDir); err != nil {
 		return fmt.Errorf("%s: extract failed: %w", fileName, err)
 	}
 
+	// Print download & extract info.
+	extractPath := filepath.Join(Dirs.DownloadRootDir, io.FileBaseName(fileName))
 	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- %s (tool: %s)\n\n", fileName, extractPath))
 	return nil
 }

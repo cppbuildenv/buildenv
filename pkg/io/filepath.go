@@ -3,6 +3,7 @@ package io
 import (
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // PathExists checks if the path exists.
@@ -24,4 +25,14 @@ func ToAbsPath(parentPath, relativePath string) (string, error) {
 	}
 
 	return rootfsPath, nil
+}
+
+func FileBaseName(fileName string) string {
+	index := strings.Index(fileName, ".tar.")
+	if index > 0 {
+		return fileName[:index]
+	}
+
+	ext := filepath.Ext(fileName)
+	return strings.TrimSuffix(fileName, ext)
 }

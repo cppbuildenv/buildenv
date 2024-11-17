@@ -58,7 +58,7 @@ func (t *Toolchain) Verify(args VerifyArgs) error {
 
 	// Verify toolchain prefix path and convert to absolute path.
 	if t.ToolchainPrefix == "" {
-		return fmt.Errorf("toolchain.env.TOOLCHAIN_PREFIX is empty")
+		return fmt.Errorf("toolchain.toolchain_prefix is empty")
 	}
 	toolchainPrefix, err := io.ToAbsPath(t.Path, t.ToolchainPrefix)
 	if err != nil {
@@ -67,11 +67,11 @@ func (t *Toolchain) Verify(args VerifyArgs) error {
 	t.ToolchainPrefix = toolchainPrefix
 
 	if t.CC == "" {
-		return fmt.Errorf("toolchain.env.CC is empty")
+		return fmt.Errorf("toolchain.cc is empty")
 	}
 
 	if t.CXX == "" {
-		return fmt.Errorf("toolchain.env.CXX is empty")
+		return fmt.Errorf("toolchain.cxx is empty")
 	}
 
 	// This is used to cross-compile other ports by buildenv.
@@ -155,13 +155,13 @@ func (t Toolchain) checkAndRepair() error {
 	}
 
 	// Extract archive file.
-	fileName := filepath.Base(t.Url)
-	folderName := strings.TrimSuffix(fileName, ".tar.gz")
-	extractPath := filepath.Join(Dirs.DownloadRootDir, folderName)
-	if err := io.Extract(downloaded, extractPath); err != nil {
+	if err := io.Extract(downloaded, Dirs.DownloadRootDir); err != nil {
 		return fmt.Errorf("%s: extract toolchain failed: %w", downloaded, err)
 	}
 
+	// Print download & extract info.
+	fileName := filepath.Base(t.Url)
+	extractPath := filepath.Join(Dirs.DownloadRootDir, io.FileBaseName(fileName))
 	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- %s (toolchain: %s)\n\n", filepath.Base(t.Url), extractPath))
 	return nil
 }
