@@ -17,6 +17,7 @@ type Tool struct {
 
 	// Internal fields.
 	toolName string `json:"-"`
+	fullpath string `json:"-"`
 }
 
 func (t *Tool) Init(toolpath string) error {
@@ -67,10 +68,10 @@ func (t *Tool) Verify(args VerifyArgs) error {
 	if err != nil {
 		return fmt.Errorf("cannot get absolute path: %s", t.Path)
 	}
-	t.Path = toolPath
+	t.fullpath = toolPath
 
 	// This is used to cross-compile other ports by buildenv.
-	os.Setenv("PATH", fmt.Sprintf("%s:%s", t.Path, os.Getenv("PATH")))
+	os.Setenv("PATH", fmt.Sprintf("%s:%s", t.fullpath, os.Getenv("PATH")))
 
 	if !args.CheckAndRepair {
 		return nil
@@ -81,7 +82,7 @@ func (t *Tool) Verify(args VerifyArgs) error {
 
 func (t Tool) checkAndRepair() error {
 	// Check if tool exists.
-	if io.PathExists(t.Path) {
+	if io.PathExists(t.fullpath) {
 		return nil
 	}
 
@@ -94,12 +95,18 @@ func (t Tool) checkAndRepair() error {
 	}
 
 	// Extract archive file.
-	if err := io.Extract(downloaded, Dirs.DownloadRootDir); err != nil {
+	folderName := strings.Split(t.Path, string(filepath.Separator))[0]
+	if err := io.Extract(downloaded, filepath.Join(Dirs.DownloadRootDir, folderName)); err != nil {
 		return fmt.Errorf("%s: extract failed: %w", fileName, err)
 	}
 
+	// Check if has nested folder (handling case where there's an extra nested folder).
+	extractPath := filepath.Join(Dirs.DownloadRootDir, folderName)
+	if err := io.MoveNestedFolderIfExist(extractPath); err != nil {
+		return fmt.Errorf("%s: failed to move nested folder: %w", fileName, err)
+	}
+
 	// Print download & extract info.
-	extractPath := filepath.Join(Dirs.DownloadRootDir, io.FileBaseName(fileName))
 	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- %s (tool: %s)\n\n", fileName, extractPath))
 	return nil
 }

@@ -24,6 +24,9 @@ type Toolchain struct {
 	NM              string `json:"nm"`
 	OBJDUMP         string `json:"objdump"`
 	STRIP           string `json:"strip"`
+
+	// Internal fields.
+	fullpath string `json:"-"`
 }
 
 func (t *Toolchain) Verify(args VerifyArgs) error {
@@ -43,10 +46,10 @@ func (t *Toolchain) Verify(args VerifyArgs) error {
 	if err != nil {
 		return fmt.Errorf("cannot get absolute path: %s", t.Path)
 	}
-	t.Path = toolchainPath
+	t.fullpath = toolchainPath
 
 	// This is used to cross-compile other ports by buildenv.
-	os.Setenv("PATH", fmt.Sprintf("%s:%s", t.Path, os.Getenv("PATH")))
+	os.Setenv("PATH", fmt.Sprintf("%s:%s", t.fullpath, os.Getenv("PATH")))
 
 	if t.SystemName == "" {
 		return fmt.Errorf("toolchain.system_name is empty")
@@ -60,11 +63,7 @@ func (t *Toolchain) Verify(args VerifyArgs) error {
 	if t.ToolchainPrefix == "" {
 		return fmt.Errorf("toolchain.toolchain_prefix is empty")
 	}
-	toolchainPrefix, err := io.ToAbsPath(t.Path, t.ToolchainPrefix)
-	if err != nil {
-		return fmt.Errorf("cannot get absolute path: %s", t.ToolchainPrefix)
-	}
-	t.ToolchainPrefix = toolchainPrefix
+	t.ToolchainPrefix = filepath.Join(t.fullpath, t.ToolchainPrefix)
 
 	if t.CC == "" {
 		return fmt.Errorf("toolchain.cc is empty")
@@ -107,9 +106,39 @@ func (t *Toolchain) Verify(args VerifyArgs) error {
 	return t.checkAndRepair()
 }
 
+func (t Toolchain) checkAndRepair() error {
+	// Check if tool exists.
+	if io.PathExists(t.fullpath) {
+		return nil
+	}
+
+	// Download to fixed dir.
+	downloaded, err := io.Download(t.Url, Dirs.DownloadRootDir)
+	if err != nil {
+		return fmt.Errorf("%s: download toolchain failed: %w", t.Url, err)
+	}
+
+	// Extract archive file.
+	fileName := filepath.Base(t.Url)
+	folderName := strings.Split(t.Path, string(filepath.Separator))[0]
+	if err := io.Extract(downloaded, filepath.Join(Dirs.DownloadRootDir, folderName)); err != nil {
+		return fmt.Errorf("%s: extract toolchain failed: %w", downloaded, err)
+	}
+
+	// Check if has nested folder (handling case where there's an extra nested folder).
+	extractPath := filepath.Join(Dirs.DownloadRootDir, folderName)
+	if err := io.MoveNestedFolderIfExist(extractPath); err != nil {
+		return fmt.Errorf("%s: failed to move nested folder: %w", fileName, err)
+	}
+
+	// Print download & extract info.
+	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- %s (toolchain: %s)\n\n", filepath.Base(t.Url), extractPath))
+	return nil
+}
+
 func (t Toolchain) generate(toolchain, environment *strings.Builder) error {
 	toolchain.WriteString("\n# Set toolchain for cross-compile.\n")
-	toolchain.WriteString(fmt.Sprintf("set(ENV{PATH} \"%s:$ENV{PATH}\")\n", t.Path))
+	toolchain.WriteString(fmt.Sprintf("set(ENV{PATH} \"%s:$ENV{PATH}\")\n", t.fullpath))
 
 	writeIfNotEmpty := func(content, env, value string) {
 		if value != "" {
@@ -122,7 +151,7 @@ func (t Toolchain) generate(toolchain, environment *strings.Builder) error {
 	}
 
 	environment.WriteString("# Set toolchain for cross compile.\n")
-	environment.WriteString(fmt.Sprintf("export TOOLCHAIN_PATH=%s\n", t.Path))
+	environment.WriteString(fmt.Sprintf("export TOOLCHAIN_PATH=%s\n", t.fullpath))
 	environment.WriteString("export PATH=${TOOLCHAIN_PATH}:${PATH}\n\n")
 
 	writeIfNotEmpty("CMAKE_C_COMPILER 		", "CC", t.CC)
@@ -139,29 +168,5 @@ func (t Toolchain) generate(toolchain, environment *strings.Builder) error {
 	toolchain.WriteString("set(CMAKE_C_FLAGS_INIT \"--sysroot=${CMAKE_SYSROOT}\")\n")
 	toolchain.WriteString("set(CMAKE_CXX_FLAGS_INIT \"--sysroot=${CMAKE_SYSROOT}\")\n")
 
-	return nil
-}
-
-func (t Toolchain) checkAndRepair() error {
-	// Check if tool exists.
-	if io.PathExists(t.Path) {
-		return nil
-	}
-
-	// Download to fixed dir.
-	downloaded, err := io.Download(t.Url, Dirs.DownloadRootDir)
-	if err != nil {
-		return fmt.Errorf("%s: download toolchain failed: %w", t.Url, err)
-	}
-
-	// Extract archive file.
-	if err := io.Extract(downloaded, Dirs.DownloadRootDir); err != nil {
-		return fmt.Errorf("%s: extract toolchain failed: %w", downloaded, err)
-	}
-
-	// Print download & extract info.
-	fileName := filepath.Base(t.Url)
-	extractPath := filepath.Join(Dirs.DownloadRootDir, io.FileBaseName(fileName))
-	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- %s (toolchain: %s)\n\n", filepath.Base(t.Url), extractPath))
 	return nil
 }

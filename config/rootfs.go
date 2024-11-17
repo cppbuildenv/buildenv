@@ -13,6 +13,9 @@ type RootFS struct {
 	Url           string   `json:"url"`
 	Path          string   `json:"path"`
 	PkgConfigPath []string `json:"pkg_config_path"`
+
+	// Internal fields.
+	fullpath string `json:"-"`
 }
 
 type RootFSEnv struct {
@@ -22,17 +25,6 @@ type RootFSEnv struct {
 }
 
 func (r *RootFS) Verify(args VerifyArgs) error {
-	// Relative path -> Absolute path.
-	var toAbsPath = func(relativePath string) (string, error) {
-		path := filepath.Join(Dirs.DownloadRootDir, relativePath)
-		rootfsPath, err := filepath.Abs(path)
-		if err != nil {
-			return "", err
-		}
-
-		return rootfsPath, nil
-	}
-
 	// Verify rootfs download url.
 	if r.Url == "" {
 		return fmt.Errorf("rootfs.url is empty")
@@ -45,11 +37,11 @@ func (r *RootFS) Verify(args VerifyArgs) error {
 	if r.Path == "" {
 		return fmt.Errorf("rootfs.path is empty")
 	}
-	rootfsPath, err := toAbsPath(r.Path)
+	rootfsPath, err := io.ToAbsPath(Dirs.DownloadRootDir, r.Path)
 	if err != nil {
 		return fmt.Errorf("cannot get absolute path: %s", r.Path)
 	}
-	r.Path = rootfsPath
+	r.fullpath = rootfsPath
 
 	// This is for cross-compile other ports by buildenv.
 	os.Setenv("SYSROOT", rootfsPath)
@@ -59,7 +51,7 @@ func (r *RootFS) Verify(args VerifyArgs) error {
 	if len(r.PkgConfigPath) > 0 {
 		var paths []string
 		for _, itemPath := range r.PkgConfigPath {
-			absPath, err := toAbsPath(filepath.Join(r.Path, itemPath))
+			absPath, err := io.ToAbsPath(Dirs.DownloadRootDir, filepath.Join(r.fullpath, itemPath))
 			if err != nil {
 				return fmt.Errorf("cannot get absolute path: %s", itemPath)
 			}
@@ -80,7 +72,7 @@ func (r *RootFS) Verify(args VerifyArgs) error {
 
 func (r RootFS) checkAndRepair() error {
 	// Check if tool exists.
-	if io.PathExists(r.Path) {
+	if io.PathExists(r.fullpath) {
 		return nil
 	}
 
@@ -91,20 +83,26 @@ func (r RootFS) checkAndRepair() error {
 	}
 
 	// Extract archive file.
-	if err := io.Extract(downloaded, Dirs.DownloadRootDir); err != nil {
+	fileName := filepath.Base(r.Url)
+	folderName := strings.Split(r.Path, string(filepath.Separator))[0]
+	if err := io.Extract(downloaded, filepath.Join(Dirs.DownloadRootDir, folderName)); err != nil {
 		return fmt.Errorf("%s: extract rootfs failed: %w", downloaded, err)
 	}
 
+	// Check if has nested folder (handling case where there's an extra nested folder).
+	extractPath := filepath.Join(Dirs.DownloadRootDir, folderName)
+	if err := io.MoveNestedFolderIfExist(extractPath); err != nil {
+		return fmt.Errorf("%s: failed to move nested folder: %w", fileName, err)
+	}
+
 	// Print download & extract info.
-	fileName := filepath.Base(r.Url)
-	extractPath := filepath.Join(Dirs.DownloadRootDir, io.FileBaseName(fileName))
 	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- %s (rootfs: %s)\n\n", filepath.Base(r.Url), extractPath))
 	return nil
 }
 
 func (r RootFS) generate(toolchain, environment *strings.Builder) error {
 	toolchain.WriteString("\n# Set sysroot for cross-compile.\n")
-	toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSROOT \"%s\")\n", r.Path))
+	toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSROOT \"%s\")\n", r.fullpath))
 	toolchain.WriteString("list(APPEND CMAKE_FIND_ROOT_PATH \"${CMAKE_SYSROOT}\")\n")
 
 	// Search programs in the host environment.
@@ -127,16 +125,16 @@ func (r RootFS) generate(toolchain, environment *strings.Builder) error {
 
 	// Write variables to buildenv.sh
 	environment.WriteString("\n# Set rootfs for cross compile.\n")
-	environment.WriteString(fmt.Sprintf("export SYSROOT=%s\n", r.Path))
+	environment.WriteString(fmt.Sprintf("export SYSROOT=%s\n", r.fullpath))
 	environment.WriteString("export PATH=${SYSROOT}:${PATH}\n")
 	environment.WriteString("export PKG_CONFIG_SYSROOT_DIR=${SYSROOT}\n")
 	environment.WriteString(fmt.Sprintf("export PKG_CONFIG_PATH=%s:$PKG_CONFIG_PATH\n", strings.Join(r.PkgConfigPath, ":")))
 
 	// Set the environment variables.
-	os.Setenv("SYSROOT", r.Path)
-	os.Setenv("PKG_CONFIG_SYSROOT_DIR", r.Path)
+	os.Setenv("SYSROOT", r.fullpath)
+	os.Setenv("PKG_CONFIG_SYSROOT_DIR", r.fullpath)
 	os.Setenv("PKG_CONFIG_PATH", strings.Join(r.PkgConfigPath, ":"))
-	os.Setenv("PATH", fmt.Sprintf("%s%c%s", r.Path, os.PathListSeparator, os.Getenv("PATH")))
+	os.Setenv("PATH", fmt.Sprintf("%s%c%s", r.fullpath, os.PathListSeparator, os.Getenv("PATH")))
 
 	return nil
 }
