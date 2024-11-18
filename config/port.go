@@ -186,17 +186,17 @@ func (p Port) checkAndRepair() error {
 
 func downloadAndDeploy(url, installedDir, downloadedDir string) error {
 	// Download to fixed dir.
-	downloaded, err := io.Download(url, downloadedDir)
+	downloaded, err := io.Download(url, downloadedDir, "")
 	if err != nil {
 		return fmt.Errorf("%s: download port failed: %w", url, err)
 	}
 
 	// Extract archive file.
-	fileName := filepath.Base(url)
-	folderName := strings.TrimSuffix(fileName, ".tar.gz")
+	archiveName := filepath.Base(url)
+	folderName := strings.TrimSuffix(archiveName, ".tar.gz")
 	extractPath := filepath.Join(installedDir, folderName)
 	if err := io.Extract(downloaded, extractPath); err != nil {
-		return fmt.Errorf("%s: extract %s failed: %w", fileName, downloaded, err)
+		return fmt.Errorf("%s: extract %s failed: %w", archiveName, downloaded, err)
 	}
 
 	return nil

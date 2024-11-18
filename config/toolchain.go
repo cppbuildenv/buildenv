@@ -10,11 +10,12 @@ import (
 )
 
 type Toolchain struct {
-	Url             string `json:"url"`
-	Path            string `json:"path"`
-	SystemName      string `json:"system_name"`
-	SystemProcessor string `json:"system_processor"`
-	ToolchainPrefix string `json:"toolchain_prefix"`
+	Url             string `json:"url"`                    // Download url.
+	ArchiveName     string `json:"archive_name,omitempty"` // Archive name can be changed to avoid conflict.
+	Path            string `json:"path"`                   // Runtime path of tool, it's relative path  and would be converted to absolute path later.
+	SystemName      string `json:"system_name"`            // System name, it will be used to generate toolchain file.
+	SystemProcessor string `json:"system_processor"`       // System processor, it will be used to generate toolchain file.
+	ToolchainPrefix string `json:"toolchain_prefix"`       // It'll be joined with toolchain path to generate toolchain file.
 	CC              string `json:"cc"`
 	CXX             string `json:"cxx"`
 	FC              string `json:"fc"`
@@ -112,32 +113,40 @@ func (t Toolchain) checkAndRepair() error {
 		return nil
 	}
 
+	// Use archive name as download file name if specified.
+	archiveName := filepath.Base(t.Url)
+	if t.ArchiveName != "" {
+		archiveName = t.ArchiveName
+	}
+
 	// Check if need to download file.
-	fileName := filepath.Base(t.Url)
-	downloaded := filepath.Join(Dirs.DownloadRootDir, fileName)
+	downloaded := filepath.Join(Dirs.DownloadRootDir, archiveName)
 	if io.PathExists(downloaded) {
 		// Redownload if remote file size and local file size not match.
 		fileSize, err := io.FileSize(t.Url)
 		if err != nil {
-			return fmt.Errorf("%s: get remote filesize failed: %w", fileName, err)
+			return fmt.Errorf("%s: get remote filesize failed: %w", archiveName, err)
 		}
 		info, err := os.Stat(downloaded)
 		if err != nil {
-			return fmt.Errorf("%s: get local filesize failed: %w", fileName, err)
+			return fmt.Errorf("%s: get local filesize failed: %w", archiveName, err)
 		}
 		if info.Size() != fileSize {
-			if _, err := io.Download(t.Url, Dirs.DownloadRootDir); err != nil {
-				return fmt.Errorf("%s: download failed: %w", fileName, err)
+			if _, err := io.Download(t.Url, Dirs.DownloadRootDir, archiveName); err != nil {
+				return fmt.Errorf("%s: download failed: %w", archiveName, err)
 			}
 		}
 	} else {
-		if _, err := io.Download(t.Url, Dirs.DownloadRootDir); err != nil {
-			return fmt.Errorf("%s: download failed: %w", fileName, err)
+		if _, err := io.Download(t.Url, Dirs.DownloadRootDir, archiveName); err != nil {
+			return fmt.Errorf("%s: download failed: %w", archiveName, err)
 		}
 	}
 
 	// Extract archive file.
 	folderName := strings.Split(t.Path, string(filepath.Separator))[0]
+	if t.ArchiveName != "" {
+		folderName = io.FileBaseName(t.ArchiveName)
+	}
 	if err := io.Extract(downloaded, filepath.Join(Dirs.DownloadRootDir, folderName)); err != nil {
 		return fmt.Errorf("%s: extract toolchain failed: %w", downloaded, err)
 	}
@@ -145,7 +154,7 @@ func (t Toolchain) checkAndRepair() error {
 	// Check if has nested folder (handling case where there's an extra nested folder).
 	extractPath := filepath.Join(Dirs.DownloadRootDir, folderName)
 	if err := io.MoveNestedFolderIfExist(extractPath); err != nil {
-		return fmt.Errorf("%s: failed to move nested folder: %w", fileName, err)
+		return fmt.Errorf("%s: failed to move nested folder: %w", archiveName, err)
 	}
 
 	// Print download & extract info.

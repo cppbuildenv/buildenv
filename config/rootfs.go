@@ -10,9 +10,10 @@ import (
 )
 
 type RootFS struct {
-	Url           string   `json:"url"`
-	Path          string   `json:"path"`
-	PkgConfigPath []string `json:"pkg_config_path"`
+	Url           string   `json:"url"`                    // Download url.
+	ArchiveName   string   `json:"archive_name,omitempty"` // Archive name can be changed to avoid conflict.
+	Path          string   `json:"path"`                   // Runtime path of tool, it's relative path  and would be converted to absolute path later.
+	PkgConfigPath []string `json:"pkg_config_path"`        // Pkg config path, default will be `usr/lib/pkgconfig`
 
 	// Internal fields.
 	fullpath string `json:"-"`
@@ -76,32 +77,40 @@ func (r RootFS) checkAndRepair() error {
 		return nil
 	}
 
+	// Use archive name as download file name if specified.
+	archiveName := filepath.Base(r.Url)
+	if r.ArchiveName != "" {
+		archiveName = r.ArchiveName
+	}
+
 	// Check if need to download file.
-	fileName := filepath.Base(r.Url)
-	downloaded := filepath.Join(Dirs.DownloadRootDir, fileName)
+	downloaded := filepath.Join(Dirs.DownloadRootDir, archiveName)
 	if io.PathExists(downloaded) {
 		// Redownload if remote file size and local file size not match.
 		fileSize, err := io.FileSize(r.Url)
 		if err != nil {
-			return fmt.Errorf("%s: get remote filesize failed: %w", fileName, err)
+			return fmt.Errorf("%s: get remote filesize failed: %w", archiveName, err)
 		}
 		info, err := os.Stat(downloaded)
 		if err != nil {
-			return fmt.Errorf("%s: get local filesize failed: %w", fileName, err)
+			return fmt.Errorf("%s: get local filesize failed: %w", archiveName, err)
 		}
 		if info.Size() != fileSize {
-			if _, err := io.Download(r.Url, Dirs.DownloadRootDir); err != nil {
-				return fmt.Errorf("%s: download failed: %w", fileName, err)
+			if _, err := io.Download(r.Url, Dirs.DownloadRootDir, archiveName); err != nil {
+				return fmt.Errorf("%s: download failed: %w", archiveName, err)
 			}
 		}
 	} else {
-		if _, err := io.Download(r.Url, Dirs.DownloadRootDir); err != nil {
-			return fmt.Errorf("%s: download failed: %w", fileName, err)
+		if _, err := io.Download(r.Url, Dirs.DownloadRootDir, archiveName); err != nil {
+			return fmt.Errorf("%s: download failed: %w", archiveName, err)
 		}
 	}
 
 	// Extract archive file.
 	folderName := strings.Split(r.Path, string(filepath.Separator))[0]
+	if r.ArchiveName != "" {
+		folderName = io.FileBaseName(r.ArchiveName)
+	}
 	if err := io.Extract(downloaded, filepath.Join(Dirs.DownloadRootDir, folderName)); err != nil {
 		return fmt.Errorf("%s: extract rootfs failed: %w", downloaded, err)
 	}
@@ -109,7 +118,7 @@ func (r RootFS) checkAndRepair() error {
 	// Check if has nested folder (handling case where there's an extra nested folder).
 	extractPath := filepath.Join(Dirs.DownloadRootDir, folderName)
 	if err := io.MoveNestedFolderIfExist(extractPath); err != nil {
-		return fmt.Errorf("%s: failed to move nested folder: %w", fileName, err)
+		return fmt.Errorf("%s: failed to move nested folder: %w", archiveName, err)
 	}
 
 	// Print download & extract info.

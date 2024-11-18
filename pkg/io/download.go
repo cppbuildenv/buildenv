@@ -11,7 +11,8 @@ import (
 	"regexp"
 )
 
-func Download(url string, destDir string) (downloaded string, err error) {
+// Download downloads a file from a URL to a specified directory and rename it if specified.
+func Download(url, destDir, archiveName string) (downloaded string, err error) {
 	// Read file size.
 	resp, err := http.Get(url)
 	if err != nil {
@@ -43,6 +44,15 @@ func Download(url string, destDir string) (downloaded string, err error) {
 	_, err = io.Copy(io.MultiWriter(file, progress), resp.Body)
 	if err != nil {
 		return "", err
+	}
+
+	// Rename downloaded file if specified and not same as downloaded file.
+	if archiveName != "" && archiveName != fileName {
+		renameFile := filepath.Join(destDir, archiveName)
+		if err := os.Rename(outputFile, renameFile); err != nil {
+			return "", err
+		}
+		outputFile = renameFile
 	}
 
 	return outputFile, nil
