@@ -35,7 +35,7 @@
 - 自动生成 CMake 配置文件，支持交叉编译的 **toolchain** 文件。
 - 自动导出依赖库，方便管理和使用。
 
-有关更多详细信息，请参阅 [Docs](./docs/home.md)。
+有关更多详细信息，请参阅Wiki。
 
 ## 安装教程
 
@@ -73,7 +73,7 @@ option2: cmake .. -DCMAKE_TOOLCHAIN_FILE=/home/phil/my_workspace/script/buildenv
 source /home/phil/my_workspace/script/buildenv.sh
 ```
 
-详细说明请看[Docs](./docs/home.md)
+详细说明请看Wiki.
 
 ## 如何参与贡献
 
