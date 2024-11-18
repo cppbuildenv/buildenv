@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// CheckAvailable checks if the given URL is accessible.
 func CheckAvailable(url string) error {
 	client := http.Client{
 		Timeout: 2 * time.Second,
@@ -24,4 +25,19 @@ func CheckAvailable(url string) error {
 	}
 
 	return fmt.Errorf("status code: %d", resp.StatusCode)
+}
+
+// FileSize returns the size of the file at the given URL.
+func FileSize(url string) (int64, error) {
+	client := http.Client{
+		Timeout: 2 * time.Second,
+	}
+
+	resp, err := client.Head(url)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	return resp.ContentLength, nil
 }

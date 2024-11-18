@@ -13,7 +13,6 @@ import (
 type Tool struct {
 	Url  string `json:"url"`
 	Path string `json:"path"`
-	Md5  string `json:"md5"`
 
 	// Internal fields.
 	toolName string `json:"-"`
@@ -86,12 +85,28 @@ func (t Tool) checkAndRepair() error {
 		return nil
 	}
 
+	// Check if need to download file.
 	fileName := filepath.Base(t.Url)
-
-	// Download to fixed dir.
-	downloaded, err := io.Download(t.Url, Dirs.DownloadRootDir)
-	if err != nil {
-		return fmt.Errorf("%s: download failed: %w", fileName, err)
+	downloaded := filepath.Join(Dirs.DownloadRootDir, fileName)
+	if io.PathExists(downloaded) {
+		// Redownload if remote file size and local file size not match.
+		fileSize, err := io.FileSize(t.Url)
+		if err != nil {
+			return fmt.Errorf("%s: get remote filesize failed: %w", fileName, err)
+		}
+		info, err := os.Stat(downloaded)
+		if err != nil {
+			return fmt.Errorf("%s: get local filesize failed: %w", fileName, err)
+		}
+		if info.Size() != fileSize {
+			if _, err := io.Download(t.Url, Dirs.DownloadRootDir); err != nil {
+				return fmt.Errorf("%s: download failed: %w", fileName, err)
+			}
+		}
+	} else {
+		if _, err := io.Download(t.Url, Dirs.DownloadRootDir); err != nil {
+			return fmt.Errorf("%s: download failed: %w", fileName, err)
+		}
 	}
 
 	// Extract archive file.

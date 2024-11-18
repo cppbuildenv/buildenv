@@ -112,14 +112,31 @@ func (t Toolchain) checkAndRepair() error {
 		return nil
 	}
 
-	// Download to fixed dir.
-	downloaded, err := io.Download(t.Url, Dirs.DownloadRootDir)
-	if err != nil {
-		return fmt.Errorf("%s: download toolchain failed: %w", t.Url, err)
+	// Check if need to download file.
+	fileName := filepath.Base(t.Url)
+	downloaded := filepath.Join(Dirs.DownloadRootDir, fileName)
+	if io.PathExists(downloaded) {
+		// Redownload if remote file size and local file size not match.
+		fileSize, err := io.FileSize(t.Url)
+		if err != nil {
+			return fmt.Errorf("%s: get remote filesize failed: %w", fileName, err)
+		}
+		info, err := os.Stat(downloaded)
+		if err != nil {
+			return fmt.Errorf("%s: get local filesize failed: %w", fileName, err)
+		}
+		if info.Size() != fileSize {
+			if _, err := io.Download(t.Url, Dirs.DownloadRootDir); err != nil {
+				return fmt.Errorf("%s: download failed: %w", fileName, err)
+			}
+		}
+	} else {
+		if _, err := io.Download(t.Url, Dirs.DownloadRootDir); err != nil {
+			return fmt.Errorf("%s: download failed: %w", fileName, err)
+		}
 	}
 
 	// Extract archive file.
-	fileName := filepath.Base(t.Url)
 	folderName := strings.Split(t.Path, string(filepath.Separator))[0]
 	if err := io.Extract(downloaded, filepath.Join(Dirs.DownloadRootDir, folderName)); err != nil {
 		return fmt.Errorf("%s: extract toolchain failed: %w", downloaded, err)
