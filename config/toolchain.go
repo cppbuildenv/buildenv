@@ -100,7 +100,7 @@ func (t *Toolchain) Verify(args VerifyArgs) error {
 		os.Setenv("STRIP", t.STRIP)
 	}
 
-	if !args.CheckAndRepair {
+	if !args.CheckAndRepair() {
 		return nil
 	}
 

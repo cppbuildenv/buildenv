@@ -16,20 +16,20 @@ type BuildTool int
 
 type Port struct {
 	Url          string                    `json:"url"`
+	Name         string                    `json:"name"`
 	Version      string                    `json:"version"`
 	SourceFolder string                    `json:"source_folder,omitempty"`
 	Depedencies  []string                  `json:"dependencies"`
 	BuildConfigs []buildsystem.BuildConfig `json:"build_configs"`
 
 	// Internal fields.
-	portName     string `json:"-"`
-	platformName string `json:"-"`
-	buildType    string `json:"-"`
-	infoPath     string `json:"-"`
-	portDir      string `json:"-"`
+	ctx      Context
+	fullName string // portName = portName + "-" + p.Version
+	infoPath string // used to record installed state
+	portDir  string // it should be `conf/ports`
 }
 
-func (p *Port) Init(portPath, platformName, buildType string) error {
+func (p *Port) Init(ctx Context, portPath string) error {
 	bytes, err := os.ReadFile(portPath)
 	if err != nil {
 		return err
@@ -39,26 +39,29 @@ func (p *Port) Init(portPath, platformName, buildType string) error {
 		return err
 	}
 
-	portName := strings.TrimSuffix(filepath.Base(p.Url), ".git")
-	portName = strings.TrimSuffix(portName, ".tar.gz")
-	portName = strings.TrimSuffix(portName, ".tar.xz")
-
-	p.portName = portName + "-" + p.Version
-	p.platformName = platformName
-	p.buildType = buildType
-	p.portDir = filepath.Dir(portPath)
-
 	// Info file: used to record installed state.
-	fileName := fmt.Sprintf("%s-%s.list", p.platformName, p.buildType)
+	systemName := ctx.Toolchain().SystemName
+	portNameType := fmt.Sprintf("%s-%s", ctx.Platform(), ctx.BuildType())
+	fileName := fmt.Sprintf("%s-%s.list", ctx.Platform(), ctx.BuildType())
+	sourceDir := filepath.Join(Dirs.WorkspaceDir, "buildtrees", p.Name, "src")
+	buildDir := filepath.Join(Dirs.WorkspaceDir, "buildtrees", p.Name, portNameType)
+	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", portNameType)
+
+	p.ctx = ctx
+	p.fullName = p.Name + "-" + p.Version
+	p.portDir = filepath.Dir(portPath)
 	p.infoPath = filepath.Join(Dirs.InstalledRootDir, "buildenv", fileName)
 
 	if len(p.BuildConfigs) > 0 {
 		for index := range p.BuildConfigs {
-			p.BuildConfigs[index].SourceDir = filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, "src")
+			p.BuildConfigs[index].Version = p.Version
+			p.BuildConfigs[index].SystemName = systemName
+			p.BuildConfigs[index].LibName = p.Name
+			p.BuildConfigs[index].SourceDir = sourceDir
 			p.BuildConfigs[index].SourceFolder = p.SourceFolder
-			p.BuildConfigs[index].BuildDir = filepath.Join(Dirs.WorkspaceDir, "buildtrees", portName, platformName+"-"+buildType)
-			p.BuildConfigs[index].InstalledDir = filepath.Join(Dirs.WorkspaceDir, "installed", platformName+"-"+buildType)
-			p.BuildConfigs[index].JobNum = 8 // TODO: make it configurable.
+			p.BuildConfigs[index].BuildDir = buildDir
+			p.BuildConfigs[index].InstalledDir = installedDir
+			p.BuildConfigs[index].JobNum = p.ctx.JobNum()
 		}
 	}
 
@@ -68,6 +71,10 @@ func (p *Port) Init(portPath, platformName, buildType string) error {
 func (p *Port) Verify(args VerifyArgs) error {
 	if p.Url == "" {
 		return fmt.Errorf("port.url is empty")
+	}
+
+	if p.Name == "" {
+		return fmt.Errorf("port.name is empty")
 	}
 
 	if p.Version == "" {
@@ -84,7 +91,7 @@ func (p *Port) Verify(args VerifyArgs) error {
 		}
 	}
 
-	if !args.CheckAndRepair {
+	if !args.CheckAndRepair() {
 		return nil
 	}
 
@@ -112,7 +119,7 @@ func (p Port) Installed() bool {
 	for scanner.Scan() {
 		line := scanner.Text()
 
-		if strings.Contains(line, p.portName) {
+		if strings.Contains(line, p.fullName) {
 			return true
 		}
 	}
@@ -129,14 +136,14 @@ func (p Port) checkAndRepair() error {
 	if len(p.BuildConfigs) > 0 {
 		// Check and repair dependencies.
 		for _, item := range p.Depedencies {
-			if item == p.portName {
+			if item == p.fullName {
 				return fmt.Errorf("port.dependencies contains circular dependency: %s", item)
 			}
 
 			portPath := filepath.Join(p.portDir, item+".json")
 
 			var port Port
-			if err := port.Init(portPath, p.platformName, p.buildType); err != nil {
+			if err := port.Init(p.ctx, portPath); err != nil {
 				return err
 			}
 
@@ -150,12 +157,15 @@ func (p Port) checkAndRepair() error {
 				continue
 			}
 
-			if err := config.CheckAndRepair(p.Url, p.Version, p.buildType); err != nil {
+			if err := config.CheckAndRepair(p.Url, p.Version, p.ctx.BuildType()); err != nil {
 				return err
 			}
 		}
 	} else {
-		installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.platformName+"-"+p.buildType)
+		platformName := p.ctx.Platform()
+		buildType := p.ctx.BuildType()
+
+		installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", platformName+"-"+buildType)
 		downloadedDir := filepath.Join(Dirs.WorkspaceDir, "downloads")
 		if err := downloadAndDeploy(p.Url, installedDir, downloadedDir); err != nil {
 			return err
@@ -172,15 +182,18 @@ func (p Port) checkAndRepair() error {
 	if err != nil {
 		return err
 	}
-	if _, err := file.Write([]byte(p.portName + "\n")); err != nil {
+	if _, err := file.Write([]byte(p.fullName + "\n")); err != nil {
 		return err
 	}
 	if err := file.Close(); err != nil {
 		return err
 	}
 
-	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.platformName+"-"+p.buildType)
-	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- %s (port: %s)\n\n", p.portName, installedDir))
+	platformName := p.ctx.Platform()
+	buildType := p.ctx.BuildType()
+
+	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", platformName+"-"+buildType)
+	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- %s (port: %s)\n\n", p.fullName, installedDir))
 	return nil
 }
 
@@ -209,17 +222,18 @@ func (p Port) matchPattern(pattern string) bool {
 		return true
 	}
 
+	platformName := p.ctx.Platform()
 	if pattern[0] == '*' && pattern[len(pattern)-1] == '*' {
-		return strings.Contains(p.platformName, pattern[1:len(pattern)-1])
+		return strings.Contains(platformName, pattern[1:len(pattern)-1])
 	}
 
 	if pattern[0] == '*' {
-		return strings.HasSuffix(p.platformName, pattern[1:])
+		return strings.HasSuffix(platformName, pattern[1:])
 	}
 
 	if pattern[len(pattern)-1] == '*' {
-		return strings.HasPrefix(p.platformName, pattern[:len(pattern)-1])
+		return strings.HasPrefix(platformName, pattern[:len(pattern)-1])
 	}
 
-	return p.platformName == pattern
+	return platformName == pattern
 }

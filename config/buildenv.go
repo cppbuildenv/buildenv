@@ -12,20 +12,46 @@ import (
 	"strings"
 )
 
-type BuildEnv struct {
-	Platform    string `json:"platform"`
-	ConfRepo    string `json:"conf_repo"`
-	ConfRepoRef string `json:"conf_repo_ref"`
-	JobNum      int    `json:"job_num"`
+type Context interface {
+	BuildEnvDir() string
+	Platform() string
+	Toolchain() *Toolchain
+	RootFS() *RootFS
+	BuildType() string
+	JobNum() int
 }
 
-func (b *BuildEnv) ChangePlatform(platform string) error {
+func NewBuildEnv(buildType string) *buildenv {
+	return &buildenv{
+		configData: configData{
+			JobNum: runtime.NumCPU(),
+		},
+		buildType: buildType,
+	}
+}
+
+type buildenv struct {
+	configData
+
+	// Internal fields.
+	platform  Platform
+	buildType string
+}
+
+type configData struct {
+	PlatformName string `json:"platform_name"`
+	ConfRepo     string `json:"conf_repo"`
+	ConfRepoRef  string `json:"conf_repo_ref"`
+	JobNum       int    `json:"job_num"`
+}
+
+func (b *buildenv) ChangePlatform(platformName string) error {
 	buildEnvPath := filepath.Join(Dirs.WorkspaceDir, "buildenv.json")
 	if err := b.init(buildEnvPath); err != nil {
 		return err
 	}
 
-	b.Platform = platform
+	b.configData.PlatformName = platformName
 	bytes, err := json.MarshalIndent(b, "", "    ")
 	if err != nil {
 		return fmt.Errorf("cannot marshal buildenv conf: %w", err)
@@ -37,25 +63,17 @@ func (b *BuildEnv) ChangePlatform(platform string) error {
 	return nil
 }
 
-func (b *BuildEnv) Verify(args VerifyArgs) error {
+func (b *buildenv) Verify(args VerifyArgs) error {
 	buildEnvPath := filepath.Join(Dirs.WorkspaceDir, "buildenv.json")
 	if err := b.init(buildEnvPath); err != nil {
 		return err
 	}
-	if b.Platform == "" {
-		return fmt.Errorf("no platform has been selected for buildenv")
-	}
-
-	// Check if platform file exists and read it.
-	platformPath := filepath.Join(Dirs.PlatformDir, b.Platform+".json")
-	if !io.PathExists(platformPath) {
-		return fmt.Errorf("platform file not exists: %s", platformPath)
-	}
 
 	var platform Platform
-	if err := platform.Init(platformPath); err != nil {
+	if err := platform.Init(b, b.configData.PlatformName); err != nil {
 		return err
 	}
+	b.platform = platform
 
 	// Verify buildenv, it'll verify toolchain, tools and dependencies inside.
 	if err := platform.Verify(args); err != nil {
@@ -65,7 +83,7 @@ func (b *BuildEnv) Verify(args VerifyArgs) error {
 	return nil
 }
 
-func (b BuildEnv) SyncRepo(repo, ref string) (string, error) {
+func (b buildenv) SyncRepo(repo, ref string) (string, error) {
 	if b.ConfRepo == "" {
 		return "", fmt.Errorf("no conf repo has been provided for buildenv")
 	}
@@ -81,7 +99,7 @@ func (b BuildEnv) SyncRepo(repo, ref string) (string, error) {
 	if io.PathExists(confDir) {
 		// clean up and checkout to ref.
 		if io.PathExists(filepath.Join(confDir, ".git")) {
-			// cd [conf] to git checkout repo.
+			// cd `conf`` to execute git command.
 			if err := os.Chdir(confDir); err != nil {
 				return "", err
 			}
@@ -109,14 +127,14 @@ func (b BuildEnv) SyncRepo(repo, ref string) (string, error) {
 	return output, nil
 }
 
-func (b *BuildEnv) init(buildEnvPath string) error {
+func (b *buildenv) init(buildEnvPath string) error {
 	if !io.PathExists(buildEnvPath) {
 		// Create conf directory.
 		if err := os.MkdirAll(filepath.Dir(buildEnvPath), os.ModeDir|os.ModePerm); err != nil {
 			return err
 		}
 
-		b.JobNum = runtime.NumCPU()
+		b.configData.JobNum = runtime.NumCPU()
 
 		// Create buildenv conf file with default values.
 		bytes, err := json.MarshalIndent(b, "", "    ")
@@ -142,7 +160,7 @@ func (b *BuildEnv) init(buildEnvPath string) error {
 	return nil
 }
 
-func (b BuildEnv) execute(command string) (string, error) {
+func (b buildenv) execute(command string) (string, error) {
 	var cmd *exec.Cmd
 
 	if runtime.GOOS == "windows" {
@@ -161,4 +179,30 @@ func (b BuildEnv) execute(command string) (string, error) {
 	}
 
 	return buffer.String(), nil
+}
+
+// ----------------------- Implementation of BuildEnvContext ----------------------- //
+
+func (b buildenv) BuildEnvDir() string {
+	return filepath.Join(Dirs.WorkspaceDir, "conf")
+}
+
+func (b buildenv) Platform() string {
+	return b.configData.PlatformName
+}
+
+func (b buildenv) Toolchain() *Toolchain {
+	return b.platform.Toolchain
+}
+
+func (b buildenv) RootFS() *RootFS {
+	return b.platform.RootFS
+}
+
+func (b buildenv) BuildType() string {
+	return b.buildType
+}
+
+func (b buildenv) JobNum() int {
+	return b.configData.JobNum
 }

@@ -1,6 +1,7 @@
 package buildsystem
 
 import (
+	"buildenv/config/generator"
 	"buildenv/pkg/color"
 	pkgio "buildenv/pkg/io"
 	"fmt"
@@ -20,16 +21,20 @@ type BuildSystem interface {
 }
 
 type BuildConfig struct {
-	Pattern   string   `json:"pattern"`
-	BuildTool string   `json:"build_tool"`
-	Arguments []string `json:"arguments"`
+	Pattern             string                 `json:"pattern"`
+	BuildTool           string                 `json:"build_tool"`
+	Arguments           []string               `json:"arguments"`
+	GenerateCMakeConfig *generator.CMakeConfig `json:"generate_cmake_config"`
 
 	// Internal fields
-	SourceDir    string `json:"-"`
-	SourceFolder string `json:"-"` // Some thirdpartys' source code is not in the root folder, so we need to specify it.
-	BuildDir     string `json:"-"`
-	InstalledDir string `json:"-"`
-	JobNum       int    `json:"-"`
+	Version      string
+	SystemName   string
+	LibName      string
+	SourceDir    string
+	SourceFolder string // Some thirdpartys' source code is not in the root folder, so we need to specify it.
+	BuildDir     string
+	InstalledDir string
+	JobNum       int
 }
 
 func (b BuildConfig) Verify() error {
@@ -92,7 +97,7 @@ func (b BuildConfig) execute(command, logPath string) error {
 	outWriter := color.NewWriter(os.Stdout, color.Green)
 	cmd.Stdout = io.MultiWriter(outWriter, logFile)
 
-	errWriter := color.NewWriter(os.Stdout, color.Red)
+	errWriter := color.NewWriter(os.Stderr, color.Red)
 	cmd.Stderr = io.MultiWriter(errWriter, logFile)
 
 	cmd.Env = os.Environ()
@@ -135,6 +140,16 @@ func (b BuildConfig) CheckAndRepair(url, version, buildType string) error {
 
 	if err := buildSystem.Install(); err != nil {
 		return err
+	}
+
+	if b.GenerateCMakeConfig != nil {
+		b.GenerateCMakeConfig.Version = b.Version
+		b.GenerateCMakeConfig.SystemName = b.SystemName
+		b.GenerateCMakeConfig.LibName = b.LibName
+		b.GenerateCMakeConfig.BuildType = buildType
+		if err := b.GenerateCMakeConfig.Generate(b.InstalledDir); err != nil {
+			return err
+		}
 	}
 	return nil
 }

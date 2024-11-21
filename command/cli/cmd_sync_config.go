@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"buildenv/command"
 	"buildenv/config"
 	"buildenv/pkg/io"
 	"encoding/json"
@@ -9,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 )
 
 func newSyncConfigCmd() *syncConfigCmd {
@@ -29,55 +27,53 @@ func (s *syncConfigCmd) listen() (handled bool) {
 		return false
 	}
 
+	buildenv := config.NewBuildEnv(buildType.buildType)
+
 	// Create buildenv.json if not exist.
 	handled = true
 	confPath := filepath.Join(config.Dirs.WorkspaceDir, "buildenv.json")
 	if !io.PathExists(confPath) {
 		if err := os.MkdirAll(filepath.Dir(confPath), os.ModePerm); err != nil {
-			fmt.Print(command.SyncFailed(err))
+			fmt.Print(config.SyncFailed(err))
 			return
 		}
-
-		var buildenv config.BuildEnv
-		buildenv.JobNum = runtime.NumCPU()
 
 		bytes, err := json.MarshalIndent(buildenv, "", "    ")
 		if err != nil {
-			fmt.Print(command.SyncFailed(err))
+			fmt.Print(config.SyncFailed(err))
 			return
 		}
 		if err := os.WriteFile(confPath, []byte(bytes), os.ModePerm); err != nil {
-			fmt.Print(command.SyncFailed(err))
+			fmt.Print(config.SyncFailed(err))
 			return
 		}
 
-		fmt.Print(command.SyncSuccess(false))
+		fmt.Print(config.SyncSuccess(false))
 		return
 	}
 
 	// Sync conf repo with repo url.
 	bytes, err := os.ReadFile(confPath)
 	if err != nil {
-		fmt.Print(command.SyncFailed(err))
+		fmt.Print(config.SyncFailed(err))
 		return
 	}
 
 	// Unmarshall with buildenv.json.
-	var buildenv config.BuildEnv
 	if err := json.Unmarshal(bytes, &buildenv); err != nil {
-		fmt.Print(command.SyncFailed(err))
+		fmt.Print(config.SyncFailed(err))
 		return
 	}
 
 	// Sync repo.
 	output, err := buildenv.SyncRepo(buildenv.ConfRepo, buildenv.ConfRepoRef)
 	if err != nil {
-		fmt.Print(command.SyncFailed(err))
+		fmt.Print(config.SyncFailed(err))
 		return
 	}
 
 	fmt.Println(output)
-	fmt.Print(command.SyncSuccess(true))
+	fmt.Print(config.SyncSuccess(true))
 
 	return
 }

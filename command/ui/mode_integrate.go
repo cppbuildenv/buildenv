@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"buildenv/command"
+	"buildenv/config"
 	"buildenv/pkg/color"
 	"buildenv/pkg/env"
 	"fmt"
@@ -11,29 +11,29 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func newInstallModel(goback func()) installModel {
-	content := fmt.Sprintf("\nInstall buildenv.\n"+
+func newIntegrateModel(goback func()) integrateModel {
+	content := fmt.Sprintf("\nIntegrate buildenv.\n"+
 		"-----------------------------------\n"+
 		"%s.\n\n"+
 		"%s",
 		color.Sprintf(color.Blue, "This will add buildenv's path to your PATH, so that you can use buildenv anywhere."),
 		color.Sprintf(color.Gray, "[↵ -> execute | ctrl+c/q -> quit]"))
-	return installModel{
+	return integrateModel{
 		content: content,
 		goback:  goback,
 	}
 }
 
-type installModel struct {
+type integrateModel struct {
 	content string
 	goback  func()
 }
 
-func (i installModel) Init() tea.Cmd {
+func (i integrateModel) Init() tea.Cmd {
 	return nil
 }
 
-func (i installModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (i integrateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -41,7 +41,7 @@ func (i installModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return i, tea.Quit
 
 		case "enter":
-			i.install()
+			i.integrate()
 			return i, tea.Quit
 
 		case "esc":
@@ -52,21 +52,21 @@ func (i installModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return i, nil
 }
 
-func (i installModel) View() string {
+func (i integrateModel) View() string {
 	return i.content
 }
 
-func (i installModel) install() {
+func (i integrateModel) integrate() {
 	exePath, err := os.Executable()
 	if err != nil {
-		fmt.Print(command.InstallFailed(err))
+		fmt.Print(config.IntegrateFailed(err))
 		os.Exit(1)
 	}
 
 	if err := env.UpdateRunPath(filepath.Dir(exePath)); err != nil {
-		fmt.Print(command.InstallFailed(err))
+		fmt.Print(config.IntegrateFailed(err))
 		os.Exit(1)
 	}
 
-	fmt.Print(command.InstallSuccess())
+	fmt.Print(config.IntegrateSuccess())
 }

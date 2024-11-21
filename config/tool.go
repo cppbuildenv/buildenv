@@ -73,7 +73,7 @@ func (t *Tool) Verify(args VerifyArgs) error {
 	// This is used to cross-compile other ports by buildenv.
 	os.Setenv("PATH", fmt.Sprintf("%s:%s", t.fullpath, os.Getenv("PATH")))
 
-	if !args.CheckAndRepair {
+	if !args.CheckAndRepair() {
 		return nil
 	}
 

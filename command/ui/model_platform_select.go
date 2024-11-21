@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"buildenv/command"
 	"buildenv/config"
 	"fmt"
 	"os"
@@ -108,11 +107,11 @@ func (p platformSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (p platformSelectModel) View() string {
 	if p.err != nil {
-		return command.PlatformSelectedFailed(p.trySelected, p.err)
+		return config.PlatformSelectedFailed(p.trySelected, p.err)
 	}
 
 	if p.selected != "" {
-		return command.PlatformSelected(p.selected)
+		return config.PlatformSelected(p.selected)
 	}
 
 	return "\n" + p.list.View()

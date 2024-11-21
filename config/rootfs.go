@@ -64,7 +64,7 @@ func (r *RootFS) Verify(args VerifyArgs) error {
 		os.Setenv("PKG_CONFIG_PATH", strings.Join(paths, ":"))
 	}
 
-	if !args.CheckAndRepair {
+	if !args.CheckAndRepair() {
 		return nil
 	}
 
