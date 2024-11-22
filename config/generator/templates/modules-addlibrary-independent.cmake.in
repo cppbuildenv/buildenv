@@ -1,0 +1,2 @@
+# Create imported target @NAMESPACE@::@COMPONENT@
+add_library(@NAMESPACE@::@COMPONENT@ @LIBTYPE_UPPER@ IMPORTED)

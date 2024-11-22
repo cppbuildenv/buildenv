@@ -21,10 +21,10 @@ type BuildSystem interface {
 }
 
 type BuildConfig struct {
-	Pattern             string                 `json:"pattern"`
-	BuildTool           string                 `json:"build_tool"`
-	Arguments           []string               `json:"arguments"`
-	GenerateCMakeConfig *generator.CMakeConfig `json:"generate_cmake_config"`
+	Pattern             string                     `json:"pattern"`
+	BuildTool           string                     `json:"build_tool"`
+	Arguments           []string                   `json:"arguments"`
+	GenerateCMakeConfig *generator.GeneratorConfig `json:"generate_cmake_config"`
 
 	// Internal fields
 	Version      string
@@ -145,7 +145,7 @@ func (b BuildConfig) CheckAndRepair(url, version, buildType string) error {
 	if b.GenerateCMakeConfig != nil {
 		b.GenerateCMakeConfig.Version = b.Version
 		b.GenerateCMakeConfig.SystemName = b.SystemName
-		b.GenerateCMakeConfig.LibName = b.LibName
+		b.GenerateCMakeConfig.Libname = b.LibName
 		b.GenerateCMakeConfig.BuildType = buildType
 		if err := b.GenerateCMakeConfig.Generate(b.InstalledDir); err != nil {
 			return err

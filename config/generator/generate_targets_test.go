@@ -5,12 +5,12 @@ import (
 	"testing"
 )
 
-func TestGenerateTargets(t *testing.T) {
+func TestGenTargets(t *testing.T) {
 	config := genTargets{
-		libInfos: CMakeConfig{
-			LibName:   "yaml-cpp",
+		config: GeneratorConfig{
+			Libname:   "yaml-cpp",
 			Namespace: "yaml-cpp",
-			LibType:   "SHARED",
+			Libtype:   "SHARED",
 		},
 	}
 

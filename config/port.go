@@ -50,7 +50,7 @@ func (p *Port) Init(ctx Context, portPath string) error {
 	p.ctx = ctx
 	p.fullName = p.Name + "-" + p.Version
 	p.portDir = filepath.Dir(portPath)
-	p.infoPath = filepath.Join(Dirs.InstalledRootDir, "buildenv", fileName)
+	p.infoPath = filepath.Join(Dirs.InstalledRootDir, fileName)
 
 	if len(p.BuildConfigs) > 0 {
 		for index := range p.BuildConfigs {
@@ -152,6 +152,7 @@ func (p Port) checkAndRepair() error {
 			}
 		}
 
+		var matchedAndFixed bool
 		for _, config := range p.BuildConfigs {
 			if !p.matchPattern(config.Pattern) {
 				continue
@@ -160,6 +161,12 @@ func (p Port) checkAndRepair() error {
 			if err := config.CheckAndRepair(p.Url, p.Version, p.ctx.BuildType()); err != nil {
 				return err
 			}
+
+			matchedAndFixed = true
+		}
+
+		if !matchedAndFixed {
+			return fmt.Errorf("no matching build_config found to build")
 		}
 	} else {
 		platformName := p.ctx.Platform()

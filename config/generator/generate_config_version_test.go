@@ -5,10 +5,10 @@ import (
 	"testing"
 )
 
-func TestGenerateConfigVersion(t *testing.T) {
+func TestGenConfigVersion(t *testing.T) {
 	config := genConfigVersion{
-		libInfos: CMakeConfig{
-			LibName: "yaml-cpp",
+		config: GeneratorConfig{
+			Libname: "yaml-cpp",
 			Version: "0.8.0",
 		},
 	}

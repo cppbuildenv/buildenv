@@ -7,9 +7,9 @@ import (
 
 func TestGenerateConfig(t *testing.T) {
 	config := genConfig{
-		libInfos: CMakeConfig{
+		config: GeneratorConfig{
 			Namespace: "yaml-cpp",
-			LibName:   "yaml-cpp",
+			Libname:   "yaml-cpp",
 		},
 	}
 

@@ -5,16 +5,16 @@ import (
 	"testing"
 )
 
-func TestGenerateTypedTargets(t *testing.T) {
-	target := genTypedTargets{
-		libInfos: CMakeConfig{
-			SystemName:  "linux",
-			Namespace:   "yaml-cpp",
-			LibName:     "yaml-cpp",
-			LibType:     "shared",
-			BuildType:   "release",
-			LibFilename: "libyaml-cpp.so.0.8.0",
-			LibSoname:   "libyaml-cpp.0.8",
+func TestGenTargetsType(t *testing.T) {
+	target := genTargetsBuildType{
+		config: GeneratorConfig{
+			SystemName: "Linux",
+			Namespace:  "yaml-cpp",
+			Libname:    "yaml-cpp",
+			Libtype:    "SHARED",
+			BuildType:  "Release",
+			Filename:   "libyaml-cpp.so.0.8.0",
+			Soname:     "libyaml-cpp.0.8",
 		},
 	}
 
