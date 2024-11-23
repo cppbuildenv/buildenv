@@ -32,17 +32,17 @@ func (g *modules) generate(installedDir string) error {
 		g.config.Namespace = g.config.Libname
 	}
 
-	modules, err := templates.ReadFile("templates/modules.cmake.in")
+	modules, err := templates.ReadFile("templates/Modules.cmake.in")
 	if err != nil {
 		return err
 	}
 
-	addLibraryDepedencies, err := templates.ReadFile("templates/modules-addlibrary-depedencies.cmake.in")
+	addLibraryDepedencies, err := templates.ReadFile("templates/Modules-addLibrary-depedencies.cmake.in")
 	if err != nil {
 		return err
 	}
 
-	addLibraryIndependent, err := templates.ReadFile("templates/modules-addlibrary-independent.cmake.in")
+	addLibraryIndependent, err := templates.ReadFile("templates/Modules-addLibrary-independent.cmake.in")
 	if err != nil {
 		return err
 	}
@@ -62,7 +62,7 @@ func (g *modules) generate(installedDir string) error {
 
 		var dependencies []string
 		for _, dependency := range component.Dependencies {
-			dependencies = append(dependencies, g.config.Libname+"::"+dependency)
+			dependencies = append(dependencies, g.config.Namespace+"::"+dependency)
 		}
 
 		section = strings.ReplaceAll(section, "@NAMESPACE@", g.config.Namespace)
@@ -81,8 +81,7 @@ func (g *modules) generate(installedDir string) error {
 	}
 
 	// Replace the placeholders with the actual values.
-	libNameUpper := strings.ReplaceAll(g.config.Libname, "-", "_")
-	libNameUpper = strings.ToUpper(libNameUpper)
+	libNameUpper := strings.ToUpper(g.config.Libname)
 
 	content := string(modules)
 	content = strings.ReplaceAll(content, "@NAMESPACE@", g.config.Namespace)
@@ -92,7 +91,7 @@ func (g *modules) generate(installedDir string) error {
 	content = strings.ReplaceAll(content, "@ADD_LIBRARY_SECTIONS@", addLibrarySections.String())
 
 	// Make dirs for writing file.
-	filePath := filepath.Join(installedDir, "lib", "cmake", g.config.Libname, g.config.Libname+"-modules.cmake")
+	filePath := filepath.Join(installedDir, "lib", "cmake", g.config.Libname, g.config.Libname+"Modules.cmake")
 	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
 		return err
 	}

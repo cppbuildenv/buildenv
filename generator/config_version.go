@@ -20,7 +20,7 @@ func (g *configVersion) generate(installedDir string) error {
 		g.config.Version = "0.0.0"
 	}
 
-	bytes, err := templates.ReadFile("templates/config-version.cmake.in")
+	bytes, err := templates.ReadFile("templates/ConfigVersion.cmake.in")
 	if err != nil {
 		return err
 	}
@@ -30,7 +30,7 @@ func (g *configVersion) generate(installedDir string) error {
 	content = strings.ReplaceAll(content, "@VERSION@", g.config.Version)
 
 	// Make dirs for writing file.
-	filePath := filepath.Join(installedDir, "lib", "cmake", g.config.Libname, g.config.Libname+"-config-version.cmake")
+	filePath := filepath.Join(installedDir, "lib", "cmake", g.config.Libname, g.config.Libname+"ConfigVersion.cmake")
 	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
 		return err
 	}

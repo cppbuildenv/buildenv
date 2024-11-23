@@ -25,7 +25,7 @@ func (g *targets) generate(installedDir string) error {
 		g.config.Namespace = g.config.Libname
 	}
 
-	bytes, err := templates.ReadFile("templates/targets.cmake.in")
+	bytes, err := templates.ReadFile("templates/Targets.cmake.in")
 	if err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ func (g *targets) generate(installedDir string) error {
 	content = strings.ReplaceAll(content, "@LIBTYPE_UPPER@", strings.ToUpper(g.config.Libtype))
 
 	// Make dirs for writing file.
-	filePath := filepath.Join(installedDir, "lib", "cmake", g.config.Libname, g.config.Libname+"-targets.cmake")
+	filePath := filepath.Join(installedDir, "lib", "cmake", g.config.Libname, g.config.Libname+"Targets.cmake")
 	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
 		return err
 	}

@@ -11,7 +11,7 @@ var templates embed.FS
 // GeneratorConfig is the information of the library.
 type GeneratorConfig struct {
 	Namespace string `json:"namespace"` // if empty, use libName instead
-	Libtype   string `json:"libtype"`   // for example: static, shared
+	Libtype   string `json:"libtype"`   // for example: STATIC, SHARED, IMPORTED
 
 	// It's the name of the binary file.
 	// in linux, it would be libyaml-cpp.a or libyaml-cpp.so.0.8.0
@@ -42,8 +42,7 @@ type generate interface {
 }
 
 func (gen GeneratorConfig) Generate(installedDir string) error {
-	gen.Libname = strings.ToLower(gen.Libname)
-	gen.Namespace = strings.ToLower(gen.Namespace)
+	gen.Libtype = strings.ToUpper(gen.Libtype)
 
 	var generators []generate
 

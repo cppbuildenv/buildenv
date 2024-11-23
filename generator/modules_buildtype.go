@@ -40,7 +40,7 @@ func (g *modulesBuildType) generate(installedDir string) error {
 		g.config.Namespace = g.config.Libname
 	}
 
-	modulesTypeBytes, err := templates.ReadFile("templates/modules-buildtype.cmake.in")
+	modulesTypeBytes, err := templates.ReadFile("templates/ModulesBuildType.cmake.in")
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func (g *modulesBuildType) generate(installedDir string) error {
 	content = strings.ReplaceAll(content, "@COMPONENT_SECTIONS@", sections.String())
 
 	// Make dirs for writing file.
-	fileName := fmt.Sprintf("%s-modules-%s.cmake", g.config.Libname, strings.ToLower(g.config.BuildType))
+	fileName := fmt.Sprintf("%sModules-%s.cmake", g.config.Libname, strings.ToLower(g.config.BuildType))
 	filePath := filepath.Join(installedDir, "lib", "cmake", g.config.Libname, fileName)
 	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
 		return err
