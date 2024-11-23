@@ -9,12 +9,13 @@ var PlatformCallbacksImpl = platformCallbacksImpl{}
 
 type platformCallbacksImpl struct{}
 
-func (p platformCallbacksImpl) OnCreatePlatform(platformPath string) error {
-	if platformPath == "" {
-		return fmt.Errorf("platformPath is empty")
+func (p platformCallbacksImpl) OnCreatePlatform(platformName string) error {
+	if platformName == "" {
+		return fmt.Errorf("platformName is empty for creating new platform")
 	}
 
 	// Create platform file.
+	platformPath := filepath.Join(Dirs.PlatformDir, platformName+".json")
 	var platform Platform
 	if err := platform.Write(platformPath); err != nil {
 		return err
@@ -24,27 +25,22 @@ func (p platformCallbacksImpl) OnCreatePlatform(platformPath string) error {
 }
 
 func (p platformCallbacksImpl) OnSelectPlatform(platformName string) error {
-	buildenv := NewBuildEnv("Release")
-	if err := buildenv.Verify(NewVerifyArgs(false, false, "Release")); err != nil {
-		return err
-	}
+	// In config mode, we always regard build type as `Release`.
+	buildType := "Release"
 
+	buildenv := NewBuildEnv(buildType)
 	if err := buildenv.ChangePlatform(platformName); err != nil {
 		return err
 	}
 
-	var platform Platform
-	if err := platform.Init(buildenv, platformName); err != nil {
+	// Verify buildenv to check if all the required fields are set for generate toolchain file.
+	if err := buildenv.Verify(NewVerifyArgs(false, false, buildType)); err != nil {
 		return err
 	}
 
-	args := NewVerifyArgs(false, false, "Release")
-	if err := platform.Verify(args); err != nil {
-		return err
-	}
-
+	// Generate toolchain file.
 	scriptDir := filepath.Join(Dirs.WorkspaceDir, "script")
-	if _, err := platform.CreateToolchainFile(scriptDir); err != nil {
+	if _, err := buildenv.platform.GenerateToolchainFile(scriptDir); err != nil {
 		return err
 	}
 

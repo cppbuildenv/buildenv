@@ -137,7 +137,7 @@ func (p Platform) Verify(args VerifyArgs) error {
 	return nil
 }
 
-func (p Platform) CreateToolchainFile(scriptDir string) (string, error) {
+func (p Platform) GenerateToolchainFile(scriptDir string) (string, error) {
 	var toolchain, environment strings.Builder
 
 	// Set default CMAKE_BUILD_TYPE.

@@ -22,6 +22,11 @@ type Context interface {
 }
 
 func NewBuildEnv(buildType string) *buildenv {
+	// Set default build type if not specified.
+	if strings.TrimSpace(buildType) == "" {
+		buildType = "Release"
+	}
+
 	return &buildenv{
 		configData: configData{
 			JobNum: runtime.NumCPU(),
