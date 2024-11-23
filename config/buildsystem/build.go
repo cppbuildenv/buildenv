@@ -62,12 +62,9 @@ func (b BuildConfig) Clone(repo, ref string) error {
 		commands = append(commands, fmt.Sprintf("git clone --branch %s --single-branch %s %s", ref, repo, b.SourceDir))
 	}
 
-	// Assemble cloneLogPath.
-	cloneLogPath := filepath.Join(filepath.Dir(b.BuildDir), filepath.Base(b.BuildDir)+"-clone.log")
-
 	// Execute clone command.
 	commandLine := strings.Join(commands, " && ")
-	if err := b.execute(commandLine, cloneLogPath); err != nil {
+	if err := b.execute(commandLine, ""); err != nil {
 		return err
 	}
 
@@ -77,27 +74,30 @@ func (b BuildConfig) Clone(repo, ref string) error {
 func (b BuildConfig) execute(command, logPath string) error {
 	var cmd *exec.Cmd
 
+	// Create command for windows and linux.
 	if runtime.GOOS == "windows" {
 		cmd = exec.Command("cmd", "/c", command)
 	} else {
 		cmd = exec.Command("bash", "-c", command)
 	}
 
-	// Create log file if not exsit.
-	if err := os.MkdirAll(filepath.Dir(logPath), os.ModeDir|os.ModePerm); err != nil {
-		return err
-	}
-	logFile, err := os.Create(logPath)
-	if err != nil {
-		return err
-	}
-	defer logFile.Close()
+	// Create log file if log path specified.
+	if logPath != "" {
+		if err := os.MkdirAll(filepath.Dir(logPath), os.ModeDir|os.ModePerm); err != nil {
+			return err
+		}
+		logFile, err := os.Create(logPath)
+		if err != nil {
+			return err
+		}
+		defer logFile.Close()
 
-	outWriter := color.NewWriter(os.Stdout, color.Green)
-	cmd.Stdout = io.MultiWriter(outWriter, logFile)
+		outWriter := color.NewWriter(os.Stdout, color.Green)
+		cmd.Stdout = io.MultiWriter(outWriter, logFile)
 
-	errWriter := color.NewWriter(os.Stderr, color.Yellow)
-	cmd.Stderr = io.MultiWriter(errWriter, logFile)
+		errWriter := color.NewWriter(os.Stderr, color.Yellow)
+		cmd.Stderr = io.MultiWriter(errWriter, logFile)
+	}
 
 	cmd.Env = os.Environ()
 	if err := cmd.Run(); err != nil {
