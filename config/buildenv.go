@@ -45,7 +45,7 @@ type buildenv struct {
 }
 
 type configData struct {
-	ConfRepo     string `json:"conf_repo"`
+	ConfRepoUrl  string `json:"conf_repo_url"`
 	ConfRepoRef  string `json:"conf_repo_ref"`
 	PlatformName string `json:"platform_name"`
 	JobNum       int    `json:"job_num"`
@@ -88,7 +88,7 @@ func (b *buildenv) Verify(args VerifyArgs) error {
 }
 
 func (b buildenv) SyncRepo(repo, ref string) (string, error) {
-	if b.ConfRepo == "" {
+	if b.ConfRepoUrl == "" {
 		return "", fmt.Errorf("no conf repo has been provided for buildenv")
 	}
 

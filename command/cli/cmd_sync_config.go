@@ -66,7 +66,7 @@ func (s *syncConfigCmd) listen() (handled bool) {
 	}
 
 	// Sync repo.
-	output, err := buildenv.SyncRepo(buildenv.ConfRepo, buildenv.ConfRepoRef)
+	output, err := buildenv.SyncRepo(buildenv.ConfRepoUrl, buildenv.ConfRepoRef)
 	if err != nil {
 		fmt.Print(config.SyncFailed(err))
 		return

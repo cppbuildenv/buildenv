@@ -1,7 +1,7 @@
 package buildsystem
 
-func NewNinja(config BuildConfig) *meson {
-	return &meson{BuildConfig: config}
+func NewNinja(config BuildConfig) *ninja {
+	return &ninja{BuildConfig: config}
 }
 
 type ninja struct {
