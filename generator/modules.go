@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-type genModules struct {
+type modules struct {
 	config GeneratorConfig
 }
 
-func (g *genModules) generate(installedDir string) error {
+func (g *modules) generate(installedDir string) error {
 	if len(g.config.Components) == 0 {
 		return fmt.Errorf("components is empty")
 	}

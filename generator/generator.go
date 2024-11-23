@@ -49,17 +49,17 @@ func (gen GeneratorConfig) Generate(installedDir string) error {
 
 	if len(gen.Components) == 0 {
 		generators = []generate{
-			&genConfig{gen},
-			&genTargets{gen},
-			&genConfigVersion{gen},
-			&genTargetsBuildType{gen},
+			&config{gen},
+			&targets{gen},
+			&configVersion{gen},
+			&targetsBuildType{gen},
 		}
 	} else {
 		generators = []generate{
-			&genConfig{gen},
-			&genConfigVersion{gen},
-			&genModules{gen},
-			&genModulesBuildType{gen},
+			&config{gen},
+			&configVersion{gen},
+			&modules{gen},
+			&modulesBuildType{gen},
 		}
 	}
 

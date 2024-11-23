@@ -6,7 +6,7 @@ import (
 )
 
 func TestGenerateConfig(t *testing.T) {
-	config := genConfig{
+	config := config{
 		config: GeneratorConfig{
 			Namespace: "yaml-cpp",
 			Libname:   "yaml-cpp",

@@ -1,7 +1,7 @@
 package buildsystem
 
 import (
-	"buildenv/config/generator"
+	"buildenv/generator"
 	"buildenv/pkg/color"
 	pkgio "buildenv/pkg/io"
 	"fmt"
@@ -14,7 +14,7 @@ import (
 )
 
 type BuildSystem interface {
-	Clone(repo, ref string) error
+	Clone(repoUrl, repoRef string) error
 	Configure(buildType string) error
 	Build() error
 	Install() error
@@ -44,7 +44,7 @@ func (b BuildConfig) Verify() error {
 	return nil
 }
 
-func (b BuildConfig) Clone(repo, ref string) error {
+func (b BuildConfig) Clone(repoUrl, repoRef string) error {
 	var commands []string
 
 	// Clone repo or sync repo.
@@ -56,10 +56,10 @@ func (b BuildConfig) Clone(repo, ref string) error {
 
 		commands = append(commands, "git reset --hard && git clean -xfd")
 		commands = append(commands, fmt.Sprintf("git -C %s fetch", b.SourceDir))
-		commands = append(commands, fmt.Sprintf("git -C %s checkout %s", b.SourceDir, ref))
+		commands = append(commands, fmt.Sprintf("git -C %s checkout %s", b.SourceDir, repoRef))
 		commands = append(commands, "git pull")
 	} else {
-		commands = append(commands, fmt.Sprintf("git clone --branch %s --single-branch %s %s", ref, repo, b.SourceDir))
+		commands = append(commands, fmt.Sprintf("git clone --branch %s --single-branch %s %s", repoRef, repoUrl, b.SourceDir))
 	}
 
 	// Execute clone command.

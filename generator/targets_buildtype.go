@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-type genTargetsBuildType struct {
+type targetsBuildType struct {
 	config GeneratorConfig
 }
 
-func (g *genTargetsBuildType) generate(installedDir string) error {
+func (g *targetsBuildType) generate(installedDir string) error {
 	// Set namespace to libName if it is empty.
 	if g.config.Namespace == "" {
 		g.config.Namespace = g.config.Libname

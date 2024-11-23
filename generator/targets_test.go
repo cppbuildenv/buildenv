@@ -5,11 +5,12 @@ import (
 	"testing"
 )
 
-func TestGenConfigVersion(t *testing.T) {
-	config := genConfigVersion{
+func TestGenTargets(t *testing.T) {
+	config := targets{
 		config: GeneratorConfig{
-			Libname: "yaml-cpp",
-			Version: "0.8.0",
+			Libname:   "yaml-cpp",
+			Namespace: "yaml-cpp",
+			Libtype:   "SHARED",
 		},
 	}
 

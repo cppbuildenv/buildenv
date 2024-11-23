@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-type genConfig struct {
+type config struct {
 	config GeneratorConfig
 }
 
-func (g *genConfig) generate(installedDir string) error {
+func (g *config) generate(installedDir string) error {
 	if g.config.Libname == "" {
 		return fmt.Errorf("lib name is empty")
 	}

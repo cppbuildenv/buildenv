@@ -1,18 +1,18 @@
 package generator
 
 import (
+	"os"
 	"testing"
 )
 
-func TestGenModulesBuildType(t *testing.T) {
-	generator := genModulesBuildType{
+func TestGenModules(t *testing.T) {
+	generator := modules{
 		config: GeneratorConfig{
-			Libname:    "ffmpeg",
-			Version:    "0.8.0",
-			Libtype:    "SHARED",
-			BuildType:  "Release",
-			Namespace:  "ffmpeg",
-			SystemName: "Linux",
+			Libname:   "ffmpeg",
+			Version:   "0.8.0",
+			Libtype:   "SHARED",
+			BuildType: "Release",
+			Namespace: "ffmpeg",
 			Components: []Component{
 				{
 					Component: "avutil",
@@ -59,7 +59,7 @@ func TestGenModulesBuildType(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// if err := os.RemoveAll("temp"); err != nil {
-	// 	t.Fatal(err)
-	// }
+	if err := os.RemoveAll("temp"); err != nil {
+		t.Fatal(err)
+	}
 }

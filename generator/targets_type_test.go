@@ -6,7 +6,7 @@ import (
 )
 
 func TestGenTargetsType(t *testing.T) {
-	target := genTargetsBuildType{
+	target := targetsBuildType{
 		config: GeneratorConfig{
 			SystemName: "Linux",
 			Namespace:  "yaml-cpp",

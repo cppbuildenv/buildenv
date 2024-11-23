@@ -2,8 +2,8 @@ package config
 
 import (
 	"bufio"
-	"buildenv/config/buildsystem"
-	"buildenv/config/generator"
+	"buildenv/buildsystem"
+	"buildenv/generator"
 	"buildenv/pkg/color"
 	"buildenv/pkg/io"
 	"encoding/json"
