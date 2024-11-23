@@ -8,11 +8,11 @@ import (
 func TestGenModules(t *testing.T) {
 	generator := genModules{
 		config: GeneratorConfig{
-			Libname:   "FFmpeg",
+			Libname:   "ffmpeg",
 			Version:   "0.8.0",
 			Libtype:   "SHARED",
 			BuildType: "Release",
-			Namespace: "FFmpeg",
+			Namespace: "ffmpeg",
 			Components: []Component{
 				{
 					Component: "avutil",
@@ -55,7 +55,7 @@ func TestGenModules(t *testing.T) {
 		},
 	}
 
-	if err := generator.generate("temp/FFmpeg"); err != nil {
+	if err := generator.generate("temp/ffmpeg"); err != nil {
 		t.Fatal(err)
 	}
 

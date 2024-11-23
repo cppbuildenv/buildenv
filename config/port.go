@@ -3,6 +3,7 @@ package config
 import (
 	"bufio"
 	"buildenv/config/buildsystem"
+	"buildenv/config/generator"
 	"buildenv/pkg/color"
 	"buildenv/pkg/io"
 	"encoding/json"
@@ -15,12 +16,13 @@ import (
 type BuildTool int
 
 type Port struct {
-	Url          string                    `json:"url"`
-	Name         string                    `json:"name"`
-	Version      string                    `json:"version"`
-	SourceFolder string                    `json:"source_folder,omitempty"`
-	Depedencies  []string                  `json:"dependencies"`
-	BuildConfigs []buildsystem.BuildConfig `json:"build_configs"`
+	Url                 string                     `json:"url"`
+	Name                string                     `json:"name"`
+	Version             string                     `json:"version"`
+	SourceFolder        string                     `json:"source_folder,omitempty"`
+	Depedencies         []string                   `json:"dependencies"`
+	BuildConfigs        []buildsystem.BuildConfig  `json:"build_configs"`
+	GenerateCMakeConfig *generator.GeneratorConfig `json:"generate_cmake_config"`
 
 	// Internal fields.
 	ctx      Context
@@ -40,7 +42,6 @@ func (p *Port) Init(ctx Context, portPath string) error {
 	}
 
 	// Info file: used to record installed state.
-	systemName := ctx.Toolchain().SystemName
 	portNameType := fmt.Sprintf("%s-%s", ctx.Platform(), ctx.BuildType())
 	fileName := fmt.Sprintf("%s-%s.list", ctx.Platform(), ctx.BuildType())
 	sourceDir := filepath.Join(Dirs.WorkspaceDir, "buildtrees", p.Name, "src")
@@ -55,7 +56,7 @@ func (p *Port) Init(ctx Context, portPath string) error {
 	if len(p.BuildConfigs) > 0 {
 		for index := range p.BuildConfigs {
 			p.BuildConfigs[index].Version = p.Version
-			p.BuildConfigs[index].SystemName = systemName
+			p.BuildConfigs[index].SystemName = ctx.SystemName()
 			p.BuildConfigs[index].LibName = p.Name
 			p.BuildConfigs[index].SourceDir = sourceDir
 			p.BuildConfigs[index].SourceFolder = p.SourceFolder
@@ -158,7 +159,7 @@ func (p Port) checkAndRepair() error {
 				continue
 			}
 
-			if err := config.CheckAndRepair(p.Url, p.Version, p.ctx.BuildType()); err != nil {
+			if err := config.CheckAndRepair(p.Url, p.Version, p.ctx.BuildType(), p.GenerateCMakeConfig); err != nil {
 				return err
 			}
 
@@ -189,7 +190,7 @@ func (p Port) checkAndRepair() error {
 	if err != nil {
 		return err
 	}
-	if _, err := file.Write([]byte(p.fullName + "\n")); err != nil {
+	if _, err := file.Write([]byte("\n" + p.fullName)); err != nil {
 		return err
 	}
 	if err := file.Close(); err != nil {

@@ -1,6 +1,9 @@
 package generator
 
-import "embed"
+import (
+	"embed"
+	"strings"
+)
 
 //go:embed templates
 var templates embed.FS
@@ -39,6 +42,9 @@ type generate interface {
 }
 
 func (gen GeneratorConfig) Generate(installedDir string) error {
+	gen.Libname = strings.ToLower(gen.Libname)
+	gen.Namespace = strings.ToLower(gen.Namespace)
+
 	var generators []generate
 
 	if len(gen.Components) == 0 {

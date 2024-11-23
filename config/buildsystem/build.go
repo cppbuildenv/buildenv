@@ -21,10 +21,9 @@ type BuildSystem interface {
 }
 
 type BuildConfig struct {
-	Pattern             string                     `json:"pattern"`
-	BuildTool           string                     `json:"build_tool"`
-	Arguments           []string                   `json:"arguments"`
-	GenerateCMakeConfig *generator.GeneratorConfig `json:"generate_cmake_config"`
+	Pattern   string   `json:"pattern"`
+	BuildTool string   `json:"build_tool"`
+	Arguments []string `json:"arguments"`
 
 	// Internal fields
 	Version      string
@@ -97,7 +96,7 @@ func (b BuildConfig) execute(command, logPath string) error {
 	outWriter := color.NewWriter(os.Stdout, color.Green)
 	cmd.Stdout = io.MultiWriter(outWriter, logFile)
 
-	errWriter := color.NewWriter(os.Stderr, color.Red)
+	errWriter := color.NewWriter(os.Stderr, color.Yellow)
 	cmd.Stderr = io.MultiWriter(errWriter, logFile)
 
 	cmd.Env = os.Environ()
@@ -108,7 +107,7 @@ func (b BuildConfig) execute(command, logPath string) error {
 	return nil
 }
 
-func (b BuildConfig) CheckAndRepair(url, version, buildType string) error {
+func (b BuildConfig) CheckAndRepair(url, version, buildType string, cmakeConfig *generator.GeneratorConfig) error {
 	var buildSystem BuildSystem
 
 	switch b.BuildTool {
@@ -142,12 +141,13 @@ func (b BuildConfig) CheckAndRepair(url, version, buildType string) error {
 		return err
 	}
 
-	if b.GenerateCMakeConfig != nil {
-		b.GenerateCMakeConfig.Version = b.Version
-		b.GenerateCMakeConfig.SystemName = b.SystemName
-		b.GenerateCMakeConfig.Libname = b.LibName
-		b.GenerateCMakeConfig.BuildType = buildType
-		if err := b.GenerateCMakeConfig.Generate(b.InstalledDir); err != nil {
+	// Generate cmake config.
+	if cmakeConfig != nil {
+		cmakeConfig.Version = b.Version
+		cmakeConfig.SystemName = b.SystemName
+		cmakeConfig.Libname = b.LibName
+		cmakeConfig.BuildType = buildType
+		if err := cmakeConfig.Generate(b.InstalledDir); err != nil {
 			return err
 		}
 	}

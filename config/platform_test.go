@@ -18,7 +18,7 @@ func TestCreateToolchainFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	filePath, err := platform.CreateToolchainFile("testdata/output")
+	filePath, err := platform.GenerateToolchainFile("testdata/output")
 	if err != nil {
 		t.Fatal(err)
 	}

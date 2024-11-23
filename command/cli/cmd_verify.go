@@ -27,6 +27,7 @@ func (v *verifyCmd) listen() (handled bool) {
 
 	args := config.NewVerifyArgs(silent.silent, true, buildType.buildType)
 	buildenv := config.NewBuildEnv(buildType.buildType)
+
 	if err := buildenv.Verify(args); err != nil {
 		platformName := strings.TrimSuffix(buildenv.Platform(), ".json")
 		fmt.Print(config.PlatformSelectedFailed(platformName, err))

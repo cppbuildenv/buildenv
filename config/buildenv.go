@@ -17,6 +17,7 @@ type Context interface {
 	Platform() string
 	Toolchain() *Toolchain
 	RootFS() *RootFS
+	SystemName() string
 	BuildType() string
 	JobNum() int
 }
@@ -44,9 +45,9 @@ type buildenv struct {
 }
 
 type configData struct {
-	PlatformName string `json:"platform_name"`
 	ConfRepo     string `json:"conf_repo"`
 	ConfRepoRef  string `json:"conf_repo_ref"`
+	PlatformName string `json:"platform_name"`
 	JobNum       int    `json:"job_num"`
 }
 
@@ -74,14 +75,12 @@ func (b *buildenv) Verify(args VerifyArgs) error {
 		return err
 	}
 
-	var platform Platform
-	if err := platform.Init(b, b.configData.PlatformName); err != nil {
+	if err := b.platform.Init(b, b.configData.PlatformName); err != nil {
 		return err
 	}
-	b.platform = platform
 
 	// Verify buildenv, it'll verify toolchain, tools and dependencies inside.
-	if err := platform.Verify(args); err != nil {
+	if err := b.platform.Verify(args); err != nil {
 		return err
 	}
 
@@ -202,6 +201,14 @@ func (b buildenv) Toolchain() *Toolchain {
 
 func (b buildenv) RootFS() *RootFS {
 	return b.platform.RootFS
+}
+
+func (b buildenv) SystemName() string {
+	if b.Toolchain() == nil {
+		return runtime.GOOS
+	}
+
+	return b.Toolchain().SystemName
 }
 
 func (b buildenv) BuildType() string {

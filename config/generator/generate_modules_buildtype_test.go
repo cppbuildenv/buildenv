@@ -7,11 +7,11 @@ import (
 func TestGenModulesBuildType(t *testing.T) {
 	generator := genModulesBuildType{
 		config: GeneratorConfig{
-			Libname:    "FFmpeg",
+			Libname:    "ffmpeg",
 			Version:    "0.8.0",
 			Libtype:    "SHARED",
 			BuildType:  "Release",
-			Namespace:  "FFmpeg",
+			Namespace:  "ffmpeg",
 			SystemName: "Linux",
 			Components: []Component{
 				{
@@ -55,7 +55,7 @@ func TestGenModulesBuildType(t *testing.T) {
 		},
 	}
 
-	if err := generator.generate("temp/FFmpeg"); err != nil {
+	if err := generator.generate("temp/ffmpeg"); err != nil {
 		t.Fatal(err)
 	}
 

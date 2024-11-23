@@ -35,6 +35,12 @@ func (g *genConfig) generate(installedDir string) error {
 	content = strings.ReplaceAll(content, "@LIBNAME_UPPER@", libNameUpper)
 	content = strings.ReplaceAll(content, "@NAMESPACE@", g.config.Namespace)
 
+	if len(g.config.Components) > 0 {
+		content = strings.ReplaceAll(content, "@CONFIG_OR_MODULE_FILE@", g.config.Libname+"-modules.cmake")
+	} else {
+		content = strings.ReplaceAll(content, "@CONFIG_OR_MODULE_FILE@", g.config.Libname+"-targets.cmake")
+	}
+
 	// Make dirs for writing file.
 	filePath := filepath.Join(installedDir, "lib", "cmake", g.config.Libname, g.config.Libname+"-config.cmake")
 	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {

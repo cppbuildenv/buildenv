@@ -51,7 +51,7 @@ func (g *genModules) generate(installedDir string) error {
 	var addLibrarySections strings.Builder
 
 	for index, component := range g.config.Components {
-		libNames = append(libNames, g.config.Libname)
+		libNames = append(libNames, g.config.Libname+"::"+component.Component)
 
 		var section string
 		if len(component.Dependencies) > 0 {
@@ -60,11 +60,16 @@ func (g *genModules) generate(installedDir string) error {
 			section = string(addLibraryIndependent)
 		}
 
+		var dependencies []string
+		for _, dependency := range component.Dependencies {
+			dependencies = append(dependencies, g.config.Libname+"::"+dependency)
+		}
+
 		section = strings.ReplaceAll(section, "@NAMESPACE@", g.config.Namespace)
 		section = strings.ReplaceAll(section, "@LIBNAME@", g.config.Libname)
 		section = strings.ReplaceAll(section, "@COMPONENT@", component.Component)
 		section = strings.ReplaceAll(section, "@LIBTYPE_UPPER@", strings.ToUpper(g.config.Libtype))
-		section = strings.ReplaceAll(section, "@DEPEDENCIES@", strings.Join(component.Dependencies, ";"))
+		section = strings.ReplaceAll(section, "@DEPEDENCIES@", strings.Join(dependencies, ";"))
 
 		if index == 0 {
 			addLibrarySections.WriteString(section + "\n")
