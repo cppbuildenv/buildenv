@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"buildenv/command"
 	"buildenv/config"
 	"flag"
 	"fmt"
@@ -26,11 +25,11 @@ func (c *createPlatformCmd) listen() (handled bool) {
 	}
 
 	if err := c.doCreate(c.platformName); err != nil {
-		fmt.Print(command.PlatformCreateFailed(c.platformName, err))
+		fmt.Print(config.PlatformCreateFailed(c.platformName, err))
 		return true
 	}
 
-	fmt.Print(command.PlatformCreated(c.platformName))
+	fmt.Print(config.PlatformCreated(c.platformName))
 	return true
 }
 

@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"buildenv/command"
 	"buildenv/config"
 	"buildenv/pkg/color"
 	"buildenv/pkg/io"
@@ -9,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -48,7 +46,7 @@ func (s syncConfigModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if output, err := s.syncRepo(); err != nil {
 				s.content += "\r" + color.Sprintf(color.Red, err.Error())
 			} else {
-				s.content += "\r" + output + "\n" + command.SyncSuccess(true)
+				s.content += "\r" + output + "\n" + config.SyncSuccess(true)
 			}
 			return s, tea.Quit
 
@@ -65,15 +63,15 @@ func (s syncConfigModel) View() string {
 }
 
 func (s syncConfigModel) syncRepo() (string, error) {
+	// In cli ui mode, buildType is always `Release`.
+	buildenv := config.NewBuildEnv("Release")
+
 	// Create buildenv.json if not exist.
 	confPath := filepath.Join(config.Dirs.WorkspaceDir, "buildenv.json")
 	if !io.PathExists(confPath) {
 		if err := os.MkdirAll(filepath.Dir(confPath), os.ModePerm); err != nil {
 			return "", err
 		}
-
-		var buildenv config.BuildEnv
-		buildenv.JobNum = runtime.NumCPU()
 
 		bytes, err := json.MarshalIndent(buildenv, "", "    ")
 		if err != nil {
@@ -83,7 +81,7 @@ func (s syncConfigModel) syncRepo() (string, error) {
 			return "", err
 		}
 
-		return command.SyncSuccess(false), nil
+		return config.SyncSuccess(false), nil
 	}
 
 	// Sync conf repo with repo url.
@@ -93,11 +91,10 @@ func (s syncConfigModel) syncRepo() (string, error) {
 	}
 
 	// Unmarshall with buildenv.json.
-	var buildenv config.BuildEnv
 	if err := json.Unmarshal(bytes, &buildenv); err != nil {
 		return "", err
 	}
 
 	// Sync repo.
-	return buildenv.SyncRepo(buildenv.ConfRepo, buildenv.ConfRepoRef)
+	return buildenv.SyncRepo(buildenv.ConfRepoUrl, buildenv.ConfRepoRef)
 }

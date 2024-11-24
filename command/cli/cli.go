@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"buildenv/command"
+	"buildenv/config"
 	"flag"
 	"runtime"
 )
@@ -18,11 +18,11 @@ type responsible interface {
 var (
 	silent         = newSilentModeCmd()
 	buildType      = newBuildTypeCmd()
-	ui             = newUICmd(command.PlatformCallbacks)
+	ui             = newUICmd(config.PlatformCallbacksImpl)
 	version        = newVersionCmd()
 	sync           = newSyncConfigCmd()
 	createPlatform = newCreatePlatformCmd()
-	selectPlatform = newSelectPlatformCmd(command.PlatformCallbacks)
+	selectPlatform = newSelectPlatformCmd(config.PlatformCallbacksImpl)
 	verify         = newVerifyCmd()
 )
 var commands = []reisterable{
@@ -36,11 +36,15 @@ var commands = []reisterable{
 	verify,
 }
 
+func BuildType() string {
+	return buildType.buildType
+}
+
 // Listen listen commands input
 func Listen() bool {
 	// `install` is supported in unix like system only.
 	if runtime.GOOS == "linux" {
-		install := newInstallCmd()
+		install := newIntegrateCmd()
 		commands = append(commands, install)
 	}
 

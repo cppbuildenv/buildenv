@@ -1,4 +1,4 @@
-package command
+package config
 
 import "buildenv/pkg/color"
 
@@ -34,10 +34,10 @@ func PlatformSelectedFailed(platform string, err error) string {
 	}
 }
 
-func InstallSuccess() string {
-	return color.Sprintf(color.Blue, "[✔] ======== buildenv is installed.\n")
+func IntegrateSuccess() string {
+	return color.Sprintf(color.Blue, "[✔] ======== buildenv is integrated.\n")
 }
 
-func InstallFailed(err error) string {
-	return color.Sprintf(color.Red, "[✘] ======== buildenv install failed: %s.\n", err)
+func IntegrateFailed(err error) string {
+	return color.Sprintf(color.Red, "[✘] ======== buildenv integrate failed: %s.\n", err)
 }

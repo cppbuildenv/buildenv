@@ -22,13 +22,23 @@ type Platform struct {
 	Packages  []string   `json:"packages"`
 
 	// Internal fields.
-	platformName string `json:"-"`
+	platformName string
+	ctx          Context
 }
 
-func (p *Platform) Init(platformPath string) error {
+func (p *Platform) Init(ctx Context, platformName string) error {
+	p.ctx = ctx
+
+	// Check if platform name is empty.
+	platformName = strings.TrimSpace(platformName)
+	if platformName == "" {
+		return fmt.Errorf("no platform has been selected for buildenv")
+	}
+
 	// Check if platform file exists.
+	platformPath := filepath.Join(Dirs.PlatformDir, platformName+".json")
 	if !io.PathExists(platformPath) {
-		return fmt.Errorf("platform file not exists: %s", platformPath)
+		return fmt.Errorf("platform file not exists: %s", platformName)
 	}
 
 	// Read conf/buildenv.json
@@ -41,7 +51,7 @@ func (p *Platform) Init(platformPath string) error {
 	}
 
 	// Set values of internal fields.
-	p.platformName = strings.TrimSuffix(filepath.Base(platformPath), ".json")
+	p.platformName = platformName
 	return nil
 }
 
@@ -108,14 +118,14 @@ func (p Platform) Verify(args VerifyArgs) error {
 	}
 
 	// Append $PKG_CONFIG_PATH with pkgconfig path that in installed dir.
-	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.platformName+"-"+args.BuildType)
+	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.platformName+"-"+args.BuildType())
 	os.Setenv("PKG_CONFIG_PATH", fmt.Sprintf("%s/lib/pkgconfig:%s", installedDir, os.Getenv("PKG_CONFIG_PATH")))
 
 	// Verify dependencies.
 	for _, item := range p.Packages {
 		portPath := filepath.Join(Dirs.PortDir, item+".json")
 		var port Port
-		if err := port.Init(portPath, p.platformName, args.BuildType); err != nil {
+		if err := port.Init(p.ctx, portPath); err != nil {
 			return fmt.Errorf("buildenv.packages[%s] read error: %w", item, err)
 		}
 
@@ -127,7 +137,7 @@ func (p Platform) Verify(args VerifyArgs) error {
 	return nil
 }
 
-func (p Platform) CreateToolchainFile(scriptDir string) (string, error) {
+func (p Platform) GenerateToolchainFile(scriptDir string) (string, error) {
 	var toolchain, environment strings.Builder
 
 	// Set default CMAKE_BUILD_TYPE.
@@ -200,11 +210,11 @@ func (p Platform) CreateToolchainFile(scriptDir string) (string, error) {
 	return toolchainPath, nil
 }
 
-func (b *Platform) writeTools(toolchain, environment *strings.Builder) error {
+func (p *Platform) writeTools(toolchain, environment *strings.Builder) error {
 	toolchain.WriteString("\n# Append `path` of tools into $PATH.\n")
 	environment.WriteString("\n# Append `path` of tools into $PATH.\n")
 
-	for _, item := range b.Tools {
+	for _, item := range p.Tools {
 		toolPath := filepath.Join(Dirs.ToolDir, item+".json")
 		var tool Tool
 		if err := tool.Init(toolPath); err != nil {

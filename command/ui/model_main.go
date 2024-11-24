@@ -25,7 +25,7 @@ func CreateMainModel(callabcks config.PlatformCallbacks) MainModel {
 		platformSelectModel: newPlatformSelectModel(callabcks, func() {
 			currentMode = modeMenu
 		}),
-		installModel: newInstallModel(func() {
+		installModel: newIntegrateModel(func() {
 			currentMode = modeMenu
 		}),
 		aboutModel: newUsageModel(func() {

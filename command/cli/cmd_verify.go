@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"buildenv/command"
 	"buildenv/config"
 	"flag"
 	"fmt"
@@ -18,7 +17,7 @@ type verifyCmd struct {
 }
 
 func (v *verifyCmd) register() {
-	flag.BoolVar(&v.verify, "verify", false, "check and repair toolchain, rootfs, tools and packages for current selected platform.")
+	flag.BoolVar(&v.verify, "verify", false, "check and repair for current selected platform.")
 }
 
 func (v *verifyCmd) listen() (handled bool) {
@@ -26,23 +25,19 @@ func (v *verifyCmd) listen() (handled bool) {
 		return false
 	}
 
-	args := config.VerifyArgs{
-		Silent:         silent.silent,
-		CheckAndRepair: true,
-		BuildType:      buildType.buildType,
-	}
+	args := config.NewVerifyArgs(silent.silent, true, buildType.buildType)
+	buildenv := config.NewBuildEnv(buildType.buildType)
 
-	var buildEnvConf config.BuildEnv
-	if err := buildEnvConf.Verify(args); err != nil {
-		platformName := strings.TrimSuffix(buildEnvConf.Platform, ".json")
-		fmt.Print(command.PlatformSelectedFailed(platformName, err))
+	if err := buildenv.Verify(args); err != nil {
+		platformName := strings.TrimSuffix(buildenv.Platform(), ".json")
+		fmt.Print(config.PlatformSelectedFailed(platformName, err))
 		os.Exit(1)
 	}
 
 	// Silent mode called from buildenv.cmake
 	if !silent.silent {
-		platformName := strings.TrimSuffix(buildEnvConf.Platform, ".json")
-		fmt.Print(command.PlatformSelected(platformName))
+		platformName := strings.TrimSuffix(buildenv.Platform(), ".json")
+		fmt.Print(config.PlatformSelected(platformName))
 	}
 
 	return true

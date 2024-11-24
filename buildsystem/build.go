@@ -1,6 +1,7 @@
 package buildsystem
 
 import (
+	"buildenv/generator"
 	"buildenv/pkg/color"
 	pkgio "buildenv/pkg/io"
 	"fmt"
@@ -13,7 +14,7 @@ import (
 )
 
 type BuildSystem interface {
-	Clone(repo, ref string) error
+	Clone(repoUrl, repoRef string) error
 	Configure(buildType string) error
 	Build() error
 	Install() error
@@ -25,11 +26,14 @@ type BuildConfig struct {
 	Arguments []string `json:"arguments"`
 
 	// Internal fields
-	SourceDir    string `json:"-"`
-	SourceFolder string `json:"-"` // Some thirdpartys' source code is not in the root folder, so we need to specify it.
-	BuildDir     string `json:"-"`
-	InstalledDir string `json:"-"`
-	JobNum       int    `json:"-"`
+	Version      string
+	SystemName   string
+	LibName      string
+	SourceDir    string
+	SourceFolder string // Some thirdpartys' source code is not in the root folder, so we need to specify it.
+	BuildDir     string
+	InstalledDir string
+	JobNum       int
 }
 
 func (b BuildConfig) Verify() error {
@@ -40,7 +44,7 @@ func (b BuildConfig) Verify() error {
 	return nil
 }
 
-func (b BuildConfig) Clone(repo, ref string) error {
+func (b BuildConfig) Clone(repoUrl, repoRef string) error {
 	var commands []string
 
 	// Clone repo or sync repo.
@@ -52,18 +56,15 @@ func (b BuildConfig) Clone(repo, ref string) error {
 
 		commands = append(commands, "git reset --hard && git clean -xfd")
 		commands = append(commands, fmt.Sprintf("git -C %s fetch", b.SourceDir))
-		commands = append(commands, fmt.Sprintf("git -C %s checkout %s", b.SourceDir, ref))
+		commands = append(commands, fmt.Sprintf("git -C %s checkout %s", b.SourceDir, repoRef))
 		commands = append(commands, "git pull")
 	} else {
-		commands = append(commands, fmt.Sprintf("git clone --branch %s --single-branch %s %s", ref, repo, b.SourceDir))
+		commands = append(commands, fmt.Sprintf("git clone --branch %s --single-branch %s %s", repoRef, repoUrl, b.SourceDir))
 	}
-
-	// Assemble cloneLogPath.
-	cloneLogPath := filepath.Join(filepath.Dir(b.BuildDir), filepath.Base(b.BuildDir)+"-clone.log")
 
 	// Execute clone command.
 	commandLine := strings.Join(commands, " && ")
-	if err := b.execute(commandLine, cloneLogPath); err != nil {
+	if err := b.execute(commandLine, ""); err != nil {
 		return err
 	}
 
@@ -73,27 +74,30 @@ func (b BuildConfig) Clone(repo, ref string) error {
 func (b BuildConfig) execute(command, logPath string) error {
 	var cmd *exec.Cmd
 
+	// Create command for windows and linux.
 	if runtime.GOOS == "windows" {
 		cmd = exec.Command("cmd", "/c", command)
 	} else {
 		cmd = exec.Command("bash", "-c", command)
 	}
 
-	// Create log file if not exsit.
-	if err := os.MkdirAll(filepath.Dir(logPath), os.ModeDir|os.ModePerm); err != nil {
-		return err
-	}
-	logFile, err := os.Create(logPath)
-	if err != nil {
-		return err
-	}
-	defer logFile.Close()
+	// Create log file if log path specified.
+	if logPath != "" {
+		if err := os.MkdirAll(filepath.Dir(logPath), os.ModeDir|os.ModePerm); err != nil {
+			return err
+		}
+		logFile, err := os.Create(logPath)
+		if err != nil {
+			return err
+		}
+		defer logFile.Close()
 
-	outWriter := color.NewWriter(os.Stdout, color.Green)
-	cmd.Stdout = io.MultiWriter(outWriter, logFile)
+		outWriter := color.NewWriter(os.Stdout, color.Green)
+		cmd.Stdout = io.MultiWriter(outWriter, logFile)
 
-	errWriter := color.NewWriter(os.Stdout, color.Red)
-	cmd.Stderr = io.MultiWriter(errWriter, logFile)
+		errWriter := color.NewWriter(os.Stderr, color.Yellow)
+		cmd.Stderr = io.MultiWriter(errWriter, logFile)
+	}
 
 	cmd.Env = os.Environ()
 	if err := cmd.Run(); err != nil {
@@ -103,7 +107,7 @@ func (b BuildConfig) execute(command, logPath string) error {
 	return nil
 }
 
-func (b BuildConfig) CheckAndRepair(url, version, buildType string) error {
+func (b BuildConfig) CheckAndRepair(url, version, buildType string, cmakeConfig *generator.GeneratorConfig) error {
 	var buildSystem BuildSystem
 
 	switch b.BuildTool {
@@ -135,6 +139,17 @@ func (b BuildConfig) CheckAndRepair(url, version, buildType string) error {
 
 	if err := buildSystem.Install(); err != nil {
 		return err
+	}
+
+	// Generate cmake config.
+	if cmakeConfig != nil {
+		cmakeConfig.Version = b.Version
+		cmakeConfig.SystemName = b.SystemName
+		cmakeConfig.Libname = b.LibName
+		cmakeConfig.BuildType = buildType
+		if err := cmakeConfig.Generate(b.InstalledDir); err != nil {
+			return err
+		}
 	}
 	return nil
 }
