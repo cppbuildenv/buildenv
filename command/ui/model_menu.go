@@ -9,7 +9,7 @@ const (
 	menuSyncConfig     string = "Init or sync buildenv's config repo."
 	menuCreatePlatform string = "Create a new platform, but need config it later."
 	menuSelectPlatform string = "Select a platform as your build target platform."
-	menuInstall        string = "Install buildenv."
+	menuIntegrate      string = "Integrate buildenv."
 	menuUsage          string = "About and Usage."
 )
 
@@ -20,7 +20,7 @@ const (
 	modeSyncConfig
 	modePlatformCreate
 	modePlatformSelect
-	modelInstall
+	modelIntegrate
 	modeAbout
 )
 
@@ -28,7 +28,7 @@ var menus = []string{
 	menuSyncConfig,
 	menuCreatePlatform,
 	menuSelectPlatform,
-	menuInstall,
+	menuIntegrate,
 	menuUsage,
 }
 
@@ -92,8 +92,8 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					case menuSyncConfig:
 						m.modeChanged(modeSyncConfig)
 
-					case menuInstall:
-						m.modeChanged(modelInstall)
+					case menuIntegrate:
+						m.modeChanged(modelIntegrate)
 
 					case menuUsage:
 						m.modeChanged(modeAbout)

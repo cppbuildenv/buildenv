@@ -42,10 +42,10 @@ func BuildType() string {
 
 // Listen listen commands input
 func Listen() bool {
-	// `install` is supported in unix like system only.
+	// `integrate` is supported in unix like system only.
 	if runtime.GOOS == "linux" {
-		install := newIntegrateCmd()
-		commands = append(commands, install)
+		integrate := newIntegrateCmd()
+		commands = append(commands, integrate)
 	}
 
 	// Read command with flag

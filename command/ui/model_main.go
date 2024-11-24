@@ -25,7 +25,7 @@ func CreateMainModel(callabcks config.PlatformCallbacks) MainModel {
 		platformSelectModel: newPlatformSelectModel(callabcks, func() {
 			currentMode = modeMenu
 		}),
-		installModel: newIntegrateModel(func() {
+		integrateModel: newIntegrateModel(func() {
 			currentMode = modeMenu
 		}),
 		aboutModel: newUsageModel(func() {
@@ -39,7 +39,7 @@ type MainModel struct {
 	syncConfigModel     tea.Model
 	platformCreateModel tea.Model
 	platformSelectModel tea.Model
-	installModel        tea.Model
+	integrateModel      tea.Model
 	aboutModel          tea.Model
 }
 
@@ -71,9 +71,9 @@ func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.platformSelectModel = model
 			return m, cmd
 
-		case modelInstall:
-			model, cmd := m.installModel.Update(msg)
-			m.installModel = model
+		case modelIntegrate:
+			model, cmd := m.integrateModel.Update(msg)
+			m.integrateModel = model
 			return m, cmd
 
 		case modeAbout:
@@ -100,8 +100,8 @@ func (m MainModel) View() string {
 	case modePlatformSelect:
 		return m.platformSelectModel.View()
 
-	case modelInstall:
-		return m.installModel.View()
+	case modelIntegrate:
+		return m.integrateModel.View()
 
 	case modeAbout:
 		return m.aboutModel.View()
