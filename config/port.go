@@ -44,8 +44,8 @@ func (p *Port) Init(ctx Context, portPath string) error {
 	// Info file: used to record installed state.
 	portNameType := fmt.Sprintf("%s-%s", ctx.Platform(), ctx.BuildType())
 	fileName := fmt.Sprintf("%s-%s.list", ctx.Platform(), ctx.BuildType())
-	sourceDir := filepath.Join(Dirs.WorkspaceDir, "buildtrees", p.Name, "src")
-	buildDir := filepath.Join(Dirs.WorkspaceDir, "buildtrees", p.Name, portNameType)
+	sourceDir := filepath.Join(Dirs.WorkspaceDir, "buildtrees", p.Name+"-"+p.Version, "src")
+	buildDir := filepath.Join(Dirs.WorkspaceDir, "buildtrees", p.Name+"-"+p.Version, portNameType)
 	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", portNameType)
 
 	p.ctx = ctx
