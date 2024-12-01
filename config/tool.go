@@ -55,12 +55,8 @@ func (t *Tool) Verify(args VerifyArgs) error {
 		return fmt.Errorf("path of %s is empty", t.toolName)
 	}
 
-	toolPath, err := io.ToAbsPath(Dirs.DownloadRootDir, t.Path)
-	if err != nil {
-		return fmt.Errorf("cannot get absolute path: %s", t.Path)
-	}
-	t.fullpath = toolPath
-	t.cmakepath = fmt.Sprintf("${BUILDENV_ROOT_DIR}/downloads/%s", t.Path)
+	t.fullpath = filepath.Join(Dirs.ExtractedToolsDir, t.Path)
+	t.cmakepath = fmt.Sprintf("${BUILDENV_ROOT_DIR}/downloads/tools/%s", t.Path)
 
 	// This is used to cross-compile other ports by buildenv.
 	os.Setenv("PATH", fmt.Sprintf("%s:%s", t.fullpath, os.Getenv("PATH")))
@@ -112,12 +108,12 @@ func (t Tool) checkAndRepair() error {
 	if t.ArchiveName != "" {
 		folderName = io.FileBaseName(t.ArchiveName)
 	}
-	if err := io.Extract(downloaded, filepath.Join(Dirs.DownloadRootDir, folderName)); err != nil {
+	if err := io.Extract(downloaded, filepath.Join(Dirs.ExtractedToolsDir, folderName)); err != nil {
 		return fmt.Errorf("%s: extract failed: %w", archiveName, err)
 	}
 
 	// Check if has nested folder (handling case where there's an extra nested folder).
-	extractPath := filepath.Join(Dirs.DownloadRootDir, folderName)
+	extractPath := filepath.Join(Dirs.ExtractedToolsDir, folderName)
 	if err := io.MoveNestedFolderIfExist(extractPath); err != nil {
 		return fmt.Errorf("%s: failed to move nested folder: %w", archiveName, err)
 	}

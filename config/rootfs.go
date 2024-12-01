@@ -40,12 +40,9 @@ func (r *RootFS) Verify(args VerifyArgs) error {
 	if r.Path == "" {
 		return fmt.Errorf("rootfs.path is empty")
 	}
-	rootfsPath, err := io.ToAbsPath(Dirs.DownloadRootDir, r.Path)
-	if err != nil {
-		return fmt.Errorf("cannot get absolute path: %s", r.Path)
-	}
-	r.fullpath = rootfsPath
-	r.cmakepath = fmt.Sprintf("${BUILDENV_ROOT_DIR}/downloads/%s", r.Path)
+
+	r.fullpath = filepath.Join(Dirs.ExtractedToolsDir, r.Path)
+	r.cmakepath = fmt.Sprintf("${BUILDENV_ROOT_DIR}/downloads/tools/%s", r.Path)
 
 	// This is for cross-compile other ports by buildenv.
 	os.Setenv("SYSROOT", r.fullpath)
@@ -55,12 +52,7 @@ func (r *RootFS) Verify(args VerifyArgs) error {
 	if len(r.PkgConfigPath) > 0 {
 		var paths []string
 		for _, itemPath := range r.PkgConfigPath {
-			absPath, err := io.ToAbsPath(Dirs.DownloadRootDir, filepath.Join(r.fullpath, itemPath))
-			if err != nil {
-				return fmt.Errorf("cannot get absolute path: %s", itemPath)
-			}
-
-			paths = append(paths, absPath)
+			paths = append(paths, filepath.Join(r.fullpath, itemPath))
 		}
 
 		// This is for cross-compile other ports by buildenv.
@@ -114,12 +106,12 @@ func (r RootFS) checkAndRepair() error {
 	if r.ArchiveName != "" {
 		folderName = io.FileBaseName(r.ArchiveName)
 	}
-	if err := io.Extract(downloaded, filepath.Join(Dirs.DownloadRootDir, folderName)); err != nil {
+	if err := io.Extract(downloaded, filepath.Join(Dirs.ExtractedToolsDir, folderName)); err != nil {
 		return fmt.Errorf("%s: extract rootfs failed: %w", downloaded, err)
 	}
 
 	// Check if has nested folder (handling case where there's an extra nested folder).
-	extractPath := filepath.Join(Dirs.DownloadRootDir, folderName)
+	extractPath := filepath.Join(Dirs.ExtractedToolsDir, folderName)
 	if err := io.MoveNestedFolderIfExist(extractPath); err != nil {
 		return fmt.Errorf("%s: failed to move nested folder: %w", archiveName, err)
 	}

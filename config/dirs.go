@@ -9,12 +9,13 @@ import (
 var Dirs = newDirs()
 
 type dirs struct {
-	WorkspaceDir     string // Default is "."
-	DownloadRootDir  string // Default is "downloads"
-	InstalledRootDir string // Default is "installed"
-	PlatformDir      string // Default is "conf/platforms"
-	ToolDir          string // Default is "conf/tools"
-	PortDir          string // Default is "conf/ports"
+	WorkspaceDir      string // absolute path of "."
+	DownloadRootDir   string // absolute path of "downloads"
+	ExtractedToolsDir string // absolute path of "downloaded/tools"
+	InstalledRootDir  string // absolute path of "installed"
+	PlatformDir       string // absolute path of "conf/platforms"
+	ToolDir           string // absolute path of "conf/tools"
+	PortDir           string // absolute path of "conf/ports"
 }
 
 func newDirs() *dirs {
@@ -29,6 +30,7 @@ func newDirs() *dirs {
 	dirs.WorkspaceDir = currentDir
 	dirs.PlatformDir = filepath.Join(dirs.WorkspaceDir, "conf", "platforms")
 	dirs.DownloadRootDir = filepath.Join(dirs.WorkspaceDir, "downloads")
+	dirs.ExtractedToolsDir = filepath.Join(dirs.WorkspaceDir, "downloads", "tools")
 	dirs.InstalledRootDir = filepath.Join(dirs.WorkspaceDir, "installed")
 	dirs.ToolDir = filepath.Join(dirs.WorkspaceDir, "conf", "tools")
 	dirs.PortDir = filepath.Join(dirs.WorkspaceDir, "conf", "ports")

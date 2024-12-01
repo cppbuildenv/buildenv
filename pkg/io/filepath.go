@@ -17,17 +17,7 @@ func PathExists(path string) bool {
 	return !os.IsNotExist(err)
 }
 
-// ToAbsPath converts relative path to absolute path.
-func ToAbsPath(parentPath, relativePath string) (string, error) {
-	path := filepath.Join(parentPath, relativePath)
-	rootfsPath, err := filepath.Abs(path)
-	if err != nil {
-		return "", err
-	}
-
-	return rootfsPath, nil
-}
-
+// FileBaseName it's a improved version to get file base name.
 func FileBaseName(fileName string) string {
 	index := strings.Index(fileName, ".tar.")
 	if index > 0 {
