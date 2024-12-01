@@ -63,7 +63,7 @@ func UpdateRunPath(runPath string) error {
 	// Append buildenv section, it would be a new second or a replaced a second.
 	lines = append(lines, "")
 	lines = append(lines, envTitle)
-	lines = append(lines, fmt.Sprintf("export PATH=%s:$PATH", runPath))
+	lines = append(lines, fmt.Sprintf("export PATH=%s", Join(runPath, "$PATH")))
 
 	// Rewind the file and overwrite it with the updated content.
 	file.Truncate(0) // Clear the content of the file.
@@ -86,4 +86,10 @@ func homeDir() string {
 	}
 
 	return usr.HomeDir
+}
+
+// Join joins the paths with the OS-specific path separator.
+func Join(paths ...string) string {
+	separator := string(string(os.PathListSeparator))
+	return strings.Join(paths, separator)
 }

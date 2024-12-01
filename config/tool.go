@@ -16,8 +16,9 @@ type Tool struct {
 	Path        string `json:"path"`                   // Runtime path of tool, it's relative path  and would be converted to absolute path later.
 
 	// Internal fields.
-	toolName string `json:"-"`
-	fullpath string `json:"-"`
+	toolName  string `json:"-"`
+	fullpath  string `json:"-"`
+	cmakepath string `json:"-"`
 }
 
 func (t *Tool) Init(toolpath string) error {
@@ -41,17 +42,6 @@ func (t *Tool) Init(toolpath string) error {
 }
 
 func (t *Tool) Verify(args VerifyArgs) error {
-	// Relative path -> Absolute path.
-	var toAbsPath = func(relativePath string) (string, error) {
-		path := filepath.Join(Dirs.DownloadRootDir, relativePath)
-		rootfsPath, err := filepath.Abs(path)
-		if err != nil {
-			return "", err
-		}
-
-		return rootfsPath, nil
-	}
-
 	// Verify tool download url.
 	if t.Url == "" {
 		return fmt.Errorf("url of %s is empty", t.toolName)
@@ -64,11 +54,13 @@ func (t *Tool) Verify(args VerifyArgs) error {
 	if t.Path == "" {
 		return fmt.Errorf("path of %s is empty", t.toolName)
 	}
-	toolPath, err := toAbsPath(t.Path)
+
+	toolPath, err := io.ToAbsPath(Dirs.DownloadRootDir, t.Path)
 	if err != nil {
 		return fmt.Errorf("cannot get absolute path: %s", t.Path)
 	}
 	t.fullpath = toolPath
+	t.cmakepath = fmt.Sprintf("${BUILDENV_ROOT_DIR}/downloads/%s", t.Path)
 
 	// This is used to cross-compile other ports by buildenv.
 	os.Setenv("PATH", fmt.Sprintf("%s:%s", t.fullpath, os.Getenv("PATH")))

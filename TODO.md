@@ -14,3 +14,4 @@
 - 每个installed的库添加platform目录，目的是为了支持不同平台的库共存
 - 执行-verify打印所有已经准备好的tool和已经安装的port
 - makefile编译前不支持配置环境变量，例如：export CFLAGS="-mfpu=neon"
+- 环境变量用os.PathListSeparator拼接

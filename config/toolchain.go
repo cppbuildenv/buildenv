@@ -2,6 +2,7 @@ package config
 
 import (
 	"buildenv/pkg/color"
+	"buildenv/pkg/env"
 	"buildenv/pkg/io"
 	"fmt"
 	"os"
@@ -27,7 +28,8 @@ type Toolchain struct {
 	STRIP           string `json:"strip"`
 
 	// Internal fields.
-	fullpath string `json:"-"`
+	fullpath  string `json:"-"`
+	cmakepath string `json:"-"`
 }
 
 func (t *Toolchain) Verify(args VerifyArgs) error {
@@ -48,6 +50,7 @@ func (t *Toolchain) Verify(args VerifyArgs) error {
 		return fmt.Errorf("cannot get absolute path: %s", t.Path)
 	}
 	t.fullpath = toolchainPath
+	t.cmakepath = fmt.Sprintf("${BUILDENV_ROOT_DIR}/downloads/%s", t.Path)
 
 	// This is used to cross-compile other ports by buildenv.
 	os.Setenv("PATH", fmt.Sprintf("%s:%s", t.fullpath, os.Getenv("PATH")))
@@ -164,7 +167,7 @@ func (t Toolchain) checkAndRepair() error {
 
 func (t Toolchain) generate(toolchain, environment *strings.Builder) error {
 	toolchain.WriteString("\n# Set toolchain for cross-compile.\n")
-	toolchain.WriteString(fmt.Sprintf("set(ENV{PATH} \"%s:$ENV{PATH}\")\n", t.fullpath))
+	toolchain.WriteString(fmt.Sprintf("set(ENV{PATH} \"%s\")\n", env.Join(t.cmakepath, "$ENV{PATH}")))
 
 	writeIfNotEmpty := func(content, env, value string) {
 		if value != "" {
@@ -177,8 +180,8 @@ func (t Toolchain) generate(toolchain, environment *strings.Builder) error {
 	}
 
 	environment.WriteString("# Set toolchain for cross compile.\n")
-	environment.WriteString(fmt.Sprintf("export TOOLCHAIN_PATH=%s\n", t.fullpath))
-	environment.WriteString("export PATH=${TOOLCHAIN_PATH}:${PATH}\n\n")
+	environment.WriteString(fmt.Sprintf("export TOOLCHAIN_PATH=%s\n", t.cmakepath))
+	environment.WriteString(fmt.Sprintf("export PATH=%s\n\n", env.Join("${TOOLCHAIN_PATH}", "${PATH}")))
 
 	writeIfNotEmpty("CMAKE_C_COMPILER 		", "CC", t.CC)
 	writeIfNotEmpty("CMAKE_CXX_COMPILER		", "CXX", t.CXX)

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"buildenv/pkg/env"
 	"buildenv/pkg/io"
 	"encoding/json"
 	"fmt"
@@ -115,6 +116,14 @@ func (p Platform) Verify(args VerifyArgs) error {
 		if err := tool.Verify(args); err != nil {
 			return fmt.Errorf("buildenv.tools[%s] verify error: %w", item, err)
 		}
+
+		// Append $PATH with tool path.
+		absToolPath, err := filepath.Abs(tool.Path)
+		if err != nil {
+			return fmt.Errorf("cannot get absolute path of tool path: %s", tool.Path)
+		}
+
+		os.Setenv("PATH", fmt.Sprintf("%s%c%s", absToolPath, os.PathListSeparator, os.Getenv("PATH")))
 	}
 
 	// Append $PKG_CONFIG_PATH with pkgconfig path that in installed dir.
@@ -155,6 +164,13 @@ func (p Platform) GenerateToolchainFile(scriptDir string) (string, error) {
 	toolchain.WriteString("\tWORKING_DIRECTORY ${HOME_DIR}\n")
 	toolchain.WriteString(")\n")
 
+	// Define buildenv root dir.
+	toolchain.WriteString("\n# Define buildenv root dir.\n")
+	toolchain.WriteString("get_filename_component(_CURRENT_DIR \"${CMAKE_CURRENT_LIST_FILE}\" PATH)\n")
+	toolchain.WriteString("get_filename_component(BUILDENV_ROOT_DIR \"${_CURRENT_DIR}\" PATH)\n")
+	environment.WriteString("\n# Define buildenv root dir.\n")
+	environment.WriteString("export BUILDENV_ROOT_DIR=$PWD/..\n")
+
 	// Set sysroot for cross-compile.
 	if p.RootFS != nil {
 		if err := p.RootFS.generate(&toolchain, &environment); err != nil {
@@ -180,10 +196,10 @@ func (p Platform) GenerateToolchainFile(scriptDir string) (string, error) {
 	}
 
 	toolchain.WriteString("\n# Add `installed dir` into library search paths.\n")
-	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.platformName+"-${CMAKE_BUILD_TYPE}")
+	installedDir := fmt.Sprintf("${BUILDENV_ROOT_DIR}/%s/%s", "installed", p.platformName+"-${CMAKE_BUILD_TYPE}")
 	toolchain.WriteString(fmt.Sprintf("list(APPEND CMAKE_FIND_ROOT_PATH \"%s\")\n", installedDir))
 	toolchain.WriteString(fmt.Sprintf("list(APPEND CMAKE_PREFIX_PATH \"%s\")\n", installedDir))
-	toolchain.WriteString(fmt.Sprintf("set(ENV{PKG_CONFIG_PATH} \"%s/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}\")\n", installedDir))
+	toolchain.WriteString(fmt.Sprintf("set(ENV{PKG_CONFIG_PATH} \"%s/lib/pkgconfig%s$ENV{PKG_CONFIG_PATH}\")\n", installedDir, string(os.PathListSeparator)))
 
 	// Create the output directory if it doesn't exist.
 	if err := os.MkdirAll(scriptDir, os.ModeDir|os.ModePerm); err != nil {
@@ -221,16 +237,13 @@ func (p *Platform) writeTools(toolchain, environment *strings.Builder) error {
 			return fmt.Errorf("cannot read tool: %s", toolPath)
 		}
 
-		absToolPath, err := filepath.Abs(tool.Path)
-		if err != nil {
-			return fmt.Errorf("cannot get absolute path of tool path: %s", toolPath)
+		verifyArgs := NewVerifyArgs(false, false, "Release")
+		if err := tool.Verify(verifyArgs); err != nil {
+			return fmt.Errorf("cannot verify tool: %s", toolPath)
 		}
 
-		toolchain.WriteString(fmt.Sprintf("set(ENV{PATH} \"%s:$ENV{PATH}\")\n", absToolPath))
-		environment.WriteString(fmt.Sprintf("export PATH=%s:$PATH\n", absToolPath))
-
-		// Append $PATH with tool path.
-		os.Setenv("PATH", fmt.Sprintf("%s%c%s", absToolPath, os.PathListSeparator, os.Getenv("PATH")))
+		toolchain.WriteString(fmt.Sprintf("set(ENV{PATH} \"%s\")\n", env.Join(tool.cmakepath, "$ENV{PATH}")))
+		environment.WriteString(fmt.Sprintf("export PATH=%s\n", env.Join(tool.cmakepath, "$PATH")))
 	}
 	return nil
 }

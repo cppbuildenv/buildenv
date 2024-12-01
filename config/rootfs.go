@@ -2,6 +2,7 @@ package config
 
 import (
 	"buildenv/pkg/color"
+	"buildenv/pkg/env"
 	"buildenv/pkg/io"
 	"fmt"
 	"os"
@@ -16,7 +17,8 @@ type RootFS struct {
 	PkgConfigPath []string `json:"pkg_config_path"`        // Pkg config path, default will be `usr/lib/pkgconfig`
 
 	// Internal fields.
-	fullpath string `json:"-"`
+	fullpath  string `json:"-"`
+	cmakepath string `json:"-"`
 }
 
 type RootFSEnv struct {
@@ -43,10 +45,11 @@ func (r *RootFS) Verify(args VerifyArgs) error {
 		return fmt.Errorf("cannot get absolute path: %s", r.Path)
 	}
 	r.fullpath = rootfsPath
+	r.cmakepath = fmt.Sprintf("${BUILDENV_ROOT_DIR}/downloads/%s", r.Path)
 
 	// This is for cross-compile other ports by buildenv.
-	os.Setenv("SYSROOT", rootfsPath)
-	os.Setenv("PKG_CONFIG_SYSROOT_DIR", rootfsPath)
+	os.Setenv("SYSROOT", r.fullpath)
+	os.Setenv("PKG_CONFIG_SYSROOT_DIR", r.fullpath)
 
 	// Verify pkg_config_path and convert to absolute path.
 	if len(r.PkgConfigPath) > 0 {
@@ -128,7 +131,7 @@ func (r RootFS) checkAndRepair() error {
 
 func (r RootFS) generate(toolchain, environment *strings.Builder) error {
 	toolchain.WriteString("\n# Set sysroot for cross-compile.\n")
-	toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSROOT \"%s\")\n", r.fullpath))
+	toolchain.WriteString(fmt.Sprintf("set(CMAKE_SYSROOT \"%s\")\n", r.cmakepath))
 	toolchain.WriteString("list(APPEND CMAKE_FIND_ROOT_PATH \"${CMAKE_SYSROOT}\")\n")
 
 	// Search programs in the host environment.
@@ -146,15 +149,23 @@ func (r RootFS) generate(toolchain, environment *strings.Builder) error {
 
 	// Replace the path with the workspace directory.
 	for _, path := range r.PkgConfigPath {
-		toolchain.WriteString(fmt.Sprintf("set(ENV{PKG_CONFIG_PATH} \"${CMAKE_SYSROOT}/%s:$ENV{PKG_CONFIG_PATH}\")\n", path))
+		toolchain.WriteString(fmt.Sprintf("set(ENV{PKG_CONFIG_PATH} \"${CMAKE_SYSROOT}/%s%s$ENV{PKG_CONFIG_PATH}\")\n", path, string(os.PathListSeparator)))
 	}
 
 	// Write variables to buildenv.sh
 	environment.WriteString("\n# Set rootfs for cross compile.\n")
-	environment.WriteString(fmt.Sprintf("export SYSROOT=%s\n", r.fullpath))
-	environment.WriteString("export PATH=${SYSROOT}:${PATH}\n")
+	environment.WriteString(fmt.Sprintf("export SYSROOT=%s\n", r.cmakepath))
+	environment.WriteString(fmt.Sprintf("export PATH=%s\n", env.Join("${SYSROOT}", "${PATH}")))
 	environment.WriteString("export PKG_CONFIG_SYSROOT_DIR=${SYSROOT}\n")
-	environment.WriteString(fmt.Sprintf("export PKG_CONFIG_PATH=%s:$PKG_CONFIG_PATH\n", strings.Join(r.PkgConfigPath, ":")))
+
+	for index, path := range r.PkgConfigPath {
+		fullpath := filepath.Join("${SYSROOT}", path)
+		environment.WriteString(fmt.Sprintf("export PKG_CONFIG_PATH=%s\n", env.Join(fullpath, "${PKG_CONFIG_PATH}")))
+
+		if index == len(r.PkgConfigPath)-1 {
+			environment.WriteString("\n")
+		}
+	}
 
 	// Set the environment variables.
 	os.Setenv("SYSROOT", r.fullpath)
