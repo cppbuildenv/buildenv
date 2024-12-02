@@ -38,7 +38,7 @@ func (t *Toolchain) Verify() error {
 		return fmt.Errorf("toolchain.url is empty")
 	}
 	if err := io.CheckAvailable(t.Url); err != nil {
-		return fmt.Errorf("toolchain.url is not accessible: %w", err)
+		return fmt.Errorf("toolchain.url of %s is not accessible", t.Url)
 	}
 
 	// Verify toolchain path and convert to absolute path.

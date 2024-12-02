@@ -29,7 +29,7 @@ func (i *installCmd) listen() (handled bool) {
 	// Check port config is exists.
 	portPath := filepath.Join(config.Dirs.PortDir, i.install+".json")
 	if !io.PathExists(portPath) {
-		fmt.Print(config.InstallFailed(i.install, fmt.Errorf("port config is not exists")))
+		fmt.Print(config.InstallFailed(i.install, fmt.Errorf("%s can not be found at %s", i.install+".json", config.Dirs.PortDir)))
 		return true
 	}
 

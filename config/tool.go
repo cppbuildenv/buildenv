@@ -47,7 +47,7 @@ func (t *Tool) Verify() error {
 		return fmt.Errorf("url of %s is empty", t.toolName)
 	}
 	if err := io.CheckAvailable(t.Url); err != nil {
-		return fmt.Errorf("tool.url of %s is not accessible: %w", t.toolName, err)
+		return fmt.Errorf("tool.url of %s is not accessible", t.Url)
 	}
 
 	// Verify tool path and convert to absolute path.

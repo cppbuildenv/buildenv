@@ -33,7 +33,7 @@ func (r *RootFS) Verify() error {
 		return fmt.Errorf("rootfs.url is empty")
 	}
 	if err := io.CheckAvailable(r.Url); err != nil {
-		return fmt.Errorf("rootfs.url is not accessible: %w", err)
+		return fmt.Errorf("rootfs.url of %s is not accessible", r.Url)
 	}
 
 	// Verify rootfs path and convert to absolute path.

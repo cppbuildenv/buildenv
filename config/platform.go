@@ -39,7 +39,7 @@ func (p *Platform) Init(ctx Context, platformName string) error {
 	// Check if platform file exists.
 	platformPath := filepath.Join(Dirs.PlatformDir, platformName+".json")
 	if !io.PathExists(platformPath) {
-		return fmt.Errorf("platform file not exists: %s", platformName)
+		return fmt.Errorf("platform %s does not exists", platformName)
 	}
 
 	// Read conf/buildenv.json
@@ -78,7 +78,7 @@ func (p Platform) Write(platformPath string) error {
 
 	// Check if conf/buildenv.json exists.
 	if io.PathExists(platformPath) {
-		return fmt.Errorf("[%s] is already exists", platformPath)
+		return fmt.Errorf("%s is already exists", platformPath)
 	}
 
 	// Make sure the parent directory exists.
@@ -93,7 +93,7 @@ func (p Platform) Verify(args VerifyArgs) error {
 	// RootFS maybe nil when platform is native.
 	if p.RootFS != nil {
 		if err := p.RootFS.Verify(); err != nil {
-			return fmt.Errorf("buildenv.rootfs error: %w", err)
+			return err
 		}
 
 		if err := p.RootFS.CheckAndRepair(args); err != nil {
@@ -178,25 +178,28 @@ func (p Platform) Verify(args VerifyArgs) error {
 func (p Platform) GenerateToolchainFile(scriptDir string) (string, error) {
 	var toolchain, environment strings.Builder
 
-	// Set default CMAKE_BUILD_TYPE.
-	toolchain.WriteString("# Set default CMAKE_BUILD_TYPE.\n")
-	toolchain.WriteString("if(NOT CMAKE_BUILD_TYPE)\n")
-	toolchain.WriteString("\tset(CMAKE_BUILD_TYPE \"Release\")\n")
-	toolchain.WriteString("endif()\n")
-
 	// Verify buildenv during configuration.
-	toolchain.WriteString("\n# Verify buildenv during configuration.\n")
-	toolchain.WriteString("set(HOME_DIR \"${CMAKE_CURRENT_LIST_DIR}/..\")\n")
-	toolchain.WriteString("set(BUILDENV_EXECUTABLE \"${HOME_DIR}/buildenv\")\n")
-	toolchain.WriteString("execute_process(\n")
-	toolchain.WriteString("\tCOMMAND ${BUILDENV_EXECUTABLE} -verify -silent -build_type=${CMAKE_BUILD_TYPE}\n")
-	toolchain.WriteString("\tWORKING_DIRECTORY ${HOME_DIR}\n")
-	toolchain.WriteString(")\n")
+	toolchain.WriteString(fmt.Sprintf("%s\n", `# Set default CMAKE_BUILD_TYPE.
+if(NOT CMAKE_BUILD_TYPE)
+	set(CMAKE_BUILD_TYPE "Release")
+endif()
+
+# Verify buildenv during configuration.
+set(HOME_DIR "${CMAKE_CURRENT_LIST_DIR}/..")
+find_program(BUILDENV buildenv PATHS ${HOME_DIR})
+if(BUILDENV)
+	message("================ buildenv -verify -silent -build_type ${CMAKE_BUILD_TYPE} ================\n")
+	execute_process(
+		COMMAND ${BUILDENV} -verify -silent -build_type=${CMAKE_BUILD_TYPE}
+		WORKING_DIRECTORY ${HOME_DIR}
+	)
+endif()`))
 
 	// Define buildenv root dir.
-	toolchain.WriteString("\n# Define buildenv root dir.\n")
-	toolchain.WriteString("get_filename_component(_CURRENT_DIR \"${CMAKE_CURRENT_LIST_FILE}\" PATH)\n")
-	toolchain.WriteString("get_filename_component(BUILDENV_ROOT_DIR \"${_CURRENT_DIR}\" PATH)\n")
+	toolchain.WriteString(fmt.Sprintf("\n%s\n", `# Define buildenv root dir.
+get_filename_component(_CURRENT_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+get_filename_component(BUILDENV_ROOT_DIR "${_CURRENT_DIR}" PATH)`))
+
 	environment.WriteString("\n# Define buildenv root dir.\n")
 	environment.WriteString("export BUILDENV_ROOT_DIR=$PWD/..\n")
 
