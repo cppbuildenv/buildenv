@@ -20,7 +20,6 @@ type Port struct {
 	Name                string                     `json:"name"`
 	Version             string                     `json:"version"`
 	SourceFolder        string                     `json:"source_folder,omitempty"`
-	Depedencies         []string                   `json:"dependencies"`
 	BuildConfigs        []buildsystem.BuildConfig  `json:"build_configs"`
 	GenerateCMakeConfig *generator.GeneratorConfig `json:"generate_cmake_config"`
 
@@ -137,30 +136,30 @@ func (p Port) checkAndRepair() error {
 	}
 
 	if len(p.BuildConfigs) > 0 {
-		// Check and repair dependencies.
-		for _, item := range p.Depedencies {
-			if item == p.fullName {
-				return fmt.Errorf("port.dependencies contains circular dependency: %s", item)
-			}
-
-			portPath := filepath.Join(p.portDir, item+".json")
-
-			var port Port
-			if err := port.Init(p.ctx, portPath); err != nil {
-				return err
-			}
-
-			if err := port.checkAndRepair(); err != nil {
-				return err
-			}
-		}
-
 		var matchedAndFixed bool
 		for _, config := range p.BuildConfigs {
 			if !p.matchPattern(config.Pattern) {
 				continue
 			}
 
+			// Check and repair dependencies.
+			for _, item := range config.Depedencies {
+				if item == p.fullName {
+					return fmt.Errorf("port.dependencies contains circular dependency: %s", item)
+				}
+
+				// Check and repair dependency.
+				var port Port
+				portPath := filepath.Join(p.portDir, item+".json")
+				if err := port.Init(p.ctx, portPath); err != nil {
+					return err
+				}
+				if err := port.checkAndRepair(); err != nil {
+					return err
+				}
+			}
+
+			// Check and repair port.
 			if err := config.CheckAndRepair(p.Url, p.Version, p.ctx.BuildType(), p.GenerateCMakeConfig); err != nil {
 				return err
 			}

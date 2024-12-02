@@ -43,7 +43,7 @@ func (c cmake) Configure(buildType string) error {
 	configure := fmt.Sprintf("cmake -S %s -B %s %s", filepath.Join(c.SourceDir, c.SourceFolder), c.BuildDir, joinedArgs)
 
 	// Print process log.
-	fmt.Printf("\n[BuildEnv]: %s\n", configure)
+	fmt.Printf("\n[buildenv execute command]: %s\n", configure)
 
 	// Execute configure.
 	configureLogPath := filepath.Join(filepath.Dir(c.BuildDir), filepath.Base(c.BuildDir)+"-configure.log")
@@ -59,7 +59,7 @@ func (c cmake) Build() error {
 	command := fmt.Sprintf("cmake --build %s --parallel %d", c.BuildDir, c.JobNum)
 
 	// Print process log.
-	fmt.Printf("\n[BuildEnv]: %s\n", command)
+	fmt.Printf("\n[buildenv execute command]: %s\n", command)
 
 	// Execute build.
 	buildLogPath := filepath.Join(filepath.Dir(c.BuildDir), filepath.Base(c.BuildDir)+"-build.log")
@@ -75,7 +75,7 @@ func (c cmake) Install() error {
 	command := fmt.Sprintf("cmake --install %s", c.BuildDir)
 
 	// Print process log.
-	fmt.Printf("\n[BuildEnv]: %s\n", command)
+	fmt.Printf("\n[buildenv execute command]: %s\n", command)
 
 	// Execute install.
 	installLogPath := filepath.Join(filepath.Dir(c.BuildDir), filepath.Base(c.BuildDir)+"-install.log")

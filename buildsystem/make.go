@@ -53,7 +53,7 @@ func (m make) Configure(buildType string) error {
 	configure := fmt.Sprintf("%s/configure %s", m.SourceDir, joinedArgs)
 
 	// Print process log.
-	fmt.Printf("\n[BuildEnv]: %s\n", configure)
+	fmt.Printf("\n[buildenv execute command]: %s\n", configure)
 
 	// Execute configure.
 	configureLogPath := filepath.Join(filepath.Dir(m.BuildDir), filepath.Base(m.BuildDir)+"-configure.log")
@@ -69,7 +69,7 @@ func (m make) Build() error {
 	command := fmt.Sprintf("make -j %d", m.JobNum)
 
 	// Print process log.
-	fmt.Printf("\n[BuildEnv]: %s\n", command)
+	fmt.Printf("\n[buildenv execute command]: %s\n", command)
 
 	// Execute build.
 	buildLogPath := filepath.Join(filepath.Dir(m.BuildDir), filepath.Base(m.BuildDir)+"-build.log")
@@ -85,7 +85,7 @@ func (m make) Install() error {
 	command := "make install"
 
 	// Print process log.
-	fmt.Printf("\n[BuildEnv]: %s\n", command)
+	fmt.Printf("\n[buildenv execute command]: %s\n", command)
 
 	// Execute install.
 	installLogPath := filepath.Join(filepath.Dir(m.BuildDir), filepath.Base(m.BuildDir)+"-install.log")
