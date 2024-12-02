@@ -104,10 +104,10 @@ func (t *Toolchain) Verify(args VerifyArgs) error {
 		return nil
 	}
 
-	return t.checkAndRepair()
+	return t.checkAndRepair(args)
 }
 
-func (t Toolchain) checkAndRepair() error {
+func (t Toolchain) checkAndRepair(args VerifyArgs) error {
 	// Default folder name is the first folder name of archive name.
 	// but it can be specified by archive name.
 	folderName := strings.Split(t.Path, string(filepath.Separator))[0]
@@ -118,8 +118,12 @@ func (t Toolchain) checkAndRepair() error {
 
 	// Check if tool exists.
 	if io.PathExists(t.fullpath) {
-		fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Toolchain: %s\nLocation: %s\n\n",
-			io.FileBaseName(t.Url), extractedPath))
+		// No need to show toolchain state info when install a port.
+		if args.PackagePort() == "" {
+			fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Toolchain: %s\nLocation: %s\n\n",
+				io.FileBaseName(t.Url), extractedPath))
+		}
+
 		return nil
 	}
 

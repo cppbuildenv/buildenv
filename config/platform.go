@@ -130,16 +130,30 @@ func (p Platform) Verify(args VerifyArgs) error {
 	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.platformName+"-"+args.BuildType())
 	os.Setenv("PKG_CONFIG_PATH", fmt.Sprintf("%s/lib/pkgconfig:%s", installedDir, os.Getenv("PKG_CONFIG_PATH")))
 
-	// Verify dependencies.
-	for _, item := range p.Packages {
-		portPath := filepath.Join(Dirs.PortDir, item+".json")
+	// Check if only to verify one port.
+	portNeedToVerify := args.PackagePort()
+	if portNeedToVerify != "" {
+		portPath := filepath.Join(Dirs.PortDir, portNeedToVerify+".json")
 		var port Port
 		if err := port.Init(p.ctx, portPath); err != nil {
-			return fmt.Errorf("buildenv.packages[%s] read error: %w", item, err)
+			return fmt.Errorf("buildenv.packages[%s] read error: %w", portNeedToVerify, err)
 		}
 
 		if err := port.Verify(args); err != nil {
-			return fmt.Errorf("buildenv.packages[%s] verify error: %w", item, err)
+			return fmt.Errorf("buildenv.packages[%s] verify error: %w", portNeedToVerify, err)
+		}
+	} else {
+		// Verify dependencies.
+		for _, item := range p.Packages {
+			portPath := filepath.Join(Dirs.PortDir, item+".json")
+			var port Port
+			if err := port.Init(p.ctx, portPath); err != nil {
+				return fmt.Errorf("buildenv.packages[%s] read error: %w", item, err)
+			}
+
+			if err := port.Verify(args); err != nil {
+				return fmt.Errorf("buildenv.packages[%s] verify error: %w", item, err)
+			}
 		}
 	}
 

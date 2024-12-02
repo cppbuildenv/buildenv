@@ -65,10 +65,10 @@ func (t *Tool) Verify(args VerifyArgs) error {
 		return nil
 	}
 
-	return t.checkAndRepair()
+	return t.checkAndRepair(args)
 }
 
-func (t Tool) checkAndRepair() error {
+func (t Tool) checkAndRepair(args VerifyArgs) error {
 	// Default folder name would be the first folder of path,
 	// it also can be specified by archiveName.
 	folderName := strings.Split(t.Path, string(filepath.Separator))[0]
@@ -80,8 +80,11 @@ func (t Tool) checkAndRepair() error {
 
 	// Check if tool exists.
 	if io.PathExists(t.fullpath) {
-		fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Tool: %s\nLocation: %s\n\n",
-			io.FileBaseName(t.Url), extractPath))
+		// No need to show rootfs state info when install a port.
+		if args.PackagePort() == "" {
+			fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Tool: %s\nLocation: %s\n\n",
+				io.FileBaseName(t.Url), extractPath))
+		}
 		return nil
 	}
 

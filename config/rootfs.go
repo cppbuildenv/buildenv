@@ -63,10 +63,10 @@ func (r *RootFS) Verify(args VerifyArgs) error {
 		return nil
 	}
 
-	return r.checkAndRepair()
+	return r.checkAndRepair(args)
 }
 
-func (r RootFS) checkAndRepair() error {
+func (r RootFS) checkAndRepair(args VerifyArgs) error {
 	// Default folder name is the first folder name of archive name.
 	// but it can be specified by archive name.
 	folderName := strings.Split(r.Path, string(filepath.Separator))[0]
@@ -77,8 +77,11 @@ func (r RootFS) checkAndRepair() error {
 
 	// Check if tool exists.
 	if io.PathExists(r.fullpath) {
-		fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Rootfs: %s\nLocation: %s\n\n",
-			io.FileBaseName(r.Url), extractedPath))
+		// No need to show rootfs state info when install a port.
+		if args.PackagePort() == "" {
+			fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Rootfs: %s\nLocation: %s\n\n",
+				io.FileBaseName(r.Url), extractedPath))
+		}
 		return nil
 	}
 

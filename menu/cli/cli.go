@@ -24,6 +24,7 @@ var (
 	createPlatform = newCreatePlatformCmd()
 	selectPlatform = newSelectPlatformCmd(config.PlatformCallbacksImpl)
 	verify         = newVerifyCmd()
+	install        = newInstallCmd()
 )
 var commands = []reisterable{
 	silent,
@@ -34,6 +35,7 @@ var commands = []reisterable{
 	createPlatform,
 	selectPlatform,
 	verify,
+	install,
 }
 
 func BuildType() string {

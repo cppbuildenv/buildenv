@@ -4,7 +4,6 @@ import (
 	"buildenv/config"
 	"flag"
 	"fmt"
-	"os"
 	"strings"
 )
 
@@ -31,7 +30,7 @@ func (v *verifyCmd) listen() (handled bool) {
 	if err := buildenv.Verify(args); err != nil {
 		platformName := strings.TrimSuffix(buildenv.Platform(), ".json")
 		fmt.Print(config.PlatformSelectedFailed(platformName, err))
-		os.Exit(1)
+		return true
 	}
 
 	platformName := strings.TrimSuffix(buildenv.Platform(), ".json")

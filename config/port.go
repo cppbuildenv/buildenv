@@ -95,7 +95,7 @@ func (p *Port) Verify(args VerifyArgs) error {
 		return nil
 	}
 
-	if err := p.checkAndRepair(); err != nil {
+	if err := p.checkAndRepair(args); err != nil {
 		return err
 	}
 
@@ -127,7 +127,7 @@ func (p Port) Installed() bool {
 	return false
 }
 
-func (p Port) checkAndRepair() error {
+func (p Port) checkAndRepair(args VerifyArgs) error {
 	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.ctx.Platform()+"-"+p.ctx.BuildType())
 	if p.Installed() {
 		fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Port: %s\nLocation: %s\n\n",
@@ -154,7 +154,7 @@ func (p Port) checkAndRepair() error {
 				if err := port.Init(p.ctx, portPath); err != nil {
 					return err
 				}
-				if err := port.checkAndRepair(); err != nil {
+				if err := port.checkAndRepair(args); err != nil {
 					return err
 				}
 			}

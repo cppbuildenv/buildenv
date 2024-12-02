@@ -41,3 +41,7 @@ func IntegrateSuccess() string {
 func IntegrateFailed(err error) string {
 	return color.Sprintf(color.Red, "[✘] ======== buildenv integrate failed: %s.\n", err)
 }
+
+func InstallFailed(port string, err error) string {
+	return color.Sprintf(color.Red, "[✘] ======== %s install failed: %s.\n", port, err)
+}
