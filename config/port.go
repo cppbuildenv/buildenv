@@ -129,8 +129,10 @@ func (p Port) Installed() bool {
 }
 
 func (p Port) checkAndRepair() error {
-	// No need to check and repair if the port is already installed.
+	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.ctx.Platform()+"-"+p.ctx.BuildType())
 	if p.Installed() {
+		fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Port: %s\nLocation: %s\n\n",
+			p.fullName, installedDir))
 		return nil
 	}
 
@@ -170,10 +172,6 @@ func (p Port) checkAndRepair() error {
 			return fmt.Errorf("no matching build_config found to build")
 		}
 	} else {
-		platformName := p.ctx.Platform()
-		buildType := p.ctx.BuildType()
-
-		installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", platformName+"-"+buildType)
 		downloadedDir := filepath.Join(Dirs.WorkspaceDir, "downloads")
 		if err := downloadAndDeploy(p.Url, installedDir, downloadedDir); err != nil {
 			return err
@@ -197,11 +195,8 @@ func (p Port) checkAndRepair() error {
 		return err
 	}
 
-	platformName := p.ctx.Platform()
-	buildType := p.ctx.BuildType()
-
-	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", platformName+"-"+buildType)
-	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- %s (port: %s)\n\n", p.fullName, installedDir))
+	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Port: %s\nLocation: %s\n\n",
+		p.fullName, installedDir))
 	return nil
 }
 

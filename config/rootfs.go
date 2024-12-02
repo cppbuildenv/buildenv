@@ -67,8 +67,18 @@ func (r *RootFS) Verify(args VerifyArgs) error {
 }
 
 func (r RootFS) checkAndRepair() error {
+	// Default folder name is the first folder name of archive name.
+	// but it can be specified by archive name.
+	folderName := strings.Split(r.Path, string(filepath.Separator))[0]
+	if r.ArchiveName != "" {
+		folderName = io.FileBaseName(r.ArchiveName)
+	}
+	extractedPath := filepath.Join(Dirs.ExtractedToolsDir, folderName)
+
 	// Check if tool exists.
 	if io.PathExists(r.fullpath) {
+		fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Rootfs: %s\nLocation: %s\n\n",
+			io.FileBaseName(r.Url), extractedPath))
 		return nil
 	}
 
@@ -102,22 +112,18 @@ func (r RootFS) checkAndRepair() error {
 	}
 
 	// Extract archive file.
-	folderName := strings.Split(r.Path, string(filepath.Separator))[0]
-	if r.ArchiveName != "" {
-		folderName = io.FileBaseName(r.ArchiveName)
-	}
 	if err := io.Extract(downloaded, filepath.Join(Dirs.ExtractedToolsDir, folderName)); err != nil {
 		return fmt.Errorf("%s: extract rootfs failed: %w", downloaded, err)
 	}
 
 	// Check if has nested folder (handling case where there's an extra nested folder).
-	extractPath := filepath.Join(Dirs.ExtractedToolsDir, folderName)
-	if err := io.MoveNestedFolderIfExist(extractPath); err != nil {
+	if err := io.MoveNestedFolderIfExist(extractedPath); err != nil {
 		return fmt.Errorf("%s: failed to move nested folder: %w", archiveName, err)
 	}
 
 	// Print download & extract info.
-	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- %s (rootfs: %s)\n\n", filepath.Base(r.Url), extractPath))
+	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Rootfs: %s\nLocation: %s\n\n",
+		io.FileBaseName(r.Url), extractedPath))
 	return nil
 }
 

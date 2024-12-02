@@ -34,11 +34,8 @@ func (v *verifyCmd) listen() (handled bool) {
 		os.Exit(1)
 	}
 
-	// Silent mode called from buildenv.cmake
-	if !silent.silent {
-		platformName := strings.TrimSuffix(buildenv.Platform(), ".json")
-		fmt.Print(config.PlatformSelected(platformName))
-	}
+	platformName := strings.TrimSuffix(buildenv.Platform(), ".json")
+	fmt.Print(config.PlatformSelected(platformName))
 
 	return true
 }

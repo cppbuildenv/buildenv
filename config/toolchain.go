@@ -108,8 +108,18 @@ func (t *Toolchain) Verify(args VerifyArgs) error {
 }
 
 func (t Toolchain) checkAndRepair() error {
+	// Default folder name is the first folder name of archive name.
+	// but it can be specified by archive name.
+	folderName := strings.Split(t.Path, string(filepath.Separator))[0]
+	if t.ArchiveName != "" {
+		folderName = io.FileBaseName(t.ArchiveName)
+	}
+	extractedPath := filepath.Join(Dirs.ExtractedToolsDir, folderName)
+
 	// Check if tool exists.
 	if io.PathExists(t.fullpath) {
+		fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Toolchain: %s\nLocation: %s\n\n",
+			io.FileBaseName(t.Url), extractedPath))
 		return nil
 	}
 
@@ -143,22 +153,18 @@ func (t Toolchain) checkAndRepair() error {
 	}
 
 	// Extract archive file.
-	folderName := strings.Split(t.Path, string(filepath.Separator))[0]
-	if t.ArchiveName != "" {
-		folderName = io.FileBaseName(t.ArchiveName)
-	}
 	if err := io.Extract(downloaded, filepath.Join(Dirs.ExtractedToolsDir, folderName)); err != nil {
 		return fmt.Errorf("%s: extract toolchain failed: %w", downloaded, err)
 	}
 
 	// Check if has nested folder (handling case where there's an extra nested folder).
-	extractPath := filepath.Join(Dirs.ExtractedToolsDir, folderName)
-	if err := io.MoveNestedFolderIfExist(extractPath); err != nil {
+	if err := io.MoveNestedFolderIfExist(extractedPath); err != nil {
 		return fmt.Errorf("%s: failed to move nested folder: %w", archiveName, err)
 	}
 
 	// Print download & extract info.
-	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- %s (toolchain: %s)\n\n", filepath.Base(t.Url), extractPath))
+	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Toolchain: %s\nLocation: %s\n\n",
+		io.FileBaseName(t.Url), extractedPath))
 	return nil
 }
 

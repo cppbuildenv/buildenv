@@ -19,6 +19,7 @@ func PathExists(path string) bool {
 
 // FileBaseName it's a improved version to get file base name.
 func FileBaseName(fileName string) string {
+	fileName = filepath.Base(fileName)
 	index := strings.Index(fileName, ".tar.")
 	if index > 0 {
 		return fileName[:index]
