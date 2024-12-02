@@ -12,7 +12,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func newSyncConfigModel(goback func()) *syncConfigModel {
+func newSyncModel(goback func()) *syncModel {
 	content := fmt.Sprintf("\nClone or synch repo of conf.\n"+
 		"-----------------------------------\n"+
 		"%s.\n\n"+
@@ -20,22 +20,22 @@ func newSyncConfigModel(goback func()) *syncConfigModel {
 		color.Sprintf(color.Blue, "This will create a buildenv.json if not exist, otherwise it'll checkout the latest conf repo with specified repo REF"),
 		color.Sprintf(color.Gray, "[↵ -> execute | ctrl+c/q -> quit]"))
 
-	return &syncConfigModel{
+	return &syncModel{
 		content: content,
 		goback:  goback,
 	}
 }
 
-type syncConfigModel struct {
+type syncModel struct {
 	content string
 	goback  func()
 }
 
-func (s syncConfigModel) Init() tea.Cmd {
+func (s syncModel) Init() tea.Cmd {
 	return nil
 }
 
-func (s syncConfigModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (s syncModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -58,11 +58,11 @@ func (s syncConfigModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return s, nil
 }
 
-func (s syncConfigModel) View() string {
+func (s syncModel) View() string {
 	return s.content
 }
 
-func (s syncConfigModel) syncRepo() (string, error) {
+func (s syncModel) syncRepo() (string, error) {
 	// In cli ui mode, buildType is always `Release`.
 	buildenv := config.NewBuildEnv("Release")
 

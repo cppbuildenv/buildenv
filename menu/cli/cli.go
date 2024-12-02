@@ -26,6 +26,7 @@ var (
 	verify         = newVerifyCmd()
 	install        = newInstallCmd()
 	offline        = newOfflineCmd(config.Callbacks)
+	about          = newAboutCmd(config.Callbacks)
 )
 var commands = []reisterable{
 	silent,
@@ -38,6 +39,7 @@ var commands = []reisterable{
 	verify,
 	install,
 	offline,
+	about,
 }
 
 func BuildType() string {

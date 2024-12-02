@@ -22,7 +22,18 @@ func (o *offlineCmd) register() {
 }
 
 func (o *offlineCmd) listen() (handled bool) {
-	o.callbacks.SetOffline(o.offline)
-	fmt.Print(config.SetOffline(o.offline))
-	return true
+	offlineFlagSet := false
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == "offline" {
+			offlineFlagSet = true
+		}
+	})
+
+	if offlineFlagSet {
+		o.callbacks.SetOffline(o.offline)
+		fmt.Print(config.SetOffline(o.offline))
+		return true
+	}
+
+	return false
 }

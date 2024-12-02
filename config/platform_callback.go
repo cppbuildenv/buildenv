@@ -1,6 +1,7 @@
 package config
 
 import (
+	"buildenv/pkg/color"
 	"fmt"
 	"path/filepath"
 )
@@ -47,7 +48,27 @@ func (c callbackImpl) OnSelectPlatform(platformName string) error {
 	return nil
 }
 
-func (p callbackImpl) SetOffline(offline bool) error {
+func (c callbackImpl) About() string {
+	toolchainPath, _ := filepath.Abs("script/buildenv.cmake")
+	environmentPath, _ := filepath.Abs("script/buildenv.sh")
+
+	return fmt.Sprintf("\nWelcome to buildenv.\n"+
+		"-----------------------------------\n"+
+		"This is a simple tool to manage your cross build environment.\n\n"+
+		"1. How to use in cmake project: \n"+
+		"option1: %s\n"+
+		"option2: %s\n\n"+
+		"2. How to use in makefile project: \n"+
+		"%s\n\n"+
+		"%s",
+		color.Sprintf(color.Blue, "set(CMAKE_TOOLCHAIN_FILE \"%s\")", toolchainPath),
+		color.Sprintf(color.Blue, "cmake .. -DCMAKE_TOOLCHAIN_FILE=%s", toolchainPath),
+		color.Sprintf(color.Blue, "source %s", environmentPath),
+		color.Sprintf(color.Gray, "[ctrl+c/q -> quit]"),
+	)
+}
+
+func (c callbackImpl) SetOffline(offline bool) error {
 	// In config mode, we always regard build type as `Release`.
 	buildType := "Release"
 	buildenv := NewBuildEnv(buildType)

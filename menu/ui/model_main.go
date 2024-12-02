@@ -15,7 +15,7 @@ func CreateMainModel(callabcks config.PlatformCallbacks) MainModel {
 		menuMode: createMenuModel(func(mode mode) {
 			currentMode = mode
 		}),
-		syncConfigModel: newSyncConfigModel(func() {
+		syncModel: newSyncModel(func() {
 			currentMode = modeMenu
 		}),
 		platformCreateModel: newPlatformCreateModel(callabcks, func(this *platformCreateModel) {
@@ -28,7 +28,7 @@ func CreateMainModel(callabcks config.PlatformCallbacks) MainModel {
 		integrateModel: newIntegrateModel(func() {
 			currentMode = modeMenu
 		}),
-		aboutModel: newUsageModel(func() {
+		aboutModel: newAboutModel(callabcks, func() {
 			currentMode = modeMenu
 		}),
 	}
@@ -36,7 +36,7 @@ func CreateMainModel(callabcks config.PlatformCallbacks) MainModel {
 
 type MainModel struct {
 	menuMode            tea.Model
-	syncConfigModel     tea.Model
+	syncModel           tea.Model
 	platformCreateModel tea.Model
 	platformSelectModel tea.Model
 	integrateModel      tea.Model
@@ -57,8 +57,8 @@ func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 
 		case modeSyncConfig:
-			model, cmd := m.syncConfigModel.Update(msg)
-			m.syncConfigModel = model
+			model, cmd := m.syncModel.Update(msg)
+			m.syncModel = model
 			return m, cmd
 
 		case modePlatformCreate:
@@ -92,7 +92,7 @@ func (m MainModel) View() string {
 		return m.menuMode.View()
 
 	case modeSyncConfig:
-		return m.syncConfigModel.View()
+		return m.syncModel.View()
 
 	case modePlatformCreate:
 		return m.platformCreateModel.View()
