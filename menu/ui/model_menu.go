@@ -8,7 +8,7 @@ import (
 const (
 	menuSyncConfig     string = "Init or sync buildenv's config repo."
 	menuCreatePlatform string = "Create a new platform, but need config it later."
-	menuSelectPlatform string = "Select a platform as your build target platform."
+	menuSelectPlatform string = "Select a platform as your build environment."
 	menuIntegrate      string = "Integrate buildenv."
 	menuUsage          string = "About and Usage."
 )

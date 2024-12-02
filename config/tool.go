@@ -107,12 +107,16 @@ func (t Tool) CheckAndRepair(args VerifyArgs) error {
 			return fmt.Errorf("%s: get local filesize failed: %w", archiveName, err)
 		}
 		if info.Size() != fileSize {
-			if _, err := io.Download(t.Url, Dirs.DownloadRootDir, archiveName); err != nil {
+			downloadRequest := io.NewDownloadRequest(t.Url, Dirs.DownloadRootDir)
+			downloadRequest.SetArchiveName(archiveName)
+			if _, err := downloadRequest.Download(); err != nil {
 				return fmt.Errorf("%s: download failed: %w", archiveName, err)
 			}
 		}
 	} else {
-		if _, err := io.Download(t.Url, Dirs.DownloadRootDir, archiveName); err != nil {
+		downloadRequest := io.NewDownloadRequest(t.Url, Dirs.DownloadRootDir)
+		downloadRequest.SetArchiveName(archiveName)
+		if _, err := downloadRequest.Download(); err != nil {
 			return fmt.Errorf("%s: download failed: %w", archiveName, err)
 		}
 	}

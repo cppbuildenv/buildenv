@@ -14,6 +14,7 @@ import (
 type PlatformCallbacks interface {
 	OnCreatePlatform(platformName string) error
 	OnSelectPlatform(platformName string) error
+	SetOffline(offline bool) error
 }
 
 type Platform struct {

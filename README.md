@@ -51,7 +51,7 @@ Please choose one from the menu...
                                                            
     1. Init or sync buildenv's config repo.                
     2. Create a new platform, it requires completion later.
-    3. Choose a platform as your build target platform.    
+    3. Choose a platform as your build environment.    
     4. Integrate buildenv.                                   
   > 5. About and usage.                                    
 

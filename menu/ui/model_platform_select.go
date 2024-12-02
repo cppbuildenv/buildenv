@@ -37,7 +37,7 @@ func newPlatformSelectModel(callbacks config.PlatformCallbacks, goback func()) *
 	}
 
 	l := list.New(items, listDelegate{styleImpl}, defaultWidth, defaultHeight)
-	l.Title = "Please select one platform as your build target platform:"
+	l.Title = "Please select one platform as your build environment:"
 
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)

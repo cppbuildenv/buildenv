@@ -5,11 +5,11 @@ import (
 	"path/filepath"
 )
 
-var PlatformCallbacksImpl = platformCallbacksImpl{}
+var Callbacks = callbackImpl{}
 
-type platformCallbacksImpl struct{}
+type callbackImpl struct{}
 
-func (p platformCallbacksImpl) OnCreatePlatform(platformName string) error {
+func (c callbackImpl) OnCreatePlatform(platformName string) error {
 	if platformName == "" {
 		return fmt.Errorf("platformName is empty for creating new platform")
 	}
@@ -24,7 +24,7 @@ func (p platformCallbacksImpl) OnCreatePlatform(platformName string) error {
 	return nil
 }
 
-func (p platformCallbacksImpl) OnSelectPlatform(platformName string) error {
+func (c callbackImpl) OnSelectPlatform(platformName string) error {
 	// In config mode, we always regard build type as `Release`.
 	buildType := "Release"
 
@@ -45,4 +45,11 @@ func (p platformCallbacksImpl) OnSelectPlatform(platformName string) error {
 	}
 
 	return nil
+}
+
+func (p callbackImpl) SetOffline(offline bool) error {
+	// In config mode, we always regard build type as `Release`.
+	buildType := "Release"
+	buildenv := NewBuildEnv(buildType)
+	return buildenv.SetOffline(offline)
 }

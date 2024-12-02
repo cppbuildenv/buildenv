@@ -96,5 +96,5 @@ func (s syncConfigModel) syncRepo() (string, error) {
 	}
 
 	// Sync repo.
-	return buildenv.SyncRepo(buildenv.ConfRepoUrl, buildenv.ConfRepoRef)
+	return buildenv.Synchronize(buildenv.ConfRepoUrl, buildenv.ConfRepoRef)
 }

@@ -199,7 +199,8 @@ func (p Port) CheckAndRepair(args VerifyArgs) error {
 
 func downloadAndDeploy(url, installedDir, downloadedDir string) error {
 	// Download to fixed dir.
-	downloaded, err := io.Download(url, downloadedDir, "")
+	downloadRequest := io.NewDownloadRequest(url, downloadedDir)
+	downloaded, err := downloadRequest.Download()
 	if err != nil {
 		return fmt.Errorf("%s: download port failed: %w", url, err)
 	}

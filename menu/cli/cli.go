@@ -18,13 +18,14 @@ type responsible interface {
 var (
 	silent         = newSilentModeCmd()
 	buildType      = newBuildTypeCmd()
-	ui             = newUICmd(config.PlatformCallbacksImpl)
+	ui             = newUICmd(config.Callbacks)
 	version        = newVersionCmd()
 	sync           = newSyncConfigCmd()
 	createPlatform = newCreatePlatformCmd()
-	selectPlatform = newSelectPlatformCmd(config.PlatformCallbacksImpl)
+	selectPlatform = newSelectPlatformCmd(config.Callbacks)
 	verify         = newVerifyCmd()
 	install        = newInstallCmd()
+	offline        = newOfflineCmd(config.Callbacks)
 )
 var commands = []reisterable{
 	silent,
@@ -36,6 +37,7 @@ var commands = []reisterable{
 	selectPlatform,
 	verify,
 	install,
+	offline,
 }
 
 func BuildType() string {

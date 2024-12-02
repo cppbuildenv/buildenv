@@ -11,30 +11,62 @@ import (
 	"regexp"
 )
 
-// Download downloads a file from a URL to a specified directory and rename it if specified.
-func Download(url, destDir, archiveName string) (downloaded string, err error) {
+func NewDownloadRequest(url, destDir string) *downloadRequest {
+	return &downloadRequest{
+		url:     url,
+		destDir: destDir,
+	}
+}
+
+type downloadRequest struct {
+	url         string
+	destDir     string
+	archiveName string
+	offline     bool
+}
+
+func (d *downloadRequest) SetArchiveName(archiveName string) *downloadRequest {
+	d.archiveName = archiveName
+	return d
+}
+
+func (d *downloadRequest) SetOffline(offline bool) *downloadRequest {
+	d.offline = offline
+	return d
+}
+
+func (d downloadRequest) Download() (downloadedFile string, err error) {
+	fileName, err := getFileName(d.url)
+	if err != nil {
+		return "", err
+	}
+
+	// In offline mode, it'll return the file path directly.
+	if d.offline {
+		downloadedFile = filepath.Join(d.destDir, fileName)
+		if d.archiveName != "" && d.archiveName != fileName {
+			downloadedFile = filepath.Join(d.destDir, d.archiveName)
+		}
+		return
+	}
+
 	// Read file size.
-	resp, err := http.Get(url)
+	resp, err := http.Get(d.url)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
 
-	fileName, err := getFileName(url)
-	if err != nil {
-		return "", err
-	}
-
 	fileSize := resp.ContentLength
 	progress := NewProgressBar(fileName, fileSize)
 
-	if err := os.MkdirAll(destDir, os.ModeDir|os.ModePerm); err != nil {
+	if err := os.MkdirAll(d.destDir, os.ModeDir|os.ModePerm); err != nil {
 		return "", err
 	}
 
-	// Build output filePath
-	outputFile := filepath.Join(destDir, fileName)
-	file, err := os.Create(outputFile)
+	// Build download file path.
+	downloadedFile = filepath.Join(d.destDir, fileName)
+	file, err := os.Create(downloadedFile)
 	if err != nil {
 		return "", err
 	}
@@ -47,15 +79,15 @@ func Download(url, destDir, archiveName string) (downloaded string, err error) {
 	}
 
 	// Rename downloaded file if specified and not same as downloaded file.
-	if archiveName != "" && archiveName != fileName {
-		renameFile := filepath.Join(destDir, archiveName)
-		if err := os.Rename(outputFile, renameFile); err != nil {
+	if d.archiveName != "" && d.archiveName != fileName {
+		renameFile := filepath.Join(d.destDir, d.archiveName)
+		if err := os.Rename(downloadedFile, renameFile); err != nil {
 			return "", err
 		}
-		outputFile = renameFile
+		downloadedFile = renameFile
 	}
 
-	return outputFile, nil
+	return downloadedFile, nil
 }
 
 func getFileName(downloadURL string) (string, error) {
