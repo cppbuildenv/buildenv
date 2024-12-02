@@ -1,7 +1,7 @@
 package main
 
 import (
-	"buildenv/command/cli"
+	"buildenv/menu/cli"
 	"flag"
 	"os"
 )
