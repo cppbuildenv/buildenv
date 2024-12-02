@@ -32,7 +32,7 @@ type Toolchain struct {
 	cmakepath string `json:"-"`
 }
 
-func (t *Toolchain) Verify(args VerifyArgs) error {
+func (t *Toolchain) Verify() error {
 	// Verify toolchain download url.
 	if t.Url == "" {
 		return fmt.Errorf("toolchain.url is empty")
@@ -100,14 +100,14 @@ func (t *Toolchain) Verify(args VerifyArgs) error {
 		os.Setenv("STRIP", t.STRIP)
 	}
 
+	return nil
+}
+
+func (t Toolchain) CheckAndRepair(args VerifyArgs) error {
 	if !args.CheckAndRepair() {
 		return nil
 	}
 
-	return t.checkAndRepair(args)
-}
-
-func (t Toolchain) checkAndRepair(args VerifyArgs) error {
 	// Default folder name is the first folder name of archive name.
 	// but it can be specified by archive name.
 	folderName := strings.Split(t.Path, string(filepath.Separator))[0]
@@ -119,7 +119,7 @@ func (t Toolchain) checkAndRepair(args VerifyArgs) error {
 	// Check if tool exists.
 	if io.PathExists(t.fullpath) {
 		// No need to show toolchain state info when install a port.
-		if args.PackagePort() == "" {
+		if args.PackagePort() == "" && !args.Silent() {
 			fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Toolchain: %s\nLocation: %s\n\n",
 				io.FileBaseName(t.Url), extractedPath))
 		}
@@ -167,8 +167,10 @@ func (t Toolchain) checkAndRepair(args VerifyArgs) error {
 	}
 
 	// Print download & extract info.
-	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Toolchain: %s\nLocation: %s\n\n",
-		io.FileBaseName(t.Url), extractedPath))
+	if !args.Silent() {
+		fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Toolchain: %s\nLocation: %s\n\n",
+			io.FileBaseName(t.Url), extractedPath))
+	}
 	return nil
 }
 

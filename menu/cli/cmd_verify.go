@@ -33,8 +33,10 @@ func (v *verifyCmd) listen() (handled bool) {
 		return true
 	}
 
-	platformName := strings.TrimSuffix(buildenv.Platform(), ".json")
-	fmt.Print(config.PlatformSelected(platformName))
+	if !silent.silent {
+		platformName := strings.TrimSuffix(buildenv.Platform(), ".json")
+		fmt.Print(config.PlatformSelected(platformName))
+	}
 
 	return true
 }

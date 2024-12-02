@@ -92,15 +92,23 @@ func (p Platform) Write(platformPath string) error {
 func (p Platform) Verify(args VerifyArgs) error {
 	// RootFS maybe nil when platform is native.
 	if p.RootFS != nil {
-		if err := p.RootFS.Verify(args); err != nil {
+		if err := p.RootFS.Verify(); err != nil {
 			return fmt.Errorf("buildenv.rootfs error: %w", err)
+		}
+
+		if err := p.RootFS.CheckAndRepair(args); err != nil {
+			return fmt.Errorf("buildenv.rootfs check and repair error: %w", err)
 		}
 	}
 
 	// Toolchain maybe nil when platform is native.
 	if p.Toolchain != nil {
-		if err := p.Toolchain.Verify(args); err != nil {
+		if err := p.Toolchain.Verify(); err != nil {
 			return fmt.Errorf("buildenv.toolchain error: %w", err)
+		}
+
+		if err := p.Toolchain.CheckAndRepair(args); err != nil {
+			return fmt.Errorf("buildenv.toolchain check and repair error: %w", err)
 		}
 	}
 
@@ -113,8 +121,12 @@ func (p Platform) Verify(args VerifyArgs) error {
 			return fmt.Errorf("buildenv.tools[%s] read error: %w", item, err)
 		}
 
-		if err := tool.Verify(args); err != nil {
+		if err := tool.Verify(); err != nil {
 			return fmt.Errorf("buildenv.tools[%s] verify error: %w", item, err)
+		}
+
+		if err := tool.CheckAndRepair(args); err != nil {
+			return fmt.Errorf("buildenv.tools[%s] check and repair error: %w", item, err)
 		}
 
 		// Append $PATH with tool path.
@@ -130,30 +142,33 @@ func (p Platform) Verify(args VerifyArgs) error {
 	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.platformName+"-"+args.BuildType())
 	os.Setenv("PKG_CONFIG_PATH", fmt.Sprintf("%s/lib/pkgconfig:%s", installedDir, os.Getenv("PKG_CONFIG_PATH")))
 
+	// Inner function used to verify port.
+	verifyPort := func(portName string) error {
+		portPath := filepath.Join(Dirs.PortDir, portName+".json")
+		var port Port
+		if err := port.Init(p.ctx, portPath); err != nil {
+			return fmt.Errorf("buildenv.packages[%s] read error: %w", portName, err)
+		}
+
+		if err := port.Verify(); err != nil {
+			return fmt.Errorf("buildenv.packages[%s] verify error: %w", portName, err)
+		}
+
+		if err := port.CheckAndRepair(args); err != nil {
+			return fmt.Errorf("buildenv.packages[%s] check and repair error: %w", portName, err)
+		}
+
+		return nil
+	}
+
 	// Check if only to verify one port.
 	portNeedToVerify := args.PackagePort()
 	if portNeedToVerify != "" {
-		portPath := filepath.Join(Dirs.PortDir, portNeedToVerify+".json")
-		var port Port
-		if err := port.Init(p.ctx, portPath); err != nil {
-			return fmt.Errorf("buildenv.packages[%s] read error: %w", portNeedToVerify, err)
-		}
-
-		if err := port.Verify(args); err != nil {
-			return fmt.Errorf("buildenv.packages[%s] verify error: %w", portNeedToVerify, err)
-		}
+		verifyPort(portNeedToVerify)
 	} else {
 		// Verify dependencies.
 		for _, item := range p.Packages {
-			portPath := filepath.Join(Dirs.PortDir, item+".json")
-			var port Port
-			if err := port.Init(p.ctx, portPath); err != nil {
-				return fmt.Errorf("buildenv.packages[%s] read error: %w", item, err)
-			}
-
-			if err := port.Verify(args); err != nil {
-				return fmt.Errorf("buildenv.packages[%s] verify error: %w", item, err)
-			}
+			verifyPort(item)
 		}
 	}
 
@@ -251,8 +266,7 @@ func (p *Platform) writeTools(toolchain, environment *strings.Builder) error {
 			return fmt.Errorf("cannot read tool: %s", toolPath)
 		}
 
-		verifyArgs := NewVerifyArgs(false, false, "Release")
-		if err := tool.Verify(verifyArgs); err != nil {
+		if err := tool.Verify(); err != nil {
 			return fmt.Errorf("cannot verify tool: %s", toolPath)
 		}
 

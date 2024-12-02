@@ -41,7 +41,7 @@ func (t *Tool) Init(toolpath string) error {
 	return nil
 }
 
-func (t *Tool) Verify(args VerifyArgs) error {
+func (t *Tool) Verify() error {
 	// Verify tool download url.
 	if t.Url == "" {
 		return fmt.Errorf("url of %s is empty", t.toolName)
@@ -61,14 +61,14 @@ func (t *Tool) Verify(args VerifyArgs) error {
 	// This is used to cross-compile other ports by buildenv.
 	os.Setenv("PATH", fmt.Sprintf("%s:%s", t.fullpath, os.Getenv("PATH")))
 
+	return nil
+}
+
+func (t Tool) CheckAndRepair(args VerifyArgs) error {
 	if !args.CheckAndRepair() {
 		return nil
 	}
 
-	return t.checkAndRepair(args)
-}
-
-func (t Tool) checkAndRepair(args VerifyArgs) error {
 	// Default folder name would be the first folder of path,
 	// it also can be specified by archiveName.
 	folderName := strings.Split(t.Path, string(filepath.Separator))[0]
@@ -81,7 +81,7 @@ func (t Tool) checkAndRepair(args VerifyArgs) error {
 	// Check if tool exists.
 	if io.PathExists(t.fullpath) {
 		// No need to show rootfs state info when install a port.
-		if args.PackagePort() == "" {
+		if args.PackagePort() == "" && !args.Silent() {
 			fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Tool: %s\nLocation: %s\n\n",
 				io.FileBaseName(t.Url), extractPath))
 		}
@@ -128,7 +128,9 @@ func (t Tool) checkAndRepair(args VerifyArgs) error {
 	}
 
 	// Print download & extract info.
-	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Tool: %s\nLocation: %s\n\n",
-		io.FileBaseName(t.Url), extractPath))
+	if !args.Silent() {
+		fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Tool: %s\nLocation: %s\n\n",
+			io.FileBaseName(t.Url), extractPath))
+	}
 	return nil
 }

@@ -68,7 +68,7 @@ func (p *Port) Init(ctx Context, portPath string) error {
 	return nil
 }
 
-func (p *Port) Verify(args VerifyArgs) error {
+func (p *Port) Verify() error {
 	if p.Url == "" {
 		return fmt.Errorf("port.url is empty")
 	}
@@ -89,14 +89,6 @@ func (p *Port) Verify(args VerifyArgs) error {
 		if err := config.Verify(); err != nil {
 			return err
 		}
-	}
-
-	if !args.CheckAndRepair() {
-		return nil
-	}
-
-	if err := p.checkAndRepair(args); err != nil {
-		return err
 	}
 
 	return nil
@@ -127,11 +119,16 @@ func (p Port) Installed() bool {
 	return false
 }
 
-func (p Port) checkAndRepair(args VerifyArgs) error {
+func (p Port) CheckAndRepair(args VerifyArgs) error {
+	if !args.CheckAndRepair() {
+		return nil
+	}
+
 	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.ctx.Platform()+"-"+p.ctx.BuildType())
 	if p.Installed() {
-		fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Port: %s\nLocation: %s\n\n",
-			p.fullName, installedDir))
+		if !args.Silent() {
+			fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Port: %s\nLocation: %s\n\n", p.fullName, installedDir))
+		}
 		return nil
 	}
 
@@ -154,7 +151,7 @@ func (p Port) checkAndRepair(args VerifyArgs) error {
 				if err := port.Init(p.ctx, portPath); err != nil {
 					return err
 				}
-				if err := port.checkAndRepair(args); err != nil {
+				if err := port.CheckAndRepair(args); err != nil {
 					return err
 				}
 			}
@@ -194,8 +191,9 @@ func (p Port) checkAndRepair(args VerifyArgs) error {
 		return err
 	}
 
-	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Port: %s\nLocation: %s\n\n",
-		p.fullName, installedDir))
+	if !args.Silent() {
+		fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Port: %s\nLocation: %s\n\n", p.fullName, installedDir))
+	}
 	return nil
 }
 

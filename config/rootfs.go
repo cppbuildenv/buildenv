@@ -27,7 +27,7 @@ type RootFSEnv struct {
 	PKG_CONFIG_PATH        []string `json:"PKG_CONFIG_PATH"`
 }
 
-func (r *RootFS) Verify(args VerifyArgs) error {
+func (r *RootFS) Verify() error {
 	// Verify rootfs download url.
 	if r.Url == "" {
 		return fmt.Errorf("rootfs.url is empty")
@@ -59,14 +59,14 @@ func (r *RootFS) Verify(args VerifyArgs) error {
 		os.Setenv("PKG_CONFIG_PATH", strings.Join(paths, ":"))
 	}
 
+	return nil
+}
+
+func (r RootFS) CheckAndRepair(args VerifyArgs) error {
 	if !args.CheckAndRepair() {
 		return nil
 	}
 
-	return r.checkAndRepair(args)
-}
-
-func (r RootFS) checkAndRepair(args VerifyArgs) error {
 	// Default folder name is the first folder name of archive name.
 	// but it can be specified by archive name.
 	folderName := strings.Split(r.Path, string(filepath.Separator))[0]
@@ -78,7 +78,7 @@ func (r RootFS) checkAndRepair(args VerifyArgs) error {
 	// Check if tool exists.
 	if io.PathExists(r.fullpath) {
 		// No need to show rootfs state info when install a port.
-		if args.PackagePort() == "" {
+		if args.PackagePort() == "" && !args.Silent() {
 			fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Rootfs: %s\nLocation: %s\n\n",
 				io.FileBaseName(r.Url), extractedPath))
 		}
@@ -125,8 +125,10 @@ func (r RootFS) checkAndRepair(args VerifyArgs) error {
 	}
 
 	// Print download & extract info.
-	fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Rootfs: %s\nLocation: %s\n\n",
-		io.FileBaseName(r.Url), extractedPath))
+	if !args.Silent() {
+		fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Rootfs: %s\nLocation: %s\n\n",
+			io.FileBaseName(r.Url), extractedPath))
+	}
 	return nil
 }
 
