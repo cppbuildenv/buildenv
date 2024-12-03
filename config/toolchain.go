@@ -119,7 +119,7 @@ func (t Toolchain) CheckAndRepair(args VerifyArgs) error {
 	// Check if tool exists.
 	if io.PathExists(t.fullpath) {
 		// No need to show toolchain state info when install a port.
-		if args.PackagePort() == "" && !args.Silent() {
+		if args.PortToInstall() == "" && !args.Silent() {
 			fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Toolchain: %s\nLocation: %s\n\n",
 				io.FileBaseName(t.Url), extractedPath))
 		}

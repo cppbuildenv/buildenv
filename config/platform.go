@@ -145,32 +145,36 @@ func (p Platform) Verify(args VerifyArgs) error {
 	os.Setenv("PKG_CONFIG_PATH", fmt.Sprintf("%s/lib/pkgconfig:%s", installedDir, os.Getenv("PKG_CONFIG_PATH")))
 
 	// Inner function used to verify port.
-	verifyPort := func(portName string) error {
-		portPath := filepath.Join(Dirs.PortDir, portName+".json")
+	installPort := func(portDesc string) error {
+		portPath := filepath.Join(Dirs.PortDir, portDesc+".json")
 		var port Port
 		if err := port.Init(p.ctx, portPath); err != nil {
-			return fmt.Errorf("buildenv.packages[%s] read error: %w", portName, err)
+			return fmt.Errorf("%s: %w", portDesc, err)
 		}
 
 		if err := port.Verify(); err != nil {
-			return fmt.Errorf("buildenv.packages[%s] verify error: %w", portName, err)
+			return fmt.Errorf("%s: %w", portDesc, err)
 		}
 
 		if err := port.CheckAndRepair(args); err != nil {
-			return fmt.Errorf("buildenv.packages[%s] check and repair error: %w", portName, err)
+			return fmt.Errorf("%s: %w", portDesc, err)
 		}
 
 		return nil
 	}
 
 	// Check if only to verify one port.
-	portNeedToVerify := args.PackagePort()
-	if portNeedToVerify != "" {
-		verifyPort(portNeedToVerify)
+	portToInstall := args.PortToInstall()
+	if portToInstall != "" {
+		if err := installPort(portToInstall); err != nil {
+			return err
+		}
 	} else {
 		// Verify dependencies.
 		for _, item := range p.Packages {
-			verifyPort(item)
+			if err := installPort(item); err != nil {
+				return err
+			}
 		}
 	}
 

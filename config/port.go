@@ -28,9 +28,19 @@ type Port struct {
 	fullName string // portName = portName + "-" + p.Version
 	infoPath string // used to record installed state
 	portDir  string // it should be `conf/ports`
+	isSubDep bool
 }
 
 func (p *Port) Init(ctx Context, portPath string) error {
+	if !io.PathExists(portPath) {
+		portName := io.FileBaseName(portPath)
+		if p.isSubDep {
+			return fmt.Errorf("sub depedency port %s does not exists", portName)
+		} else {
+			return fmt.Errorf("port %s does not exists", portName)
+		}
+	}
+
 	bytes, err := os.ReadFile(portPath)
 	if err != nil {
 		return err
@@ -147,6 +157,7 @@ func (p Port) CheckAndRepair(args VerifyArgs) error {
 
 				// Check and repair dependency.
 				var port Port
+				port.isSubDep = true
 				portPath := filepath.Join(p.portDir, item+".json")
 				if err := port.Init(p.ctx, portPath); err != nil {
 					return err

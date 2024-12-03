@@ -18,7 +18,6 @@ path不存在，应该先尝试用下载后的文件解压，而不是直接重�
 makefile编译前不支持配置环境变量，例如：export CFLAGS="-mfpu=neon"  | ✘
 环境变量用os.PathListSeparator拼接  | ✔
 添加-build参数，用于指定三方库的编译  | ✘
-添加offline选项，用于指定不下载  | ✘
 将download的资源统一解压到内部的tools目录  | ✔
 完事动态生成的cmake config文件（静态库还没支持）| ✘
 支持windows下工作  | ✘

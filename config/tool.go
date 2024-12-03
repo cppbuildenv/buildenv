@@ -81,7 +81,7 @@ func (t Tool) CheckAndRepair(args VerifyArgs) error {
 	// Check if tool exists.
 	if io.PathExists(t.fullpath) {
 		// No need to show rootfs state info when install a port.
-		if args.PackagePort() == "" && !args.Silent() {
+		if args.PortToInstall() == "" && !args.Silent() {
 			fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Tool: %s\nLocation: %s\n\n",
 				io.FileBaseName(t.Url), extractPath))
 		}

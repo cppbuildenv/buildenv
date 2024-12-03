@@ -78,7 +78,7 @@ func (r RootFS) CheckAndRepair(args VerifyArgs) error {
 	// Check if tool exists.
 	if io.PathExists(r.fullpath) {
 		// No need to show rootfs state info when install a port.
-		if args.PackagePort() == "" && !args.Silent() {
+		if args.PortToInstall() == "" && !args.Silent() {
 			fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Rootfs: %s\nLocation: %s\n\n",
 				io.FileBaseName(r.Url), extractedPath))
 		}
