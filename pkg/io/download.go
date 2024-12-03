@@ -22,7 +22,6 @@ type downloadRequest struct {
 	url         string
 	destDir     string
 	archiveName string
-	offline     bool
 }
 
 func (d *downloadRequest) SetArchiveName(archiveName string) *downloadRequest {
@@ -30,26 +29,7 @@ func (d *downloadRequest) SetArchiveName(archiveName string) *downloadRequest {
 	return d
 }
 
-func (d *downloadRequest) SetOffline(offline bool) *downloadRequest {
-	d.offline = offline
-	return d
-}
-
 func (d downloadRequest) Download() (downloadedFile string, err error) {
-	fileName, err := getFileName(d.url)
-	if err != nil {
-		return "", err
-	}
-
-	// In offline mode, it'll return the file path directly.
-	if d.offline {
-		downloadedFile = filepath.Join(d.destDir, fileName)
-		if d.archiveName != "" && d.archiveName != fileName {
-			downloadedFile = filepath.Join(d.destDir, d.archiveName)
-		}
-		return
-	}
-
 	// Read file size.
 	resp, err := http.Get(d.url)
 	if err != nil {
@@ -57,9 +37,13 @@ func (d downloadRequest) Download() (downloadedFile string, err error) {
 	}
 	defer resp.Body.Close()
 
-	fileSize := resp.ContentLength
-	progress := NewProgressBar(fileName, fileSize)
+	// Get file name
+	fileName, err := getFileName(d.url)
+	if err != nil {
+		return "", err
+	}
 
+	// Create download directory.
 	if err := os.MkdirAll(d.destDir, os.ModeDir|os.ModePerm); err != nil {
 		return "", err
 	}
@@ -73,6 +57,7 @@ func (d downloadRequest) Download() (downloadedFile string, err error) {
 	defer file.Close()
 
 	// Copy to local file with progress.
+	progress := NewProgressBar(fileName, resp.ContentLength)
 	_, err = io.Copy(io.MultiWriter(file, progress), resp.Body)
 	if err != nil {
 		return "", err

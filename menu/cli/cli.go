@@ -25,7 +25,6 @@ var (
 	selectPlatform = newSelectPlatformCmd(config.Callbacks)
 	verify         = newVerifyCmd()
 	install        = newInstallCmd()
-	offline        = newOfflineCmd(config.Callbacks)
 	about          = newAboutCmd(config.Callbacks)
 )
 var commands = []reisterable{
@@ -38,7 +37,6 @@ var commands = []reisterable{
 	selectPlatform,
 	verify,
 	install,
-	offline,
 	about,
 }
 
