@@ -17,8 +17,8 @@ type selectPlatformCmd struct {
 	callbacks    config.PlatformCallbacks
 }
 
-func (p *selectPlatformCmd) register() {
-	flag.StringVar(&p.platformName, "select_platform", "", "select a platform as build environment")
+func (s *selectPlatformCmd) register() {
+	flag.StringVar(&s.platformName, "select_platform", "", "select a platform as build environment")
 }
 
 func (s *selectPlatformCmd) listen() (handled bool) {
