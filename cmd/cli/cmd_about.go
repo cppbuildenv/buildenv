@@ -6,6 +6,8 @@ import (
 	"fmt"
 )
 
+var Version string // for example: `1.0.0`
+
 func newAboutCmd(callbacks config.PlatformCallbacks) *aboutCmd {
 	return &aboutCmd{
 		callbacks: callbacks,
@@ -18,12 +20,12 @@ type aboutCmd struct {
 }
 
 func (a *aboutCmd) register() {
-	flag.BoolVar(&a.about, "about", false, "about and usage")
+	flag.BoolVar(&a.about, "about", false, "about buildenv and how to use it.")
 }
 
 func (a *aboutCmd) listen() (handled bool) {
 	if a.about {
-		fmt.Print(a.callbacks.About())
+		fmt.Print(a.callbacks.About(Version))
 		return true
 	}
 

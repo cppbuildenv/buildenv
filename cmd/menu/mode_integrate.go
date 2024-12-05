@@ -16,7 +16,7 @@ func newIntegrateModel(goback func()) integrateModel {
 		"-----------------------------------\n"+
 		"%s.\n\n"+
 		"%s",
-		color.Sprintf(color.Blue, "This will add buildenv's path to your PATH, so that you can use buildenv anywhere."),
+		color.Sprintf(color.Blue, "This will append buildenv's file dir to ~/.profile, then you can use buildenv anywhere."),
 		color.Sprintf(color.Gray, "[↵ -> execute | ctrl+c/q -> quit]"))
 	return integrateModel{
 		content: content,

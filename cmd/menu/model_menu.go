@@ -8,9 +8,9 @@ import (
 const (
 	menuSyncConfig     string = "Init or sync buildenv's config repo."
 	menuCreatePlatform string = "Create a new platform, but need config it later."
-	menuSelectPlatform string = "Select a platform as your build environment."
-	menuIntegrate      string = "Integrate buildenv."
-	menuUsage          string = "About and Usage."
+	menuSelectPlatform string = "Select a platform as your project's cross build env."
+	menuIntegrate      string = "Integrate buildenv, then you can run buildenv everywhere."
+	menuUsage          string = "About and usage."
 )
 
 type mode = int
@@ -33,7 +33,7 @@ var menus = []string{
 }
 
 func createMenuModel(modeChanged func(mode mode)) menuModel {
-	const defaultWidth = 80
+	const defaultWidth = 100
 	const defaultHeight = 12
 
 	var items []list.Item
@@ -44,7 +44,7 @@ func createMenuModel(modeChanged func(mode mode)) menuModel {
 	styles := createStyles()
 
 	l := list.New(items, listDelegate{styles}, defaultWidth, defaultHeight)
-	l.Title = "Please select one from the menu..."
+	l.Title = "Welcome to buildenv! \nPlease choose an option from the menu below..."
 
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)

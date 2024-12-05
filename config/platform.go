@@ -14,7 +14,7 @@ import (
 type PlatformCallbacks interface {
 	OnCreatePlatform(platformName string) error
 	OnSelectPlatform(platformName string) error
-	About() string
+	About(version string) string
 	SetOffline(offline bool) error
 }
 

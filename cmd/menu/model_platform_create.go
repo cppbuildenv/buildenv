@@ -77,7 +77,7 @@ func (p platformCreateModel) View() string {
 	}
 
 	return fmt.Sprintf("\n%s\n\n%s\n\n%s\n",
-		color.Sprintf(color.Blue, "Please input your platform name: "),
+		color.Sprintf(color.Blue, "Please enter your platform name: "),
 		p.textInput.View(),
 		color.Sprintf(color.Gray, "[esc -> back | ctrl+c/q -> quit]"),
 	)

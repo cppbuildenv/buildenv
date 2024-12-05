@@ -16,7 +16,7 @@ type verifyCmd struct {
 }
 
 func (v *verifyCmd) register() {
-	flag.BoolVar(&v.verify, "verify", false, "check and repair for current selected platform.")
+	flag.BoolVar(&v.verify, "verify", false, "check and repair cross build envronment for selected platform.")
 }
 
 func (v *verifyCmd) listen() (handled bool) {

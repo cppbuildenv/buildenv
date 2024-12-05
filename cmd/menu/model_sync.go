@@ -17,7 +17,7 @@ func newSyncModel(goback func()) *syncModel {
 		"-----------------------------------\n"+
 		"%s.\n\n"+
 		"%s",
-		color.Sprintf(color.Blue, "This will create a buildenv.json if not exist, otherwise it'll checkout the latest conf repo with specified repo REF"),
+		color.Sprintf(color.Blue, "This will create a buildenv.json if not exist, otherwise it'll checkout the latest commit."),
 		color.Sprintf(color.Gray, "[↵ -> execute | ctrl+c/q -> quit]"))
 
 	return &syncModel{

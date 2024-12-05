@@ -18,9 +18,7 @@ type responsible interface {
 var (
 	silent         = newSilentModeCmd()
 	buildType      = newBuildTypeCmd()
-	ui             = newUICmd(config.Callbacks)
-	version        = newVersionCmd()
-	sync           = newSyncConfigCmd()
+	sync           = newSyncCmd()
 	createPlatform = newCreatePlatformCmd()
 	selectPlatform = newSelectPlatformCmd(config.Callbacks)
 	verify         = newVerifyCmd()
@@ -30,8 +28,6 @@ var (
 var commands = []reisterable{
 	silent,
 	buildType,
-	ui,
-	version,
 	sync,
 	createPlatform,
 	selectPlatform,

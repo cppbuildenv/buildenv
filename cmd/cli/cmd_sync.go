@@ -10,19 +10,19 @@ import (
 	"path/filepath"
 )
 
-func newSyncConfigCmd() *syncConfigCmd {
-	return &syncConfigCmd{}
+func newSyncCmd() *syncCmd {
+	return &syncCmd{}
 }
 
-type syncConfigCmd struct {
+type syncCmd struct {
 	sync bool
 }
 
-func (s *syncConfigCmd) register() {
-	flag.BoolVar(&s.sync, "sync", false, "create buildenv.json or sync conf repo defined in buildenv.json.")
+func (s *syncCmd) register() {
+	flag.BoolVar(&s.sync, "sync", false, "init or sync buildenv's config repo.")
 }
 
-func (s *syncConfigCmd) listen() (handled bool) {
+func (s *syncCmd) listen() (handled bool) {
 	if !s.sync {
 		return false
 	}

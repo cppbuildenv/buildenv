@@ -18,7 +18,7 @@ type installCmd struct {
 }
 
 func (i *installCmd) register() {
-	flag.StringVar(&i.install, "install", "", "configre, build and install a port")
+	flag.StringVar(&i.install, "install", "", "clone, configre, build and install a 3rd party port.")
 }
 
 func (i *installCmd) listen() (handled bool) {

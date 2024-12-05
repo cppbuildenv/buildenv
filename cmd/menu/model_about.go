@@ -1,6 +1,7 @@
 package menu
 
 import (
+	"buildenv/cmd/cli"
 	"buildenv/config"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -38,5 +39,5 @@ func (u aboutModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (u aboutModel) View() string {
-	return u.callbacks.About()
+	return u.callbacks.About(cli.Version)
 }

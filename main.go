@@ -2,14 +2,22 @@ package main
 
 import (
 	"buildenv/cmd/cli"
-	"flag"
+	"buildenv/cmd/menu"
+	"buildenv/config"
+	"log"
 	"os"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 func main() {
-	if exit := cli.Listen(); exit {
+	if handled := cli.Listen(); handled {
 		os.Exit(0)
 	}
 
-	flag.Usage()
+	// Run in ui mode in default.
+	model := menu.CreateMainModel(config.Callbacks)
+	if _, err := tea.NewProgram(model).Run(); err != nil {
+		log.Fatalf("run buildenv in ui mode: %s", err)
+	}
 }

@@ -48,19 +48,20 @@ func (c callbackImpl) OnSelectPlatform(platformName string) error {
 	return nil
 }
 
-func (c callbackImpl) About() string {
+func (c callbackImpl) About(version string) string {
 	toolchainPath, _ := filepath.Abs("script/buildenv.cmake")
 	environmentPath, _ := filepath.Abs("script/buildenv.sh")
 
-	return fmt.Sprintf("\nWelcome to buildenv.\n"+
-		"-----------------------------------\n"+
-		"This is a simple tool to manage your cross build environment.\n\n"+
-		"1. How to use in cmake project: \n"+
+	return fmt.Sprintf("\nWelcome to buildenv (%s).\n"+
+		"---------------------------------------\n"+
+		"This is a simple pkg-manager for C/C++.\n\n"+
+		"1. How to use it to build cmake project: \n"+
 		"option1: %s\n"+
 		"option2: %s\n\n"+
-		"2. How to use in makefile project: \n"+
+		"2. How to use it to build makefile project: \n"+
 		"%s\n\n"+
 		"%s",
+		version,
 		color.Sprintf(color.Blue, "set(CMAKE_TOOLCHAIN_FILE \"%s\")", toolchainPath),
 		color.Sprintf(color.Blue, "cmake .. -DCMAKE_TOOLCHAIN_FILE=%s", toolchainPath),
 		color.Sprintf(color.Blue, "source %s", environmentPath),

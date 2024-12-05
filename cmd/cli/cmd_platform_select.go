@@ -18,7 +18,7 @@ type selectPlatformCmd struct {
 }
 
 func (s *selectPlatformCmd) register() {
-	flag.StringVar(&s.platformName, "select_platform", "", "select a platform as build environment")
+	flag.StringVar(&s.platformName, "select_platform", "", "select a platform as cross build environment.")
 }
 
 func (s *selectPlatformCmd) listen() (handled bool) {

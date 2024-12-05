@@ -18,7 +18,7 @@ type integrateCmd struct {
 }
 
 func (i *integrateCmd) register() {
-	flag.BoolVar(&i.integrate, "integrate", false, "integrate buildenv so that can use it everywhere")
+	flag.BoolVar(&i.integrate, "integrate", false, "integrate buildenv so can use it everywhere.")
 }
 
 func (c *integrateCmd) listen() (handled bool) {
