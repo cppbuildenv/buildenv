@@ -1,4 +1,4 @@
-package ui
+package menu
 
 import (
 	"fmt"
