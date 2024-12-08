@@ -8,75 +8,75 @@ import (
 )
 
 type targetsBuildType struct {
-	config GeneratorConfig
+	cmakeConfig CMakeConfig
 }
 
 func (g *targetsBuildType) generate(installedDir string) error {
 	// Set namespace to libName if it is empty.
-	if g.config.Namespace == "" {
-		g.config.Namespace = g.config.Libname
+	if g.cmakeConfig.Namespace == "" {
+		g.cmakeConfig.Namespace = g.cmakeConfig.Libname
 	}
 
-	if g.config.Libname == "" {
+	if g.cmakeConfig.Libname == "" {
 		return fmt.Errorf("lib name is empty")
 	}
 
-	if g.config.Libtype == "" {
+	if g.cmakeConfig.Libtype == "" {
 		return fmt.Errorf("lib type is empty")
 	}
 
-	if g.config.BuildType == "" {
+	if g.cmakeConfig.BuildType == "" {
 		return fmt.Errorf("build type is empty")
 	}
 
 	// Verify importName for windows and soName for linux.
-	switch strings.ToLower(g.config.SystemName) {
+	switch strings.ToLower(g.cmakeConfig.SystemName) {
 	case "windows":
-		if g.config.Libtype == "SHARED" && g.config.Impname == "" {
+		if g.cmakeConfig.Libtype == "SHARED" && g.cmakeConfig.Impname == "" {
 			return fmt.Errorf("import name is empty for windows shared lib")
 		}
 
 	case "linux":
-		if g.config.Libtype == "SHARED" && g.config.Soname == "" {
+		if g.cmakeConfig.Libtype == "SHARED" && g.cmakeConfig.Soname == "" {
 			return fmt.Errorf("so name is empty for linux shared lib")
 		}
 	}
 
 	template := fmt.Sprintf("templates/%s/targets-buildtype-%s.cmake.in",
-		strings.ToLower(g.config.SystemName),
-		strings.ToLower(g.config.Libtype))
+		strings.ToLower(g.cmakeConfig.SystemName),
+		strings.ToLower(g.cmakeConfig.Libtype))
 	bytes, err := templates.ReadFile(template)
 	if err != nil {
 		return err
 	}
 
 	// Replace the placeholders with the actual values.
-	libNameUpper := strings.ReplaceAll(g.config.Libname, "-", "_")
+	libNameUpper := strings.ReplaceAll(g.cmakeConfig.Libname, "-", "_")
 	libNameUpper = strings.ToUpper(libNameUpper)
 
 	content := string(bytes)
-	content = strings.ReplaceAll(content, "@NAMESPACE@", g.config.Namespace)
-	content = strings.ReplaceAll(content, "@LIBNAME@", g.config.Libname)
+	content = strings.ReplaceAll(content, "@NAMESPACE@", g.cmakeConfig.Namespace)
+	content = strings.ReplaceAll(content, "@LIBNAME@", g.cmakeConfig.Libname)
 	content = strings.ReplaceAll(content, "@LIBNAME_UPPER@", libNameUpper)
-	content = strings.ReplaceAll(content, "@LIBTYPE@", g.config.Libtype)
-	content = strings.ReplaceAll(content, "@FILENAME@", g.config.Filename)
-	content = strings.ReplaceAll(content, "@BUILD_TYPE@", g.config.BuildType)
-	content = strings.ReplaceAll(content, "@BUILD_TYPE_UPPER@", strings.ToUpper(g.config.BuildType))
+	content = strings.ReplaceAll(content, "@LIBTYPE@", g.cmakeConfig.Libtype)
+	content = strings.ReplaceAll(content, "@FILENAME@", g.cmakeConfig.Filename)
+	content = strings.ReplaceAll(content, "@BUILD_TYPE@", g.cmakeConfig.BuildType)
+	content = strings.ReplaceAll(content, "@BUILD_TYPE_UPPER@", strings.ToUpper(g.cmakeConfig.BuildType))
 
-	switch strings.ToLower(g.config.SystemName) {
+	switch strings.ToLower(g.cmakeConfig.SystemName) {
 	case "windows":
-		content = strings.ReplaceAll(content, "@IMPNAME@", g.config.Impname)
+		content = strings.ReplaceAll(content, "@IMPNAME@", g.cmakeConfig.Impname)
 
 	case "linux":
-		content = strings.ReplaceAll(content, "@SO_NAME@", g.config.Soname)
+		content = strings.ReplaceAll(content, "@SO_NAME@", g.cmakeConfig.Soname)
 
 	default:
-		return fmt.Errorf("unsupported system name: %s", g.config.SystemName)
+		return fmt.Errorf("unsupported system name: %s", g.cmakeConfig.SystemName)
 	}
 
 	// Make dirs for writing file.
-	fileName := fmt.Sprintf("%sTargets-%s.cmake", g.config.Libname, strings.ToLower(g.config.BuildType))
-	filePath := filepath.Join(installedDir, "lib", "cmake", g.config.Libname, fileName)
+	fileName := fmt.Sprintf("%sTargets-%s.cmake", g.cmakeConfig.Libname, strings.ToLower(g.cmakeConfig.BuildType))
+	filePath := filepath.Join(installedDir, "lib", "cmake", g.cmakeConfig.Libname, fileName)
 	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
 		return err
 	}

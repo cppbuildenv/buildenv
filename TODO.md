@@ -22,3 +22,5 @@ makefile编译前不支持配置环境变量，例如：export CFLAGS="-mfpu=neo
 完事动态生成的cmake config文件（静态库还没支持）| ✘
 支持windows下工作  | ✘
 支持uninstall功能  | ✘
+拓展project，将packages的配置文件放到project目录下  | ✘
+makefile的安装路径和依赖寻找路径应该自动管理

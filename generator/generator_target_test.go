@@ -7,7 +7,7 @@ import (
 
 func TestConfigVersion(t *testing.T) {
 	config := configVersion{
-		config: GeneratorConfig{
+		cmakeConfig: CMakeConfig{
 			Libname: "yaml-cpp",
 			Version: "0.8.0",
 		},
@@ -24,7 +24,7 @@ func TestConfigVersion(t *testing.T) {
 
 func TestConfig(t *testing.T) {
 	config := config{
-		config: GeneratorConfig{
+		cmakeConfig: CMakeConfig{
 			Namespace: "yaml-cpp",
 			Libname:   "yaml-cpp",
 		},
@@ -41,7 +41,7 @@ func TestConfig(t *testing.T) {
 
 func TestTargets(t *testing.T) {
 	config := targets{
-		config: GeneratorConfig{
+		cmakeConfig: CMakeConfig{
 			Libname:   "yaml-cpp",
 			Namespace: "yaml-cpp",
 			Libtype:   "SHARED",
@@ -59,7 +59,7 @@ func TestTargets(t *testing.T) {
 
 func TestTargetsType(t *testing.T) {
 	target := targetsBuildType{
-		config: GeneratorConfig{
+		cmakeConfig: CMakeConfig{
 			SystemName: "Linux",
 			Namespace:  "yaml-cpp",
 			Libname:    "yaml-cpp",
@@ -81,7 +81,7 @@ func TestTargetsType(t *testing.T) {
 
 func TestModulesBuildType(t *testing.T) {
 	generator := modulesBuildType{
-		config: GeneratorConfig{
+		cmakeConfig: CMakeConfig{
 			Libname:    "ffmpeg",
 			Version:    "0.8.0",
 			Libtype:    "SHARED",
@@ -141,7 +141,7 @@ func TestModulesBuildType(t *testing.T) {
 
 func TestModules(t *testing.T) {
 	generator := modules{
-		config: GeneratorConfig{
+		cmakeConfig: CMakeConfig{
 			Libname:   "ffmpeg",
 			Version:   "0.8.0",
 			Libtype:   "SHARED",

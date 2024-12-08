@@ -3,7 +3,6 @@ package config
 import (
 	"bufio"
 	"buildenv/buildsystem"
-	"buildenv/generator"
 	"buildenv/pkg/color"
 	"buildenv/pkg/io"
 	"encoding/json"
@@ -16,12 +15,11 @@ import (
 type BuildTool int
 
 type Port struct {
-	Url                 string                     `json:"url"`
-	Name                string                     `json:"name"`
-	Version             string                     `json:"version"`
-	SourceFolder        string                     `json:"source_folder,omitempty"`
-	BuildConfigs        []buildsystem.BuildConfig  `json:"build_configs"`
-	GenerateCMakeConfig *generator.GeneratorConfig `json:"generate_cmake_config"`
+	Url          string                    `json:"url"`
+	Name         string                    `json:"name"`
+	Version      string                    `json:"version"`
+	SourceFolder string                    `json:"source_folder,omitempty"`
+	BuildConfigs []buildsystem.BuildConfig `json:"build_configs"`
 
 	// Internal fields.
 	ctx      Context
@@ -143,40 +141,38 @@ func (p Port) CheckAndRepair(args VerifyArgs) error {
 	}
 
 	if len(p.BuildConfigs) > 0 {
-		var matchedAndFixed bool
+		var matchedConfig *buildsystem.BuildConfig
 		for _, config := range p.BuildConfigs {
-			if !p.matchPattern(config.Pattern) {
-				continue
+			if p.matchPattern(config.Pattern) {
+				matchedConfig = &config
+				break
 			}
-
-			// Check and repair dependencies.
-			for _, item := range config.Depedencies {
-				if item == p.fullName {
-					return fmt.Errorf("port.dependencies contains circular dependency: %s", item)
-				}
-
-				// Check and repair dependency.
-				var port Port
-				port.isSubDep = true
-				portPath := filepath.Join(p.portDir, item+".json")
-				if err := port.Init(p.ctx, portPath); err != nil {
-					return err
-				}
-				if err := port.CheckAndRepair(args); err != nil {
-					return err
-				}
-			}
-
-			// Check and repair port.
-			if err := config.CheckAndRepair(p.Url, p.Version, p.ctx.BuildType(), p.GenerateCMakeConfig); err != nil {
-				return err
-			}
-
-			matchedAndFixed = true
+		}
+		if matchedConfig == nil {
+			return fmt.Errorf("no matching build_config found to build")
 		}
 
-		if !matchedAndFixed {
-			return fmt.Errorf("no matching build_config found to build")
+		// Check and repair dependencies.
+		for _, item := range matchedConfig.Depedencies {
+			if item == p.fullName {
+				return fmt.Errorf("port.dependencies contains circular dependency: %s", item)
+			}
+
+			// Check and repair dependency.
+			var port Port
+			port.isSubDep = true
+			portPath := filepath.Join(p.portDir, item+".json")
+			if err := port.Init(p.ctx, portPath); err != nil {
+				return err
+			}
+			if err := port.CheckAndRepair(args); err != nil {
+				return err
+			}
+		}
+
+		// Check and repair port.
+		if err := matchedConfig.CheckAndRepair(p.Url, p.Version, p.ctx.BuildType(), matchedConfig.CMakeConfig); err != nil {
+			return err
 		}
 	} else {
 		downloadedDir := filepath.Join(Dirs.WorkspaceDir, "downloads")

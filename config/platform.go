@@ -194,7 +194,6 @@ endif()
 set(HOME_DIR "${CMAKE_CURRENT_LIST_DIR}/..")
 find_program(BUILDENV buildenv PATHS ${HOME_DIR})
 if(BUILDENV)
-	message("================ buildenv -verify -silent -build_type ${CMAKE_BUILD_TYPE} ================\n")
 	execute_process(
 		COMMAND ${BUILDENV} -verify -silent -build_type=${CMAKE_BUILD_TYPE}
 		WORKING_DIRECTORY ${HOME_DIR}

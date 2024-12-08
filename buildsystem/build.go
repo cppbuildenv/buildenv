@@ -21,10 +21,11 @@ type BuildSystem interface {
 }
 
 type BuildConfig struct {
-	Pattern     string   `json:"pattern"`
-	BuildTool   string   `json:"build_tool"`
-	Arguments   []string `json:"arguments"`
-	Depedencies []string `json:"dependencies"`
+	Pattern     string                 `json:"pattern"`
+	BuildTool   string                 `json:"build_tool"`
+	Arguments   []string               `json:"arguments"`
+	Depedencies []string               `json:"dependencies"`
+	CMakeConfig *generator.CMakeConfig `json:"cmake_config"`
 
 	// Internal fields
 	Version      string
@@ -108,7 +109,7 @@ func (b BuildConfig) execute(command, logPath string) error {
 	return nil
 }
 
-func (b BuildConfig) CheckAndRepair(url, version, buildType string, cmakeConfig *generator.GeneratorConfig) error {
+func (b BuildConfig) CheckAndRepair(url, version, buildType string, cmakeConfig *generator.CMakeConfig) error {
 	var buildSystem BuildSystem
 
 	switch b.BuildTool {

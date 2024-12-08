@@ -8,28 +8,29 @@ import (
 )
 
 type modules struct {
-	config GeneratorConfig
+	cmakeConfig CMakeConfig
 }
 
 func (g *modules) generate(installedDir string) error {
-	if len(g.config.Components) == 0 {
+	if len(g.cmakeConfig.Components) == 0 {
 		return fmt.Errorf("components is empty")
 	}
 
-	if g.config.Libname == "" {
+	if g.cmakeConfig.Libname == "" {
 		return fmt.Errorf("lib name is empty")
 	}
 
-	if g.config.Version == "" {
+	if g.cmakeConfig.Version == "" {
 		return fmt.Errorf("version is empty")
 	}
 
-	if g.config.Libtype == "" {
+	if g.cmakeConfig.Libtype == "" {
 		return fmt.Errorf("lib type is empty")
 	}
+	g.cmakeConfig.Libtype = strings.ToUpper(g.cmakeConfig.Libtype)
 
-	if g.config.Namespace == "" {
-		g.config.Namespace = g.config.Libname
+	if g.cmakeConfig.Namespace == "" {
+		g.cmakeConfig.Namespace = g.cmakeConfig.Libname
 	}
 
 	modules, err := templates.ReadFile("templates/Modules.cmake.in")
@@ -50,8 +51,12 @@ func (g *modules) generate(installedDir string) error {
 	var libNames []string
 	var addLibrarySections strings.Builder
 
-	for index, component := range g.config.Components {
-		libNames = append(libNames, g.config.Libname+"::"+component.Component)
+	for index, component := range g.cmakeConfig.Components {
+		if g.cmakeConfig.Libtype == "SHARED" && component.Soname == "" {
+			return fmt.Errorf("soname of %s is empty to generate cmake config for SHARED library", component.Filename)
+		}
+
+		libNames = append(libNames, g.cmakeConfig.Libname+"::"+component.Component)
 
 		var section string
 		if len(component.Dependencies) > 0 {
@@ -62,18 +67,18 @@ func (g *modules) generate(installedDir string) error {
 
 		var dependencies []string
 		for _, dependency := range component.Dependencies {
-			dependencies = append(dependencies, g.config.Namespace+"::"+dependency)
+			dependencies = append(dependencies, g.cmakeConfig.Namespace+"::"+dependency)
 		}
 
-		section = strings.ReplaceAll(section, "@NAMESPACE@", g.config.Namespace)
-		section = strings.ReplaceAll(section, "@LIBNAME@", g.config.Libname)
+		section = strings.ReplaceAll(section, "@NAMESPACE@", g.cmakeConfig.Namespace)
+		section = strings.ReplaceAll(section, "@LIBNAME@", g.cmakeConfig.Libname)
 		section = strings.ReplaceAll(section, "@COMPONENT@", component.Component)
-		section = strings.ReplaceAll(section, "@LIBTYPE_UPPER@", strings.ToUpper(g.config.Libtype))
+		section = strings.ReplaceAll(section, "@LIBTYPE_UPPER@", strings.ToUpper(g.cmakeConfig.Libtype))
 		section = strings.ReplaceAll(section, "@DEPEDENCIES@", strings.Join(dependencies, ";"))
 
 		if index == 0 {
 			addLibrarySections.WriteString(section + "\n")
-		} else if index == len(g.config.Components)-1 {
+		} else if index == len(g.cmakeConfig.Components)-1 {
 			addLibrarySections.WriteString("\n" + section)
 		} else {
 			addLibrarySections.WriteString("\n" + section + "\n")
@@ -81,17 +86,17 @@ func (g *modules) generate(installedDir string) error {
 	}
 
 	// Replace the placeholders with the actual values.
-	libNameUpper := strings.ToUpper(g.config.Libname)
+	libNameUpper := strings.ToUpper(g.cmakeConfig.Libname)
 
 	content := string(modules)
-	content = strings.ReplaceAll(content, "@NAMESPACE@", g.config.Namespace)
+	content = strings.ReplaceAll(content, "@NAMESPACE@", g.cmakeConfig.Namespace)
 	content = strings.ReplaceAll(content, "@LIB_NAMES@", strings.Join(libNames, " "))
-	content = strings.ReplaceAll(content, "@LIBNAME@", g.config.Libname)
+	content = strings.ReplaceAll(content, "@LIBNAME@", g.cmakeConfig.Libname)
 	content = strings.ReplaceAll(content, "@LIBNAME_UPPER@", libNameUpper)
 	content = strings.ReplaceAll(content, "@ADD_LIBRARY_SECTIONS@", addLibrarySections.String())
 
 	// Make dirs for writing file.
-	filePath := filepath.Join(installedDir, "lib", "cmake", g.config.Libname, g.config.Libname+"Modules.cmake")
+	filePath := filepath.Join(installedDir, "lib", "cmake", g.cmakeConfig.Libname, g.cmakeConfig.Libname+"Modules.cmake")
 	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
 		return err
 	}

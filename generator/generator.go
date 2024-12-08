@@ -8,10 +8,10 @@ import (
 //go:embed templates
 var templates embed.FS
 
-// GeneratorConfig is the information of the library.
-type GeneratorConfig struct {
+// CMakeConfig is the information of the library.
+type CMakeConfig struct {
 	Namespace string `json:"namespace"` // if empty, use libName instead
-	Libtype   string `json:"libtype"`   // for example: STATIC, SHARED, IMPORTED
+	Libtype   string `json:"libtype"`   // it would be STATIC, SHARED or IMPORTED
 
 	// It's the name of the binary file.
 	// in linux, it would be libyaml-cpp.a or libyaml-cpp.so.0.8.0
@@ -41,7 +41,7 @@ type generate interface {
 	generate(installedDir string) error
 }
 
-func (gen GeneratorConfig) Generate(installedDir string) error {
+func (gen CMakeConfig) Generate(installedDir string) error {
 	gen.Libtype = strings.ToUpper(gen.Libtype)
 
 	var generators []generate
