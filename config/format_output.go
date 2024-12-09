@@ -45,11 +45,3 @@ func IntegrateFailed(err error) string {
 func InstallFailed(port string, err error) string {
 	return color.Sprintf(color.Red, "[✘] %s install failed.\n[☛] %s.\n", port, err)
 }
-
-func SetOffline(offline bool) string {
-	if offline {
-		return color.Sprintf(color.Blue, "[✔] ======== buildenv's offline mode now is ON.\n")
-	} else {
-		return color.Sprintf(color.Blue, "[✔] ======== buildenv's offline mode now is OFF.\n")
-	}
-}

@@ -15,7 +15,6 @@ type PlatformCallbacks interface {
 	OnCreatePlatform(platformName string) error
 	OnSelectPlatform(platformName string) error
 	About(version string) string
-	SetOffline(offline bool) error
 }
 
 type Platform struct {

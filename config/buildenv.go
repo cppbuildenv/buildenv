@@ -19,7 +19,6 @@ type Context interface {
 	RootFS() *RootFS
 	SystemName() string
 	BuildType() string
-	Offline() bool
 	JobNum() int
 }
 
@@ -49,7 +48,6 @@ type configData struct {
 	ConfRepoUrl  string `json:"conf_repo_url"`
 	ConfRepoRef  string `json:"conf_repo_ref"`
 	PlatformName string `json:"platform_name"`
-	Offline      bool   `json:"offline"`
 	JobNum       int    `json:"job_num"`
 }
 
@@ -131,25 +129,6 @@ func (b buildenv) Synchronize(repo, ref string) (string, error) {
 	}
 
 	return output, nil
-}
-
-func (b *buildenv) SetOffline(offline bool) error {
-	buildEnvPath := filepath.Join(Dirs.WorkspaceDir, "buildenv.json")
-	if err := b.init(buildEnvPath); err != nil {
-		return err
-	}
-
-	// Set offline.
-	b.configData.Offline = offline
-	bytes, err := json.MarshalIndent(b, "", "    ")
-	if err != nil {
-		return fmt.Errorf("cannot marshal buildenv conf: %w", err)
-	}
-	if err := os.WriteFile(buildEnvPath, bytes, os.ModePerm); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (b *buildenv) init(buildEnvPath string) error {
@@ -234,10 +213,6 @@ func (b buildenv) SystemName() string {
 
 func (b buildenv) BuildType() string {
 	return b.buildType
-}
-
-func (b buildenv) Offline() bool {
-	return b.configData.Offline
 }
 
 func (b buildenv) JobNum() int {

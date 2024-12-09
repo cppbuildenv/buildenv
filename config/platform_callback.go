@@ -68,10 +68,3 @@ func (c callbackImpl) About(version string) string {
 		color.Sprintf(color.Gray, "[ctrl+c/q -> quit]"),
 	)
 }
-
-func (c callbackImpl) SetOffline(offline bool) error {
-	// In config mode, we always regard build type as `Release`.
-	buildType := "Release"
-	buildenv := NewBuildEnv(buildType)
-	return buildenv.SetOffline(offline)
-}

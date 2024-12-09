@@ -2,7 +2,6 @@ package buildsystem
 
 import (
 	"buildenv/generator"
-	"buildenv/pkg/color"
 	pkgio "buildenv/pkg/io"
 	"fmt"
 	"io"
@@ -94,11 +93,8 @@ func (b BuildConfig) execute(command, logPath string) error {
 		}
 		defer logFile.Close()
 
-		outWriter := color.NewWriter(os.Stdout, color.Green)
-		cmd.Stdout = io.MultiWriter(outWriter, logFile)
-
-		errWriter := color.NewWriter(os.Stderr, color.Yellow)
-		cmd.Stderr = io.MultiWriter(errWriter, logFile)
+		cmd.Stdout = io.MultiWriter(os.Stdout, logFile)
+		cmd.Stderr = io.MultiWriter(os.Stderr, logFile)
 	}
 
 	cmd.Env = os.Environ()
