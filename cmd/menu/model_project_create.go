@@ -9,7 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func newProjectCreateModel(callbacks config.BuildEnvCallbacks, goback func(this *projectCreateModel)) *projectCreateModel {
+func newProjectCreateModel(callbacks config.BuildEnvCallbacks) *projectCreateModel {
 	ti := textinput.New()
 	ti.Placeholder = "your project's name..."
 	ti.Focus()
@@ -22,7 +22,6 @@ func newProjectCreateModel(callbacks config.BuildEnvCallbacks, goback func(this 
 	return &projectCreateModel{
 		textInput: ti,
 		callbacks: callbacks,
-		goback:    goback,
 	}
 }
 
@@ -32,7 +31,6 @@ type projectCreateModel struct {
 	err       error
 
 	callbacks config.BuildEnvCallbacks
-	goback    func(this *projectCreateModel)
 }
 
 func (p projectCreateModel) Init() tea.Cmd {
@@ -47,8 +45,7 @@ func (p projectCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return p, tea.Quit
 
 		case "esc":
-			p.goback(&p)
-			return p, nil
+			return MenuModel, nil
 
 		case "enter":
 			if err := p.callbacks.OnCreateProject(p.textInput.Value()); err != nil {

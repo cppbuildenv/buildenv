@@ -7,16 +7,14 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func newAboutModel(callbacks config.BuildEnvCallbacks, goback func()) *aboutModel {
+func newAboutModel(callbacks config.BuildEnvCallbacks) *aboutModel {
 	return &aboutModel{
 		callbacks: callbacks,
-		goback:    goback,
 	}
 }
 
 type aboutModel struct {
 	callbacks config.BuildEnvCallbacks
-	goback    func()
 }
 
 func (aboutModel) Init() tea.Cmd {
@@ -31,8 +29,7 @@ func (u aboutModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return u, tea.Quit
 
 		case "esc":
-			u.goback()
-			return u, nil
+			return MenuModel, nil
 		}
 	}
 	return u, nil

@@ -10,7 +10,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func newProjectSelectModel(callbacks config.BuildEnvCallbacks, goback func()) *projectSelectModel {
+func newProjectSelectModel(callbacks config.BuildEnvCallbacks) *projectSelectModel {
 	const defaultWidth = 80
 	const defaultHeight = 10
 
@@ -50,7 +50,6 @@ func newProjectSelectModel(callbacks config.BuildEnvCallbacks, goback func()) *p
 		list:      l,
 		styles:    styleImpl,
 		callbacks: callbacks,
-		goback:    goback,
 	}
 }
 
@@ -61,7 +60,6 @@ type projectSelectModel struct {
 	err         error
 	styles      styles
 	callbacks   config.BuildEnvCallbacks
-	goback      func()
 }
 
 func (p projectSelectModel) Init() tea.Cmd {
@@ -89,11 +87,10 @@ func (p projectSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return p, tea.Quit
 
 		case "esc":
-			p.goback()
 			p.trySelected = ""
 			p.selected = ""
 			p.err = nil
-			return p, nil
+			return MenuModel, nil
 
 		case "ctrl+c", "q":
 			return p, tea.Quit

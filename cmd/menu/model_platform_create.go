@@ -9,7 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func newPlatformCreateModel(callbacks config.BuildEnvCallbacks, goback func(this *platformCreateModel)) *platformCreateModel {
+func newPlatformCreateModel(callbacks config.BuildEnvCallbacks) *platformCreateModel {
 	ti := textinput.New()
 	ti.Placeholder = "for example: x86_64-linux-ubuntu-20.04..."
 	ti.Focus()
@@ -22,7 +22,6 @@ func newPlatformCreateModel(callbacks config.BuildEnvCallbacks, goback func(this
 	return &platformCreateModel{
 		textInput: ti,
 		callbacks: callbacks,
-		goback:    goback,
 	}
 }
 
@@ -32,7 +31,6 @@ type platformCreateModel struct {
 	err       error
 
 	callbacks config.BuildEnvCallbacks
-	goback    func(this *platformCreateModel)
 }
 
 func (p platformCreateModel) Init() tea.Cmd {
@@ -47,8 +45,7 @@ func (p platformCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return p, tea.Quit
 
 		case "esc":
-			p.goback(&p)
-			return p, nil
+			return MenuModel, nil
 
 		case "enter":
 			if err := p.callbacks.OnCreatePlatform(p.textInput.Value()); err != nil {

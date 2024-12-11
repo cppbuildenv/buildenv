@@ -3,7 +3,6 @@ package main
 import (
 	"buildenv/cmd/cli"
 	"buildenv/cmd/menu"
-	"buildenv/config"
 	"log"
 	"os"
 
@@ -16,8 +15,7 @@ func main() {
 	}
 
 	// Run in ui mode in default.
-	model := menu.CreateMainModel(config.Callbacks)
-	if _, err := tea.NewProgram(model).Run(); err != nil {
+	if _, err := tea.NewProgram(menu.MenuModel).Run(); err != nil {
 		log.Fatalf("run buildenv in ui mode: %s", err)
 	}
 }

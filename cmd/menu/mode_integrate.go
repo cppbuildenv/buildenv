@@ -11,22 +11,18 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func newIntegrateModel(goback func()) integrateModel {
+func newIntegrateModel() integrateModel {
 	content := fmt.Sprintf("\nIntegrate buildenv.\n"+
 		"-----------------------------------\n"+
 		"%s.\n\n"+
 		"%s",
 		color.Sprintf(color.Blue, "This will append buildenv's file dir to ~/.profile, then you can use buildenv anywhere."),
 		color.Sprintf(color.Gray, "[↵ -> execute | ctrl+c/q -> quit]"))
-	return integrateModel{
-		content: content,
-		goback:  goback,
-	}
+	return integrateModel{content: content}
 }
 
 type integrateModel struct {
 	content string
-	goback  func()
 }
 
 func (i integrateModel) Init() tea.Cmd {
@@ -45,8 +41,7 @@ func (i integrateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return i, tea.Quit
 
 		case "esc":
-			i.goback()
-			return i, nil
+			return MenuModel, nil
 		}
 	}
 	return i, nil

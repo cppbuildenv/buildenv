@@ -12,7 +12,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func newSyncModel(goback func()) *syncModel {
+func newSyncModel() *syncModel {
 	content := fmt.Sprintf("\nClone or synch repo of conf.\n"+
 		"-----------------------------------\n"+
 		"%s.\n\n"+
@@ -22,13 +22,11 @@ func newSyncModel(goback func()) *syncModel {
 
 	return &syncModel{
 		content: content,
-		goback:  goback,
 	}
 }
 
 type syncModel struct {
 	content string
-	goback  func()
 }
 
 func (s syncModel) Init() tea.Cmd {
@@ -51,8 +49,7 @@ func (s syncModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return s, tea.Quit
 
 		case "esc":
-			s.goback()
-			return s, nil
+			return MenuModel, nil
 		}
 	}
 	return s, nil

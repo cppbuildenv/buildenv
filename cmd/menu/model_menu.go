@@ -1,44 +1,36 @@
 package menu
 
 import (
+	"buildenv/config"
+	"slices"
+
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+var MenuModel = newMenuModel(config.Callbacks)
+
 const (
-	menuSyncConfig     string = "Init or sync buildenv's config repo."
+	menuSync           string = "Init or sync buildenv's config repo."
 	menuPlatformCreate string = "Create a new platform."
 	menuPlatformSelect string = "Select your current platform."
 	menuProjectCreate  string = "Create a new project."
 	menuProjectSelect  string = "Select your current project."
 	menuIntegrate      string = "Integrate buildenv, then you can run it everywhere."
-	menuUsage          string = "About and usage."
-)
-
-type mode = int
-
-const (
-	modeMenu mode = iota
-	modeSyncConfig
-	modePlatformCreate
-	modePlatformSelect
-	modeProjectCreate
-	modeProjectSelect
-	modelIntegrate
-	modeAbout
+	menuAbout          string = "About and usage."
 )
 
 var menus = []string{
-	menuSyncConfig,
+	menuSync,
 	menuPlatformCreate,
 	menuPlatformSelect,
 	menuProjectCreate,
 	menuProjectSelect,
 	menuIntegrate,
-	menuUsage,
+	menuAbout,
 }
 
-func createMenuModel(modeChanged func(mode mode)) menuModel {
+func newMenuModel(callabcks config.BuildEnvCallbacks) *menuModel {
 	const defaultWidth = 100
 	const defaultHeight = 15
 
@@ -59,21 +51,35 @@ func createMenuModel(modeChanged func(mode mode)) menuModel {
 	l.Styles.PaginationStyle = styles.paginationStyle
 	l.Styles.HelpStyle = styles.helpStyle
 
-	return menuModel{list: l, modeChanged: modeChanged, styles: styles}
+	menuModel := menuModel{
+		list:   l,
+		styles: styles,
+		models: make(map[string]tea.Model),
+	}
+
+	// init models
+	menuModel.models[menuSync] = newSyncModel()
+	menuModel.models[menuPlatformCreate] = newPlatformSelectModel(callabcks)
+	menuModel.models[menuPlatformSelect] = newPlatformCreateModel(callabcks)
+	menuModel.models[menuProjectCreate] = newProjectCreateModel(callabcks)
+	menuModel.models[menuProjectSelect] = newProjectSelectModel(callabcks)
+	menuModel.models[menuIntegrate] = newIntegrateModel()
+	menuModel.models[menuAbout] = newAboutModel(callabcks)
+
+	return &menuModel
 }
 
 type menuModel struct {
-	list        list.Model
-	quitting    bool
-	styles      styles
-	modeChanged func(mode mode)
+	list   list.Model
+	styles styles
+	models map[string]tea.Model
 }
 
 func (m menuModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.list.SetWidth(msg.Width)
@@ -82,35 +88,15 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "esc", "q":
-			m.quitting = true
 			return m, tea.Quit
 
 		case "enter":
 			if i, ok := m.list.SelectedItem().(listItem); ok {
-				if m.modeChanged != nil {
-					switch string(i) {
-					case menuPlatformSelect:
-						m.modeChanged(modePlatformSelect)
+				// Remember selected item.
+				index := slices.Index(menus, string(i))
+				m.list.Select(index)
 
-					case menuPlatformCreate:
-						m.modeChanged(modePlatformCreate)
-
-					case menuProjectSelect:
-						m.modeChanged(modeProjectSelect)
-
-					case menuProjectCreate:
-						m.modeChanged(modeProjectCreate)
-
-					case menuSyncConfig:
-						m.modeChanged(modeSyncConfig)
-
-					case menuIntegrate:
-						m.modeChanged(modelIntegrate)
-
-					case menuUsage:
-						m.modeChanged(modeAbout)
-					}
-				}
+				return m.models[string(i)], nil
 			}
 
 			return m, nil
@@ -123,9 +109,5 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m menuModel) View() string {
-	if m.quitting {
-		return ""
-	}
-
 	return "\n" + m.list.View()
 }
