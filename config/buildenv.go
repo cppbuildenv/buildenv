@@ -41,6 +41,7 @@ type buildenv struct {
 
 	// Internal fields.
 	platform  Platform
+	project   Project
 	buildType string
 }
 
@@ -48,6 +49,7 @@ type configData struct {
 	ConfRepoUrl  string `json:"conf_repo_url"`
 	ConfRepoRef  string `json:"conf_repo_ref"`
 	PlatformName string `json:"platform_name"`
+	ProjectName  string `json:"project_name"`
 	JobNum       int    `json:"job_num"`
 }
 
@@ -69,18 +71,43 @@ func (b *buildenv) ChangePlatform(platformName string) error {
 	return nil
 }
 
+func (b *buildenv) ChangeProject(projectName string) error {
+	buildEnvPath := filepath.Join(Dirs.WorkspaceDir, "buildenv.json")
+	if err := b.init(buildEnvPath); err != nil {
+		return err
+	}
+
+	b.configData.ProjectName = projectName
+	bytes, err := json.MarshalIndent(b, "", "    ")
+	if err != nil {
+		return fmt.Errorf("cannot marshal buildenv conf: %w", err)
+	}
+	if err := os.WriteFile(buildEnvPath, bytes, os.ModePerm); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (b *buildenv) Verify(args VerifyArgs) error {
 	buildEnvPath := filepath.Join(Dirs.WorkspaceDir, "buildenv.json")
 	if err := b.init(buildEnvPath); err != nil {
 		return err
 	}
 
+	// init and verify platform.
 	if err := b.platform.Init(b, b.configData.PlatformName); err != nil {
 		return err
 	}
-
-	// Verify buildenv, it'll verify toolchain, tools and dependencies inside.
 	if err := b.platform.Verify(args); err != nil {
+		return err
+	}
+
+	// init and verify project
+	if err := b.project.Init(b, b.configData.ProjectName); err != nil {
+		return err
+	}
+	if err := b.project.Verify(args); err != nil {
 		return err
 	}
 

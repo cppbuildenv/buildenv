@@ -48,6 +48,44 @@ func (c callbackImpl) OnSelectPlatform(platformName string) error {
 	return nil
 }
 
+func (c callbackImpl) OnCreateProject(projectName string) error {
+	if projectName == "" {
+		return fmt.Errorf("projectName is empty for creating new project")
+	}
+
+	// Create project file.
+	projectPath := filepath.Join(Dirs.ProjectDir, projectName+".json")
+	var project Project
+	if err := project.Write(projectPath); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c callbackImpl) OnSelectProject(projectName string) error {
+	// In config mode, we always regard build type as `Release`.
+	buildType := "Release"
+
+	buildenv := NewBuildEnv(buildType)
+	if err := buildenv.ChangeProject(projectName); err != nil {
+		return err
+	}
+
+	// Verify buildenv to check if all the required fields are set for generate toolchain file.
+	if err := buildenv.Verify(NewVerifyArgs(false, false, buildType)); err != nil {
+		return err
+	}
+
+	// Generate toolchain file.
+	scriptDir := filepath.Join(Dirs.WorkspaceDir, "script")
+	if _, err := buildenv.platform.GenerateToolchainFile(scriptDir); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (c callbackImpl) About(version string) string {
 	toolchainPath, _ := filepath.Abs("script/buildenv.cmake")
 	environmentPath, _ := filepath.Abs("script/buildenv.sh")

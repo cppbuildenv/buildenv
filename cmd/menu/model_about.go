@@ -7,7 +7,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func newAboutModel(callbacks config.PlatformCallbacks, goback func()) *aboutModel {
+func newAboutModel(callbacks config.BuildEnvCallbacks, goback func()) *aboutModel {
 	return &aboutModel{
 		callbacks: callbacks,
 		goback:    goback,
@@ -15,7 +15,7 @@ func newAboutModel(callbacks config.PlatformCallbacks, goback func()) *aboutMode
 }
 
 type aboutModel struct {
-	callbacks config.PlatformCallbacks
+	callbacks config.BuildEnvCallbacks
 	goback    func()
 }
 

@@ -47,16 +47,18 @@ CMake长期以来仅提供了 `find_package` 功能，即包寻找能力，但�
 ```
 $ ./buildenv -ui
 
-Please choose one from the menu...                     
-                                                           
-    1. Init or sync buildenv's config repo.                
-    2. Create a new platform, it requires completion later.
-    3. Choose a platform as your build environment.    
-    4. Integrate buildenv.                                   
-  > 5. About and usage.                                    
-
-
-    ↑/k up • ↓/j down • q quit • ? more  
+ Welcome to buildenv!                                        
+    Please choose an option from the menu below...              
+                                                                
+  > 1. Init or sync buildenv's config repo.                     
+    2. Create a new platform.                                   
+    3. Select your current platform.                            
+    4. Create a new project.                                    
+    5. Select your current project.                             
+    6. Integrate buildenv, then you can run it everywhere.
+    7. About and usage.                                         
+                                                                
+    ↑/k up • ↓/j down • q quit • ? more 
 ```
 
 选择`5`并回车，即可进入使用说明：

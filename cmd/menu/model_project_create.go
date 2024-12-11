@@ -9,9 +9,9 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func newPlatformCreateModel(callbacks config.BuildEnvCallbacks, goback func(this *platformCreateModel)) *platformCreateModel {
+func newProjectCreateModel(callbacks config.BuildEnvCallbacks, goback func(this *projectCreateModel)) *projectCreateModel {
 	ti := textinput.New()
-	ti.Placeholder = "for example: x86_64-linux-ubuntu-20.04..."
+	ti.Placeholder = "your project's name..."
 	ti.Focus()
 	ti.CharLimit = 100
 	ti.Width = 100
@@ -19,27 +19,27 @@ func newPlatformCreateModel(callbacks config.BuildEnvCallbacks, goback func(this
 	ti.PromptStyle = styleImpl.focusedStyle
 	ti.Cursor.Style = styleImpl.focusedStyle
 
-	return &platformCreateModel{
+	return &projectCreateModel{
 		textInput: ti,
 		callbacks: callbacks,
 		goback:    goback,
 	}
 }
 
-type platformCreateModel struct {
+type projectCreateModel struct {
 	textInput textinput.Model
 	created   bool
 	err       error
 
 	callbacks config.BuildEnvCallbacks
-	goback    func(this *platformCreateModel)
+	goback    func(this *projectCreateModel)
 }
 
-func (p platformCreateModel) Init() tea.Cmd {
+func (p projectCreateModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (p platformCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (p projectCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -51,7 +51,7 @@ func (p platformCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return p, nil
 
 		case "enter":
-			if err := p.callbacks.OnCreatePlatform(p.textInput.Value()); err != nil {
+			if err := p.callbacks.OnCreateProject(p.textInput.Value()); err != nil {
 				p.err = err
 				p.created = false
 			} else {
@@ -67,23 +67,23 @@ func (p platformCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return p, cmd
 }
 
-func (p platformCreateModel) View() string {
+func (p projectCreateModel) View() string {
 	if p.created {
-		return config.PlatformCreated(p.textInput.Value())
+		return config.ProjectCreated(p.textInput.Value())
 	}
 
 	if p.err != nil {
-		return config.PlatformCreateFailed(p.textInput.Value(), p.err)
+		return config.ProjectCreateFailed(p.textInput.Value(), p.err)
 	}
 
 	return fmt.Sprintf("\n%s\n\n%s\n\n%s\n",
-		color.Sprintf(color.Blue, "Please enter your platform name: "),
+		color.Sprintf(color.Blue, "Please enter your project's name: "),
 		p.textInput.View(),
 		color.Sprintf(color.Gray, "[esc -> back | ctrl+c/q -> quit]"),
 	)
 }
 
-func (p *platformCreateModel) Reset() {
+func (p *projectCreateModel) Reset() {
 	p.textInput.Reset()
 	p.created = false
 	p.err = nil

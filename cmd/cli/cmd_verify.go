@@ -4,7 +4,6 @@ import (
 	"buildenv/config"
 	"flag"
 	"fmt"
-	"strings"
 )
 
 func newVerifyCmd() *verifyCmd {
@@ -28,14 +27,12 @@ func (v *verifyCmd) listen() (handled bool) {
 	buildenv := config.NewBuildEnv(buildType.buildType)
 
 	if err := buildenv.Verify(args); err != nil {
-		platformName := strings.TrimSuffix(buildenv.Platform(), ".json")
-		fmt.Print(config.PlatformSelectedFailed(platformName, err))
+		fmt.Print(config.PlatformSelectedFailed(buildenv.PlatformName, err))
 		return true
 	}
 
 	if !silent.silent {
-		platformName := strings.TrimSuffix(buildenv.Platform(), ".json")
-		fmt.Print(config.PlatformSelected(platformName))
+		fmt.Print(config.ProjectSelected(buildenv.ProjectName))
 	}
 
 	return true

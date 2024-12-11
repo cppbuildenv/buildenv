@@ -11,9 +11,11 @@ import (
 	"strings"
 )
 
-type PlatformCallbacks interface {
+type BuildEnvCallbacks interface {
 	OnCreatePlatform(platformName string) error
 	OnSelectPlatform(platformName string) error
+	OnCreateProject(projectName string) error
+	OnSelectProject(projectName string) error
 	About(version string) string
 }
 
@@ -21,7 +23,6 @@ type Platform struct {
 	RootFS    *RootFS    `json:"rootfs"`
 	Toolchain *Toolchain `json:"toolchain"`
 	Tools     []string   `json:"tools"`
-	Packages  []string   `json:"packages"`
 
 	// Internal fields.
 	platformName string
@@ -67,9 +68,6 @@ func (p Platform) Write(platformPath string) error {
 	}
 	if len(p.Tools) == 0 {
 		p.Tools = []string{}
-	}
-	if len(p.Packages) == 0 {
-		p.Packages = []string{}
 	}
 
 	bytes, err := json.MarshalIndent(p, "", "    ")
@@ -142,40 +140,6 @@ func (p Platform) Verify(args VerifyArgs) error {
 	// Append $PKG_CONFIG_PATH with pkgconfig path that in installed dir.
 	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.platformName+"-"+args.BuildType())
 	os.Setenv("PKG_CONFIG_PATH", fmt.Sprintf("%s/lib/pkgconfig:%s", installedDir, os.Getenv("PKG_CONFIG_PATH")))
-
-	// Inner function used to verify port.
-	installPort := func(portDesc string) error {
-		portPath := filepath.Join(Dirs.PortDir, portDesc+".json")
-		var port Port
-		if err := port.Init(p.ctx, portPath); err != nil {
-			return fmt.Errorf("%s: %w", portDesc, err)
-		}
-
-		if err := port.Verify(); err != nil {
-			return fmt.Errorf("%s: %w", portDesc, err)
-		}
-
-		if err := port.CheckAndRepair(args); err != nil {
-			return fmt.Errorf("%s: %w", portDesc, err)
-		}
-
-		return nil
-	}
-
-	// Check if only to verify one port.
-	portToInstall := args.PortToInstall()
-	if portToInstall != "" {
-		if err := installPort(portToInstall); err != nil {
-			return err
-		}
-	} else {
-		// Verify dependencies.
-		for _, item := range p.Packages {
-			if err := installPort(item); err != nil {
-				return err
-			}
-		}
-	}
 
 	return nil
 }

@@ -76,14 +76,14 @@ func (t Tool) CheckAndRepair(args VerifyArgs) error {
 		folderName = io.FileBaseName(t.ArchiveName)
 	}
 
-	extractPath := filepath.Join(Dirs.ExtractedToolsDir, folderName)
+	extractedPath := filepath.Join(Dirs.ExtractedToolsDir, folderName)
 
 	// Check if tool exists.
 	if io.PathExists(t.fullpath) {
 		// No need to show rootfs state info when install a port.
 		if args.PortToInstall() == "" && !args.Silent() {
-			fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Tool: %s\nLocation: %s\n\n",
-				io.FileBaseName(t.Url), extractPath))
+			title := color.Sprintf(color.Green, "[✔] ---- Tool: %s\n", io.FileBaseName(t.Url))
+			fmt.Printf("%sLocation: %s\n\n", title, extractedPath)
 		}
 		return nil
 	}
@@ -127,14 +127,14 @@ func (t Tool) CheckAndRepair(args VerifyArgs) error {
 	}
 
 	// Check if has nested folder (handling case where there's an extra nested folder).
-	if err := io.MoveNestedFolderIfExist(extractPath); err != nil {
+	if err := io.MoveNestedFolderIfExist(extractedPath); err != nil {
 		return fmt.Errorf("%s: failed to move nested folder: %w", archiveName, err)
 	}
 
 	// Print download & extract info.
 	if !args.Silent() {
-		fmt.Print(color.Sprintf(color.Blue, "[✔] -------- Tool: %s\nLocation: %s\n\n",
-			io.FileBaseName(t.Url), extractPath))
+		title := color.Sprintf(color.Green, "[✔] ---- Tool: %s\n", io.FileBaseName(t.Url))
+		fmt.Printf("%sLocation: %s\n\n", title, extractedPath)
 	}
 	return nil
 }

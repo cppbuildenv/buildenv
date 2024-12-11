@@ -10,7 +10,7 @@ var (
 	currentMode mode
 )
 
-func CreateMainModel(callabcks config.PlatformCallbacks) MainModel {
+func CreateMainModel(callabcks config.BuildEnvCallbacks) MainModel {
 	return MainModel{
 		menuMode: createMenuModel(func(mode mode) {
 			currentMode = mode
@@ -23,6 +23,13 @@ func CreateMainModel(callabcks config.PlatformCallbacks) MainModel {
 			currentMode = modeMenu
 		}),
 		platformSelectModel: newPlatformSelectModel(callabcks, func() {
+			currentMode = modeMenu
+		}),
+		projectCreateModel: newProjectCreateModel(callabcks, func(this *projectCreateModel) {
+			this.Reset()
+			currentMode = modeMenu
+		}),
+		projectSelectModel: newProjectSelectModel(callabcks, func() {
 			currentMode = modeMenu
 		}),
 		integrateModel: newIntegrateModel(func() {
@@ -39,6 +46,8 @@ type MainModel struct {
 	syncModel           tea.Model
 	platformCreateModel tea.Model
 	platformSelectModel tea.Model
+	projectCreateModel  tea.Model
+	projectSelectModel  tea.Model
 	integrateModel      tea.Model
 	aboutModel          tea.Model
 }
@@ -71,6 +80,16 @@ func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.platformSelectModel = model
 			return m, cmd
 
+		case modeProjectCreate:
+			model, cmd := m.projectCreateModel.Update(msg)
+			m.projectCreateModel = model
+			return m, cmd
+
+		case modeProjectSelect:
+			model, cmd := m.projectSelectModel.Update(msg)
+			m.projectSelectModel = model
+			return m, cmd
+
 		case modelIntegrate:
 			model, cmd := m.integrateModel.Update(msg)
 			m.integrateModel = model
@@ -99,6 +118,12 @@ func (m MainModel) View() string {
 
 	case modePlatformSelect:
 		return m.platformSelectModel.View()
+
+	case modeProjectCreate:
+		return m.projectCreateModel.View()
+
+	case modeProjectSelect:
+		return m.projectSelectModel.View()
 
 	case modelIntegrate:
 		return m.integrateModel.View()

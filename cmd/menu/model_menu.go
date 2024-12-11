@@ -7,9 +7,11 @@ import (
 
 const (
 	menuSyncConfig     string = "Init or sync buildenv's config repo."
-	menuCreatePlatform string = "Create a new platform, but need config it later."
-	menuSelectPlatform string = "Select a platform as your project's cross build env."
-	menuIntegrate      string = "Integrate buildenv, then you can run buildenv everywhere."
+	menuPlatformCreate string = "Create a new platform."
+	menuPlatformSelect string = "Select your current platform."
+	menuProjectCreate  string = "Create a new project."
+	menuProjectSelect  string = "Select your current project."
+	menuIntegrate      string = "Integrate buildenv, then you can run it everywhere."
 	menuUsage          string = "About and usage."
 )
 
@@ -20,21 +22,25 @@ const (
 	modeSyncConfig
 	modePlatformCreate
 	modePlatformSelect
+	modeProjectCreate
+	modeProjectSelect
 	modelIntegrate
 	modeAbout
 )
 
 var menus = []string{
 	menuSyncConfig,
-	menuCreatePlatform,
-	menuSelectPlatform,
+	menuPlatformCreate,
+	menuPlatformSelect,
+	menuProjectCreate,
+	menuProjectSelect,
 	menuIntegrate,
 	menuUsage,
 }
 
 func createMenuModel(modeChanged func(mode mode)) menuModel {
 	const defaultWidth = 100
-	const defaultHeight = 12
+	const defaultHeight = 15
 
 	var items []list.Item
 	for _, menu := range menus {
@@ -83,11 +89,17 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if i, ok := m.list.SelectedItem().(listItem); ok {
 				if m.modeChanged != nil {
 					switch string(i) {
-					case menuSelectPlatform:
+					case menuPlatformSelect:
 						m.modeChanged(modePlatformSelect)
 
-					case menuCreatePlatform:
+					case menuPlatformCreate:
 						m.modeChanged(modePlatformCreate)
+
+					case menuProjectSelect:
+						m.modeChanged(modeProjectSelect)
+
+					case menuProjectCreate:
+						m.modeChanged(modeProjectCreate)
 
 					case menuSyncConfig:
 						m.modeChanged(modeSyncConfig)

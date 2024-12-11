@@ -8,14 +8,14 @@ import (
 
 var Version string // for example: `1.0.0`
 
-func newAboutCmd(callbacks config.PlatformCallbacks) *aboutCmd {
+func newAboutCmd(callbacks config.BuildEnvCallbacks) *aboutCmd {
 	return &aboutCmd{
 		callbacks: callbacks,
 	}
 }
 
 type aboutCmd struct {
-	callbacks config.PlatformCallbacks
+	callbacks config.BuildEnvCallbacks
 	about     bool
 }
 

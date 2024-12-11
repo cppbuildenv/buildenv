@@ -10,20 +10,20 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func newPlatformSelectModel(callbacks config.BuildEnvCallbacks, goback func()) *platformSelectModel {
+func newProjectSelectModel(callbacks config.BuildEnvCallbacks, goback func()) *projectSelectModel {
 	const defaultWidth = 80
 	const defaultHeight = 10
 
-	// Create platform dir if not exists.
-	if err := os.MkdirAll(config.Dirs.PlatformDir, 0755); err != nil {
-		fmt.Println("Error creating platform dir:", err)
+	// Create projects dir if not exists.
+	if err := os.MkdirAll(config.Dirs.ProjectDir, 0755); err != nil {
+		fmt.Println("Error creating projects dir:", err)
 		os.Exit(1)
 	}
 
-	// List all entities in platform dir.
-	entities, err := os.ReadDir(config.Dirs.PlatformDir)
+	// List all entities in project dir.
+	entities, err := os.ReadDir(config.Dirs.ProjectDir)
 	if err != nil {
-		fmt.Println("Error reading platform dir:", err)
+		fmt.Println("Error reading projects dir:", err)
 		os.Exit(1)
 	}
 
@@ -31,13 +31,13 @@ func newPlatformSelectModel(callbacks config.BuildEnvCallbacks, goback func()) *
 	var items []list.Item
 	for _, entity := range entities {
 		if !entity.IsDir() && strings.HasSuffix(entity.Name(), ".json") {
-			platformName := strings.TrimSuffix(entity.Name(), ".json")
-			items = append(items, listItem(platformName))
+			projectName := strings.TrimSuffix(entity.Name(), ".json")
+			items = append(items, listItem(projectName))
 		}
 	}
 
 	l := list.New(items, listDelegate{styleImpl}, defaultWidth, defaultHeight)
-	l.Title = "Select your current platform:"
+	l.Title = "Select your current project:"
 
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
@@ -46,7 +46,7 @@ func newPlatformSelectModel(callbacks config.BuildEnvCallbacks, goback func()) *
 	l.Styles.PaginationStyle = styleImpl.paginationStyle
 	l.Styles.HelpStyle = styleImpl.helpStyle
 
-	return &platformSelectModel{
+	return &projectSelectModel{
 		list:      l,
 		styles:    styleImpl,
 		callbacks: callbacks,
@@ -54,7 +54,7 @@ func newPlatformSelectModel(callbacks config.BuildEnvCallbacks, goback func()) *
 	}
 }
 
-type platformSelectModel struct {
+type projectSelectModel struct {
 	list        list.Model
 	trySelected string
 	selected    string
@@ -64,11 +64,11 @@ type platformSelectModel struct {
 	goback      func()
 }
 
-func (p platformSelectModel) Init() tea.Cmd {
+func (p projectSelectModel) Init() tea.Cmd {
 	return nil
 }
 
-func (p platformSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (p projectSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		p.list.SetWidth(msg.Width)
@@ -79,7 +79,7 @@ func (p platformSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			if i, ok := p.list.SelectedItem().(listItem); ok {
 				p.trySelected = string(i)
-				if err := p.callbacks.OnSelectPlatform(string(i)); err != nil {
+				if err := p.callbacks.OnSelectProject(string(i)); err != nil {
 					p.err = err
 				} else {
 					p.selected = string(i)
@@ -105,13 +105,13 @@ func (p platformSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return p, cmd
 }
 
-func (p platformSelectModel) View() string {
+func (p projectSelectModel) View() string {
 	if p.err != nil {
-		return config.PlatformSelectedFailed(p.trySelected, p.err)
+		return config.ProjectSelectedFailed(p.trySelected, p.err)
 	}
 
 	if p.selected != "" {
-		return config.PlatformSelected(p.selected)
+		return config.ProjectSelected(p.selected)
 	}
 
 	return "\n" + p.list.View()

@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-func newSelectPlatformCmd(callbacks config.PlatformCallbacks) *selectPlatformCmd {
+func newSelectPlatformCmd(callbacks config.BuildEnvCallbacks) *selectPlatformCmd {
 	return &selectPlatformCmd{
 		callbacks: callbacks,
 	}
@@ -14,7 +14,7 @@ func newSelectPlatformCmd(callbacks config.PlatformCallbacks) *selectPlatformCmd
 
 type selectPlatformCmd struct {
 	platformName string
-	callbacks    config.PlatformCallbacks
+	callbacks    config.BuildEnvCallbacks
 }
 
 func (s *selectPlatformCmd) register() {

@@ -14,6 +14,7 @@ type dirs struct {
 	ExtractedToolsDir string // absolute path of "downloaded/tools"
 	InstalledRootDir  string // absolute path of "installed"
 	PlatformDir       string // absolute path of "conf/platforms"
+	ProjectDir        string // absolute path of "conf/projects"
 	ToolDir           string // absolute path of "conf/tools"
 	PortDir           string // absolute path of "conf/ports"
 }
@@ -29,6 +30,7 @@ func newDirs() *dirs {
 	// Set default paths.
 	dirs.WorkspaceDir = currentDir
 	dirs.PlatformDir = filepath.Join(dirs.WorkspaceDir, "conf", "platforms")
+	dirs.ProjectDir = filepath.Join(dirs.WorkspaceDir, "conf", "projects")
 	dirs.DownloadRootDir = filepath.Join(dirs.WorkspaceDir, "downloads")
 	dirs.ExtractedToolsDir = filepath.Join(dirs.WorkspaceDir, "downloads", "tools")
 	dirs.InstalledRootDir = filepath.Join(dirs.WorkspaceDir, "installed")
