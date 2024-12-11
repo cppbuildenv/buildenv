@@ -59,8 +59,8 @@ func newMenuModel(callabcks config.BuildEnvCallbacks) *menuModel {
 
 	// init models
 	menuModel.models[menuSync] = newSyncModel()
-	menuModel.models[menuPlatformCreate] = newPlatformSelectModel(callabcks)
-	menuModel.models[menuPlatformSelect] = newPlatformCreateModel(callabcks)
+	menuModel.models[menuPlatformCreate] = newPlatformCreateModel(callabcks)
+	menuModel.models[menuPlatformSelect] = newPlatformSelectModel(callabcks)
 	menuModel.models[menuProjectCreate] = newProjectCreateModel(callabcks)
 	menuModel.models[menuProjectSelect] = newProjectSelectModel(callabcks)
 	menuModel.models[menuIntegrate] = newIntegrateModel()

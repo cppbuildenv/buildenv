@@ -139,7 +139,8 @@ func (p Platform) Verify(args VerifyArgs) error {
 
 	// Append $PKG_CONFIG_PATH with pkgconfig path that in installed dir.
 	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.platformName+"-"+args.BuildType())
-	os.Setenv("PKG_CONFIG_PATH", fmt.Sprintf("%s/lib/pkgconfig:%s", installedDir, os.Getenv("PKG_CONFIG_PATH")))
+	os.Setenv("PKG_CONFIG_PATH", fmt.Sprintf("%s/lib/pkgconfig%s%s",
+		installedDir, string(os.PathListSeparator), os.Getenv("PKG_CONFIG_PATH")))
 
 	return nil
 }

@@ -47,6 +47,7 @@ func (r *RootFS) Verify() error {
 	// This is for cross-compile other ports by buildenv.
 	os.Setenv("SYSROOT", r.fullpath)
 	os.Setenv("PKG_CONFIG_SYSROOT_DIR", r.fullpath)
+	os.Setenv("PATH", r.fullpath+string(os.PathListSeparator)+os.Getenv("PATH"))
 
 	// Verify pkg_config_path and convert to absolute path.
 	if len(r.PkgConfigPath) > 0 {
@@ -56,7 +57,7 @@ func (r *RootFS) Verify() error {
 		}
 
 		// This is for cross-compile other ports by buildenv.
-		os.Setenv("PKG_CONFIG_PATH", strings.Join(paths, ":"))
+		os.Setenv("PKG_CONFIG_PATH", strings.Join(paths, string(os.PathListSeparator)))
 	}
 
 	return nil
@@ -173,12 +174,6 @@ func (r RootFS) generate(toolchain, environment *strings.Builder) error {
 			environment.WriteString("\n")
 		}
 	}
-
-	// Set the environment variables.
-	os.Setenv("SYSROOT", r.fullpath)
-	os.Setenv("PKG_CONFIG_SYSROOT_DIR", r.fullpath)
-	os.Setenv("PKG_CONFIG_PATH", strings.Join(r.PkgConfigPath, ":"))
-	os.Setenv("PATH", fmt.Sprintf("%s%c%s", r.fullpath, os.PathListSeparator, os.Getenv("PATH")))
 
 	return nil
 }
