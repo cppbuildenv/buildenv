@@ -4,64 +4,64 @@ import "buildenv/pkg/color"
 
 func SyncSuccess(repoUrlInside bool) string {
 	if repoUrlInside {
-		return color.Sprintf(color.Magenta, "[✔] ======== conf repo is synchronized ========\n")
+		return color.Sprintf(color.Magenta, "\n[✔] ======== conf repo is synchronized ========\n\n")
 	} else {
-		return color.Sprintf(color.Magenta, "[✔] ======== buildenv.json is created but need to config it later ========\n")
+		return color.Sprintf(color.Magenta, "\n[✔] ======== buildenv.json is created but need to config it later ========\n\n")
 	}
 }
 
 func SyncFailed(err error) string {
-	return color.Sprintf(color.Red, "[✘] buildenv.json is invalid.\n[☛] %s.\n", err)
+	return color.Sprintf(color.Red, "\n[✘] buildenv.json is invalid.\n[☛] %s.\n\n", err)
 }
 
 func PlatformCreated(platform string) string {
-	return color.Sprintf(color.Magenta, "[✔] ======== %s is created but need to config it later ========\n", platform)
+	return color.Sprintf(color.Magenta, "\n[✔] ======== %s is created but need to config it later ========\n\n", platform)
 }
 
 func PlatformCreateFailed(platform string, err error) string {
-	return color.Sprintf(color.Red, "[✘] %s could not be created.\n[☛] %s.\n", platform, err)
+	return color.Sprintf(color.Red, "\n[✘] %s could not be created.\n[☛] %s.\n\n", platform, err)
 }
 
 func PlatformSelected(platform string) string {
-	return color.Sprintf(color.Magenta, "[✔] ======== current platform: %s ========\n", platform)
+	return color.Sprintf(color.Magenta, "\n[✔] ======== current platform: %s ========\n\n", platform)
 }
 
 func PlatformSelectedFailed(platform string, err error) string {
 	if platform == "" {
-		return color.Sprintf(color.Red, "[✘] %s.\n", err)
+		return color.Sprintf(color.Red, "\n[✘] %s.\n\n", err)
 	} else {
-		return color.Sprintf(color.Red, "[✘] %s is broken.\n[☛] %s.\n", platform, err)
+		return color.Sprintf(color.Red, "\n[✘] %s is broken.\n[☛] %s.\n\n", platform, err)
 	}
 }
 
 func ProjectCreated(project string) string {
-	return color.Sprintf(color.Magenta, "[✔] ======== %s is created but need to config it later ========", project)
+	return color.Sprintf(color.Magenta, "\n[✔] ======== %s is created but need to config it later ========\n\n", project)
 }
 
 func ProjectCreateFailed(project string, err error) string {
-	return color.Sprintf(color.Red, "[✘] %s could not be created.\n[☛] %s.\n", project, err)
+	return color.Sprintf(color.Red, "\n[✘] %s could not be created.\n[☛] %s.\n\n", project, err)
 }
 
 func ProjectSelected(project string) string {
-	return color.Sprintf(color.Magenta, "[✔] ======== build environment is ready for project: %s ========\n", project)
+	return color.Sprintf(color.Magenta, "\n[✔] ======== build environment is ready for project: %s ========\n\n", project)
 }
 
 func ProjectSelectedFailed(platform string, err error) string {
 	if platform == "" {
-		return color.Sprintf(color.Red, "[✘] %s.\n", err)
+		return color.Sprintf(color.Red, "\n[✘] %s.\n\n", err)
 	} else {
-		return color.Sprintf(color.Red, "[✘] %s is broken.\n[☛] %s.\n", platform, err)
+		return color.Sprintf(color.Red, "\n[✘] %s is broken.\n[☛] %s.\n\n", platform, err)
 	}
 }
 
 func IntegrateSuccess() string {
-	return color.Sprintf(color.Magenta, "[✔] ======== buildenv is integrated ========\n")
+	return color.Sprintf(color.Magenta, "\n[✔] ======== buildenv is integrated ========\n\n")
 }
 
 func IntegrateFailed(err error) string {
-	return color.Sprintf(color.Red, "[✘] buildenv integrate failed.\n[☛] %s.\n", err)
+	return color.Sprintf(color.Red, "\n[✘] buildenv integrate failed.\n[☛] %s.\n\n", err)
 }
 
 func InstallFailed(port string, err error) string {
-	return color.Sprintf(color.Red, "[✘] %s install failed.\n[☛] %s.\n", port, err)
+	return color.Sprintf(color.Red, "\n[✘] %s install failed.\n[☛] %s.\n\n", port, err)
 }

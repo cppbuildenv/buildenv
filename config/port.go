@@ -135,8 +135,8 @@ func (p Port) CheckAndRepair(args VerifyArgs) error {
 	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.ctx.Platform()+"-"+p.ctx.BuildType())
 	if p.Installed() {
 		if !args.Silent() {
-			title := color.Sprintf(color.Green, "[✔] ---- Port: %s\n", p.fullName)
-			fmt.Printf("%sLocation: %s\n\n", title, installedDir)
+			title := color.Sprintf(color.Green, "\n[✔] ---- Port: %s\n", p.fullName)
+			fmt.Printf("%sLocation: %s\n", title, installedDir)
 		}
 		return nil
 	}
@@ -200,8 +200,8 @@ func (p Port) CheckAndRepair(args VerifyArgs) error {
 	}
 
 	if !args.Silent() {
-		title := color.Sprintf(color.Green, "[✔] ---- Port: %s\n", p.fullName)
-		fmt.Printf("%sLocation: %s\n\n", title, installedDir)
+		title := color.Sprintf(color.Green, "\n[✔] ---- Port: %s\n", p.fullName)
+		fmt.Printf("%sLocation: %s\n", title, installedDir)
 	}
 	return nil
 }

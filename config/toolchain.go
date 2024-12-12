@@ -120,8 +120,8 @@ func (t Toolchain) CheckAndRepair(args VerifyArgs) error {
 	if io.PathExists(t.fullpath) {
 		// No need to show toolchain state info when install a port.
 		if args.PortToInstall() == "" && !args.Silent() {
-			title := color.Sprintf(color.Green, "[✔] ---- Toolchain: %s\n", io.FileBaseName(t.Url))
-			fmt.Printf("%sLocation: %s\n\n", title, extractedPath)
+			title := color.Sprintf(color.Green, "\n[✔] ---- Toolchain: %s\n", io.FileBaseName(t.Url))
+			fmt.Printf("%sLocation: %s\n", title, extractedPath)
 		}
 
 		return nil
@@ -172,8 +172,8 @@ func (t Toolchain) CheckAndRepair(args VerifyArgs) error {
 
 	// Print download & extract info.
 	if !args.Silent() {
-		title := color.Sprintf(color.Green, "[✔] ---- Toolchain: %s\n", io.FileBaseName(t.Url))
-		fmt.Printf("%sLocation: %s\n\n", title, extractedPath)
+		title := color.Sprintf(color.Green, "\n[✔] ---- Toolchain: %s\n", io.FileBaseName(t.Url))
+		fmt.Printf("%sLocation: %s\n", title, extractedPath)
 	}
 	return nil
 }
