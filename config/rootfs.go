@@ -11,20 +11,13 @@ import (
 )
 
 type RootFS struct {
-	Url           string   `json:"url"`                    // Download url.
-	ArchiveName   string   `json:"archive_name,omitempty"` // Archive name can be changed to avoid conflict.
-	Path          string   `json:"path"`                   // Runtime path of tool, it's relative path  and would be converted to absolute path later.
-	PkgConfigPath []string `json:"pkg_config_path"`        // Pkg config path, default will be `usr/lib/pkgconfig`
+	Url         string `json:"url"`                    // Download url.
+	ArchiveName string `json:"archive_name,omitempty"` // Archive name can be changed to avoid conflict.
+	Path        string `json:"path"`                   // Runtime path of tool, it's relative path  and would be converted to absolute path later.
 
 	// Internal fields.
 	fullpath  string `json:"-"`
 	cmakepath string `json:"-"`
-}
-
-type RootFSEnv struct {
-	SYSROOT                string   `json:"SYSROOT"`
-	PKG_CONFIG_SYSROOT_DIR string   `json:"PKG_CONFIG_SYSROOT_DIR"`
-	PKG_CONFIG_PATH        []string `json:"PKG_CONFIG_PATH"`
 }
 
 func (r *RootFS) Verify() error {
@@ -44,22 +37,7 @@ func (r *RootFS) Verify() error {
 	r.fullpath = filepath.Join(Dirs.ExtractedToolsDir, r.Path)
 	r.cmakepath = fmt.Sprintf("${BUILDENV_ROOT_DIR}/downloads/tools/%s", r.Path)
 
-	// This is for cross-compile other ports by buildenv.
 	os.Setenv("SYSROOT", r.fullpath)
-	os.Setenv("PKG_CONFIG_SYSROOT_DIR", r.fullpath)
-	os.Setenv("PATH", r.fullpath+string(os.PathListSeparator)+os.Getenv("PATH"))
-
-	// Verify pkg_config_path and convert to absolute path.
-	if len(r.PkgConfigPath) > 0 {
-		var paths []string
-		for _, itemPath := range r.PkgConfigPath {
-			paths = append(paths, filepath.Join(r.fullpath, itemPath))
-		}
-
-		// This is for cross-compile other ports by buildenv.
-		os.Setenv("PKG_CONFIG_PATH", strings.Join(paths, string(os.PathListSeparator)))
-	}
-
 	return nil
 }
 
@@ -155,25 +133,11 @@ func (r RootFS) generate(toolchain, environment *strings.Builder) error {
 	toolchain.WriteString("\n# Set pkg-config path for cross-compile.\n")
 	toolchain.WriteString("set(ENV{PKG_CONFIG_SYSROOT_DIR} \"${CMAKE_SYSROOT}\")\n")
 
-	// Replace the path with the workspace directory.
-	for _, path := range r.PkgConfigPath {
-		toolchain.WriteString(fmt.Sprintf("set(ENV{PKG_CONFIG_PATH} \"${CMAKE_SYSROOT}/%s%s$ENV{PKG_CONFIG_PATH}\")\n", path, string(os.PathListSeparator)))
-	}
-
 	// Write variables to buildenv.sh
 	environment.WriteString("\n# Set rootfs for cross compile.\n")
 	environment.WriteString(fmt.Sprintf("export SYSROOT=%s\n", r.cmakepath))
 	environment.WriteString(fmt.Sprintf("export PATH=%s\n", env.Join("${SYSROOT}", "${PATH}")))
 	environment.WriteString("export PKG_CONFIG_SYSROOT_DIR=${SYSROOT}\n")
-
-	for index, path := range r.PkgConfigPath {
-		fullpath := filepath.Join("${SYSROOT}", path)
-		environment.WriteString(fmt.Sprintf("export PKG_CONFIG_PATH=%s\n", env.Join(fullpath, "${PKG_CONFIG_PATH}")))
-
-		if index == len(r.PkgConfigPath)-1 {
-			environment.WriteString("\n")
-		}
-	}
 
 	return nil
 }

@@ -48,7 +48,7 @@ func (m make) Configure(buildType string) error {
 	// Assemble script.
 	m.Arguments = append(m.Arguments, fmt.Sprintf("--prefix=%s", m.InstalledDir))
 
-	// Assemble args into a string.
+	// Join args into a string.
 	joinedArgs := strings.Join(m.Arguments, " ")
 	configure := fmt.Sprintf("%s/configure %s", m.SourceDir, joinedArgs)
 

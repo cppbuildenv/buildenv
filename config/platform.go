@@ -63,9 +63,6 @@ func (p Platform) Write(platformPath string) error {
 	p.RootFS = new(RootFS)
 	p.Toolchain = new(Toolchain)
 
-	if len(p.RootFS.PkgConfigPath) == 0 {
-		p.RootFS.PkgConfigPath = []string{}
-	}
 	if len(p.Tools) == 0 {
 		p.Tools = []string{}
 	}
@@ -134,13 +131,12 @@ func (p Platform) Verify(args VerifyArgs) error {
 			return fmt.Errorf("cannot get absolute path of tool path: %s", tool.Path)
 		}
 
-		os.Setenv("PATH", fmt.Sprintf("%s%c%s", absToolPath, os.PathListSeparator, os.Getenv("PATH")))
+		os.Setenv("PATH", absToolPath+string(os.PathListSeparator)+os.Getenv("PATH"))
 	}
 
 	// Append $PKG_CONFIG_PATH with pkgconfig path that in installed dir.
 	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.platformName+"-"+args.BuildType())
-	os.Setenv("PKG_CONFIG_PATH", fmt.Sprintf("%s/lib/pkgconfig%s%s",
-		installedDir, string(os.PathListSeparator), os.Getenv("PKG_CONFIG_PATH")))
+	os.Setenv("PKG_CONFIG_PATH", installedDir+"/lib/pkgconfig"+string(os.PathListSeparator)+os.Getenv("PKG_CONFIG_PATH"))
 
 	return nil
 }

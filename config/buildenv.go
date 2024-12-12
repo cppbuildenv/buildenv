@@ -201,10 +201,10 @@ func (b buildenv) execute(command string) (string, error) {
 	}
 
 	var buffer bytes.Buffer
-
 	cmd.Stdout = &buffer
 	cmd.Stderr = &buffer
 
+	cmd.Env = os.Environ()
 	if err := cmd.Run(); err != nil {
 		return "", err
 	}

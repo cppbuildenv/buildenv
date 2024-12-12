@@ -6,25 +6,25 @@ platform添加native的支持  | ✔
 提供silent cli参数，用于在toolchain调用buildenv时候不输出过程信息  | ✔
 cli未提供create_platform的支持  | ✔
 go内部拼装PATH环境路径，估计是有问题的，可能不该这么用  | ✔
-支持 buildenv -upgrade 升级  | ✘
 toolchain里定义CC和CXX时候后面拼上 "--sysroot=xxx"  | ✔
-运行tools需要将内部lib路径加入到LD_LIBRARY_PATH  | ✘
 三方库如果编译后产生pkg-config文件，需要加入系统变量（ffmpeg在通过pkg-config寻找libx265）  | ✔
-cli里添加命令：编译指定的某个port，最好以列表方式呈现，让用户选择  | ✘
-有的toolchain或者tool不是绿色版，不能托管到buildenv里，需要绝对路径指向  | ✘
 path不存在，应该先尝试用下载后的文件解压，而不是直接重复下载，重新下载的前提是md5等校验没通过  | ✔
 每个installed的库添加platform目录，目的是为了支持不同平台的库共存  | ✔
 执行-verify打印所有已经准备好的tool和已经安装的port  | ✔
-makefile编译前不支持配置环境变量，例如：export CFLAGS="-mfpu=neon"  | ✘
 环境变量用os.PathListSeparator拼接  | ✔
-添加-build参数，用于指定三方库的编译  | ✘
 将download的资源统一解压到内部的tools目录  | ✔
-完事动态生成的cmake config文件（静态库还没支持）| ✘
+拓展project，将packages的配置文件放到project目录下  | ✔
+menu cli的实现可以考虑用面向对象思维简化  | ✔
+git在下载代码时候没有过程log  | ✔
+添加-install参数，用于指定三方库的编译  | ✔
+运行tools需要将内部lib路径加入到LD_LIBRARY_PATH  | ✘
+支持 buildenv -upgrade 升级  | ✘
+cli里添加命令：编译指定的某个port，最好以列表方式呈现，让用户选择  | ✘
+有的toolchain或者tool不是绿色版，不能托管到buildenv里，需要绝对路径指向  | ✘
+makefile编译前不支持配置环境变量，例如：export CFLAGS="-mfpu=neon"  | ✘
+动态生成的cmake config文件（windows还没测试）| ✘
 支持windows下工作  | ✘
 支持uninstall功能  | ✘
-拓展project，将packages的配置文件放到project目录下  | ✔
 makefile的安装路径和依赖寻找路径应该自动管理 | ✘
 git 同步代码需要优化  | ✘
-menu cli的实现可以考虑用面向对象思维简化  | ✔
 支持编译库为native的  | ✘
-git在下载代码时候没有过程log  | ✘

@@ -59,7 +59,7 @@ func (t *Tool) Verify() error {
 	t.cmakepath = fmt.Sprintf("${BUILDENV_ROOT_DIR}/downloads/tools/%s", t.Path)
 
 	// This is used to cross-compile other ports by buildenv.
-	os.Setenv("PATH", fmt.Sprintf("%s:%s", t.fullpath, os.Getenv("PATH")))
+	os.Setenv("PATH", t.fullpath+string(os.PathListSeparator)+os.Getenv("PATH"))
 
 	return nil
 }

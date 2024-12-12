@@ -47,6 +47,7 @@ func Extract(archiveFile, destDir string) error {
 		cmd = exec.Command("bash", "-c", command)
 	}
 
+	cmd.Env = os.Environ()
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to extract: %w", err)
 	}
