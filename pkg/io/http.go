@@ -3,17 +3,25 @@ package io
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 )
 
 // CheckAvailable checks if the given URL is accessible.
-func CheckAvailable(url string) error {
+func CheckAvailable(filePath string) error {
+	if strings.HasPrefix(filePath, "file:///") {
+		filePath = strings.TrimPrefix(filePath, "file:///")
+		if !PathExists(filePath) {
+			return fmt.Errorf("file not exists: %s", filePath)
+		}
+	}
+
 	client := http.Client{
 		Timeout: 2 * time.Second,
 	}
 
 	// Check URL availability using HEAD request.
-	resp, err := client.Head(url)
+	resp, err := client.Head(filePath)
 	if err != nil {
 		return err
 	}

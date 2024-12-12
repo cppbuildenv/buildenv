@@ -28,25 +28,27 @@ func (m make) Configure(buildType string) error {
 		return err
 	}
 
+	var (
+		crossPrefix = os.Getenv("CROSS_PREFIX")
+		sysroot     = os.Getenv("SYSROOT")
+		host        = os.Getenv("HOST")
+	)
+
+	// Append common variables for cross compiling.
+	m.Arguments = append(m.Arguments, fmt.Sprintf("--prefix=%s", m.InstalledDir))
+	m.Arguments = append(m.Arguments, fmt.Sprintf("--sysroot=%s", sysroot))
+	m.Arguments = append(m.Arguments, fmt.Sprintf("--cross-prefix=%s", crossPrefix))
+
 	// Replace placeholders with real paths.
 	for index, argument := range m.Arguments {
 		if strings.Contains(argument, "${INSTALLED_DIR}") {
 			m.Arguments[index] = strings.ReplaceAll(argument, "${INSTALLED_DIR}", m.InstalledDir)
 		}
 
-		if strings.Contains(argument, "${TOOLCHAIN_PREFIX}") {
-			toolchainPrefix := os.Getenv("TOOLCHAIN_PREFIX")
-			m.Arguments[index] = strings.ReplaceAll(argument, "${TOOLCHAIN_PREFIX}", toolchainPrefix)
-		}
-
-		if strings.Contains(argument, "${SYSROOT}") {
-			sysroot := os.Getenv("SYSROOT")
-			m.Arguments[index] = strings.ReplaceAll(argument, "${SYSROOT}", sysroot)
+		if strings.Contains(argument, "${HOST}") {
+			m.Arguments[index] = strings.ReplaceAll(argument, "${HOST}", host)
 		}
 	}
-
-	// Assemble script.
-	m.Arguments = append(m.Arguments, fmt.Sprintf("--prefix=%s", m.InstalledDir))
 
 	// Join args into a string.
 	joinedArgs := strings.Join(m.Arguments, " ")

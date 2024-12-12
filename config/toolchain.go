@@ -11,12 +11,13 @@ import (
 )
 
 type Toolchain struct {
-	Url             string `json:"url"`                    // Download url.
+	Url             string `json:"url"`                    // Download url or local file url.
 	ArchiveName     string `json:"archive_name,omitempty"` // Archive name can be changed to avoid conflict.
-	Path            string `json:"path"`                   // Runtime path of tool, it's relative path  and would be converted to absolute path later.
-	SystemName      string `json:"system_name"`            // System name, it will be used to generate toolchain file.
-	SystemProcessor string `json:"system_processor"`       // System processor, it will be used to generate toolchain file.
-	ToolchainPrefix string `json:"toolchain_prefix"`       // It'll be joined with toolchain path to generate toolchain file.
+	Path            string `json:"path"`                   // Runtime path of tool, it's relative path and would be converted to absolute path later.
+	SystemName      string `json:"system_name"`            // It would be "Windows", "Linux", "Android" and so on.
+	SystemProcessor string `json:"system_processor"`       // It would be "x86_64", "aarch64" and so on.
+	Host            string `json:"host"`                   // It would be "x86_64-linux-gnu", "aarch64-linux-gnu" and so on.
+	CrossPrefix     string `json:"cross_prefix"`           // It would be like "x86_64-linux-gnu-"
 	CC              string `json:"cc"`
 	CXX             string `json:"cxx"`
 	FC              string `json:"fc"`
@@ -35,7 +36,7 @@ type Toolchain struct {
 func (t *Toolchain) Verify() error {
 	// Verify toolchain download url.
 	if t.Url == "" {
-		return fmt.Errorf("toolchain.url is empty")
+		return fmt.Errorf("toolchain.url would be http url or local file url, but it's empty")
 	}
 	if err := io.CheckAvailable(t.Url); err != nil {
 		return fmt.Errorf("toolchain.url of %s is not accessible", t.Url)
@@ -49,9 +50,6 @@ func (t *Toolchain) Verify() error {
 	t.fullpath = filepath.Join(Dirs.ExtractedToolsDir, t.Path)
 	t.cmakepath = fmt.Sprintf("${BUILDENV_ROOT_DIR}/downloads/tools/%s", t.Path)
 
-	// This is used to cross-compile other ports by buildenv.
-	os.Setenv("PATH", t.fullpath+string(os.PathListSeparator)+os.Getenv("PATH"))
-
 	if t.SystemName == "" {
 		return fmt.Errorf("toolchain.system_name is empty")
 	}
@@ -61,10 +59,13 @@ func (t *Toolchain) Verify() error {
 	}
 
 	// Verify toolchain prefix path and convert to absolute path.
-	if t.ToolchainPrefix == "" {
-		return fmt.Errorf("toolchain.toolchain_prefix is empty")
+	if t.CrossPrefix == "" {
+		return fmt.Errorf("toolchain.toolchain_prefix should be like 'x86_64-linux-gnu-', but it's empty")
 	}
-	t.ToolchainPrefix = filepath.Join(t.fullpath, t.ToolchainPrefix)
+
+	if t.Host == "" {
+		return fmt.Errorf("toolchain.host should be like 'x86_64-linux-gnu', but it's empty")
+	}
 
 	if t.CC == "" {
 		return fmt.Errorf("toolchain.cc is empty")
@@ -74,10 +75,6 @@ func (t *Toolchain) Verify() error {
 		return fmt.Errorf("toolchain.cxx is empty")
 	}
 
-	// This is used to cross-compile other ports by buildenv.
-	os.Setenv("TOOLCHAIN_PREFIX", t.ToolchainPrefix)
-	os.Setenv("CC", t.CC)
-	os.Setenv("CXX", t.CXX)
 	if t.FC != "" {
 		os.Setenv("FC", t.FC)
 	}
@@ -99,6 +96,13 @@ func (t *Toolchain) Verify() error {
 	if t.STRIP != "" {
 		os.Setenv("STRIP", t.STRIP)
 	}
+
+	// This is used to cross-compile other ports by buildenv.
+	os.Setenv("PATH", t.fullpath+string(os.PathListSeparator)+os.Getenv("PATH"))
+	os.Setenv("CROSS_PREFIX", t.CrossPrefix)
+	os.Setenv("HOST", t.Host)
+	os.Setenv("CC", t.CC)
+	os.Setenv("CXX", t.CXX)
 
 	return nil
 }
