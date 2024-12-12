@@ -192,10 +192,11 @@ func (t Toolchain) generate(toolchain, environment *strings.Builder) error {
 		}
 	}
 
-	environment.WriteString("# Set toolchain for cross compile.\n")
+	environment.WriteString("\n# Set toolchain for cross compile.\n")
 	environment.WriteString(fmt.Sprintf("export TOOLCHAIN_PATH=%s\n", t.cmakepath))
 	environment.WriteString(fmt.Sprintf("export PATH=%s\n\n", env.Join("${TOOLCHAIN_PATH}", "${PATH}")))
 
+	environment.WriteString("# Set cross compile tools.\n")
 	writeIfNotEmpty("CMAKE_C_COMPILER 		", "CC", t.CC)
 	writeIfNotEmpty("CMAKE_CXX_COMPILER		", "CXX", t.CXX)
 	writeIfNotEmpty("CMAKE_Fortran_COMPILER	", "FC", t.FC)

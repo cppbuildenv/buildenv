@@ -133,7 +133,7 @@ func (r RootFS) generate(toolchain, environment *strings.Builder) error {
 	toolchain.WriteString("\n# Set pkg-config path for cross-compile.\n")
 	toolchain.WriteString("set(ENV{PKG_CONFIG_SYSROOT_DIR} \"${CMAKE_SYSROOT}\")\n")
 
-	// Write variables to buildenv.sh
+	// Write variables to environment
 	environment.WriteString("\n# Set rootfs for cross compile.\n")
 	environment.WriteString(fmt.Sprintf("export SYSROOT=%s\n", r.cmakepath))
 	environment.WriteString(fmt.Sprintf("export PATH=%s\n", env.Join("${SYSROOT}", "${PATH}")))

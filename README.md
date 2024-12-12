@@ -26,7 +26,7 @@ CMake长期以来仅提供了 `find_package` 功能，即包寻找能力，但�
 为了解决上述问题，**buildenv** 作为一个新的工具应运而生，主要解决以下两个核心问题：
 
 1. **管理三方库的安装目录**，并提供统一的 **依赖库寻找目录**，使得包管理更为直观。
-2. **自动下载编译工具**，包括 **toolchain**、**sysroot** 和 **CMake** 等，并生成当前编译环境的**buildenv.cmake**文件(即：**-DCMAKE_TOOLCHAIN_FILE**指向的文件)，极大简化了交叉编译的配置过程；
+2. **自动下载编译工具**，包括 **toolchain**、**sysroot** 和 **CMake** 等，并生成当前编译环境的**toolchain_file.cmake**文件(即：**-DCMAKE_TOOLCHAIN_FILE**指向的文件)，极大简化了交叉编译的配置过程；
 3. **支持生成CMake配置文件**：对于非CMake作为构建工具的三方库，**buildenv** 可以自动生成对应的 **CMake** 配置文件，方便在 **CMake** 中使用。
 
 ## 其他核心功能
@@ -69,11 +69,11 @@ Welcome to buildenv.
 This is a simple tool to manage your cross build environment.
 
 1. How to use in cmake project: 
-option1: set(CMAKE_TOOLCHAIN_FILE "/mnt/data/work_phil/Golang/buildenv/script/buildenv.cmake")
-option2: cmake .. -DCMAKE_TOOLCHAIN_FILE=/home/phil/my_workspace/script/buildenv.cmake
+option1: set(CMAKE_TOOLCHAIN_FILE "/mnt/data/work_phil/Golang/buildenv/script/toolchain_file.cmake")
+option2: cmake .. -DCMAKE_TOOLCHAIN_FILE=/home/phil/my_workspace/script/toolchain_file.cmake
 
 2. How to use in makefile project: 
-source /home/phil/my_workspace/script/buildenv.sh
+source /home/phil/my_workspace/script/environment
 ```
 
 详细说明请看Wiki.

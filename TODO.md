@@ -28,3 +28,6 @@ makefile编译前不支持配置环境变量，例如：export CFLAGS="-mfpu=neo
 makefile的安装路径和依赖寻找路径应该自动管理 | ✘
 git 同步代码需要优化  | ✘
 支持编译库为native的  | ✘
+usage 里的颜色需要优化  | ✘
+install 三方库的时候，如果已经配置到project里了，无需指定版本  | ✘
+--host，--host和--cross-prefix自动设置  | ✘
