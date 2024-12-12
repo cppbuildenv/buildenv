@@ -52,12 +52,9 @@ func (m make) Configure(buildType string) error {
 	joinedArgs := strings.Join(m.Arguments, " ")
 	configure := fmt.Sprintf("%s/configure %s", m.SourceDir, joinedArgs)
 
-	// Print process log.
-	fmt.Printf("\n[buildenv execute command]: %s\n", configure)
-
 	// Execute configure.
 	configureLogPath := filepath.Join(filepath.Dir(m.BuildDir), filepath.Base(m.BuildDir)+"-configure.log")
-	if err := m.execute(configure, configureLogPath); err != nil {
+	if err := m.execute("[buildenv configure]", configure, configureLogPath); err != nil {
 		return err
 	}
 
@@ -68,12 +65,9 @@ func (m make) Build() error {
 	// Assemble script.
 	command := fmt.Sprintf("make -j %d", m.JobNum)
 
-	// Print process log.
-	fmt.Printf("\n[buildenv execute command]: %s\n", command)
-
 	// Execute build.
 	buildLogPath := filepath.Join(filepath.Dir(m.BuildDir), filepath.Base(m.BuildDir)+"-build.log")
-	if err := m.execute(command, buildLogPath); err != nil {
+	if err := m.execute("[buildenv build]", command, buildLogPath); err != nil {
 		return err
 	}
 
@@ -84,12 +78,9 @@ func (m make) Install() error {
 	// Assemble script.
 	command := "make install"
 
-	// Print process log.
-	fmt.Printf("\n[buildenv execute command]: %s\n", command)
-
 	// Execute install.
 	installLogPath := filepath.Join(filepath.Dir(m.BuildDir), filepath.Base(m.BuildDir)+"-install.log")
-	if err := m.execute(command, installLogPath); err != nil {
+	if err := m.execute("[buildenv install]", command, installLogPath); err != nil {
 		return err
 	}
 	return nil
