@@ -56,11 +56,11 @@ func (b BuildConfig) Clone(repoUrl, repoRef string) error {
 		}
 
 		commands = append(commands, "git reset --hard && git clean -xfd")
-		commands = append(commands, fmt.Sprintf("git -C %s fetch", b.SourceDir))
+		commands = append(commands, fmt.Sprintf("git -C %s fetch origin", b.SourceDir))
 		commands = append(commands, fmt.Sprintf("git -C %s checkout %s", b.SourceDir, repoRef))
-		commands = append(commands, "git pull")
+		commands = append(commands, fmt.Sprintf("git -C %s pull origin %s", b.SourceDir, repoRef))
 	} else {
-		commands = append(commands, fmt.Sprintf("git clone --branch %s --single-branch %s %s", repoRef, repoUrl, b.SourceDir))
+		commands = append(commands, fmt.Sprintf("git clone --branch %s %s %s", repoRef, repoUrl, b.SourceDir))
 	}
 
 	// Execute clone command.
@@ -95,6 +95,9 @@ func (b BuildConfig) execute(command, logPath string) error {
 
 		cmd.Stdout = io.MultiWriter(os.Stdout, logFile)
 		cmd.Stderr = io.MultiWriter(os.Stderr, logFile)
+	} else {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stdout
 	}
 
 	cmd.Env = os.Environ()
