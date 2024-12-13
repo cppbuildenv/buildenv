@@ -11,7 +11,7 @@ func TestCreateToolchainFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	Dirs.ToolDir = "testdata/conf/tools" // change for test
+	Dirs.ToolsDir = "testdata/conf/tools" // change for test
 
 	args := NewVerifyArgs(false, false, "Release")
 	if err := platform.Verify(args); err != nil {

@@ -13,10 +13,10 @@ type dirs struct {
 	DownloadRootDir   string // absolute path of "downloads"
 	ExtractedToolsDir string // absolute path of "downloaded/tools"
 	InstalledRootDir  string // absolute path of "installed"
-	PlatformDir       string // absolute path of "conf/platforms"
-	ProjectDir        string // absolute path of "conf/projects"
-	ToolDir           string // absolute path of "conf/tools"
-	PortDir           string // absolute path of "conf/ports"
+	PlatformsDir      string // absolute path of "conf/platforms"
+	ProjectsDir       string // absolute path of "conf/projects"
+	ToolsDir          string // absolute path of "conf/tools"
+	PortsDir          string // absolute path of "conf/ports"
 }
 
 func newDirs() *dirs {
@@ -29,13 +29,13 @@ func newDirs() *dirs {
 
 	// Set default paths.
 	dirs.WorkspaceDir = currentDir
-	dirs.PlatformDir = filepath.Join(dirs.WorkspaceDir, "conf", "platforms")
-	dirs.ProjectDir = filepath.Join(dirs.WorkspaceDir, "conf", "projects")
+	dirs.PlatformsDir = filepath.Join(dirs.WorkspaceDir, "conf", "platforms")
+	dirs.ProjectsDir = filepath.Join(dirs.WorkspaceDir, "conf", "projects")
 	dirs.DownloadRootDir = filepath.Join(dirs.WorkspaceDir, "downloads")
 	dirs.ExtractedToolsDir = filepath.Join(dirs.WorkspaceDir, "downloads", "tools")
 	dirs.InstalledRootDir = filepath.Join(dirs.WorkspaceDir, "installed")
-	dirs.ToolDir = filepath.Join(dirs.WorkspaceDir, "conf", "tools")
-	dirs.PortDir = filepath.Join(dirs.WorkspaceDir, "conf", "ports")
+	dirs.ToolsDir = filepath.Join(dirs.WorkspaceDir, "conf", "tools")
+	dirs.PortsDir = filepath.Join(dirs.WorkspaceDir, "conf", "ports")
 
 	return &dirs
 }

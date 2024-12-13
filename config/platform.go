@@ -39,7 +39,7 @@ func (p *Platform) Init(ctx Context, platformName string) error {
 	}
 
 	// Check if platform file exists.
-	platformPath := filepath.Join(Dirs.PlatformDir, platformName+".json")
+	platformPath := filepath.Join(Dirs.PlatformsDir, platformName+".json")
 	if !io.PathExists(platformPath) {
 		return fmt.Errorf("platform %s does not exists", platformName)
 	}
@@ -110,7 +110,7 @@ func (p Platform) Verify(args VerifyArgs) error {
 
 	// Verify tools.
 	for _, item := range p.Tools {
-		toolpath := filepath.Join(Dirs.ToolDir, item+".json")
+		toolpath := filepath.Join(Dirs.ToolsDir, item+".json")
 		var tool Tool
 
 		if err := tool.Init(toolpath); err != nil {
@@ -231,7 +231,7 @@ func (p *Platform) writeTools(toolchain, environment *strings.Builder) error {
 	environment.WriteString("\n# Append `path` of tools into $PATH.\n")
 
 	for _, item := range p.Tools {
-		toolPath := filepath.Join(Dirs.ToolDir, item+".json")
+		toolPath := filepath.Join(Dirs.ToolsDir, item+".json")
 		var tool Tool
 		if err := tool.Init(toolPath); err != nil {
 			return fmt.Errorf("cannot read tool: %s", toolPath)

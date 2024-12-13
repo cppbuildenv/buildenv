@@ -15,9 +15,10 @@ import (
 
 type BuildSystem interface {
 	Clone(repoUrl, repoRef string) error
-	Configure(buildType string) error
-	Build() error
-	Install() error
+	Configure(buildType string) (string, error)
+	Build() (string, error)
+	Install() (string, error)
+	InstalledFiles(installLogFile string) ([]string, error)
 }
 
 type BuildConfig struct {
@@ -28,14 +29,16 @@ type BuildConfig struct {
 	CMakeConfig *generator.CMakeConfig `json:"cmake_config"`
 
 	// Internal fields
-	Version      string
-	SystemName   string
-	LibName      string
-	SourceDir    string
-	SourceFolder string // Some thirdpartys' source code is not in the root folder, so we need to specify it.
-	BuildDir     string
-	InstalledDir string
-	JobNum       int
+	BuildSystem      BuildSystem
+	Version          string
+	SystemName       string
+	LibName          string
+	SourceDir        string
+	SourceFolder     string // Some thirdpartys' source code is not in the root folder, so we need to specify it.
+	BuildDir         string
+	InstalledDir     string
+	InstalledRootDir string
+	JobNum           int
 }
 
 func (b BuildConfig) Verify() error {
@@ -114,38 +117,37 @@ func (b BuildConfig) execute(title, command, logPath string) error {
 	return nil
 }
 
-func (b BuildConfig) CheckAndRepair(url, version, buildType string, cmakeConfig *generator.CMakeConfig) error {
-	var buildSystem BuildSystem
-
+func (b *BuildConfig) CheckAndRepair(url, version, buildType string, cmakeConfig *generator.CMakeConfig) (string, error) {
 	switch b.BuildTool {
 	case "cmake":
-		buildSystem = NewCMake(b)
+		b.BuildSystem = NewCMake(*b)
 	case "ninja":
-		buildSystem = NewNinja(b)
+		b.BuildSystem = NewNinja(*b)
 	case "make":
-		buildSystem = NewMake(b)
+		b.BuildSystem = NewMake(*b)
 	case "autotools":
-		buildSystem = NewAutoTool(b)
+		b.BuildSystem = NewAutoTool(*b)
 	case "meson":
-		buildSystem = NewMeson(b)
+		b.BuildSystem = NewMeson(*b)
 	default:
-		return fmt.Errorf("unsupported build system: %s", b.BuildTool)
+		return "", fmt.Errorf("unsupported build system: %s", b.BuildTool)
 	}
 
-	if err := buildSystem.Clone(url, version); err != nil {
-		return err
+	if err := b.BuildSystem.Clone(url, version); err != nil {
+		return "", err
 	}
 
-	if err := buildSystem.Configure(buildType); err != nil {
-		return err
+	if _, err := b.BuildSystem.Configure(buildType); err != nil {
+		return "", err
 	}
 
-	if err := buildSystem.Build(); err != nil {
-		return err
+	if _, err := b.BuildSystem.Build(); err != nil {
+		return "", err
 	}
 
-	if err := buildSystem.Install(); err != nil {
-		return err
+	installLogPath, err := b.BuildSystem.Install()
+	if err != nil {
+		return "", err
 	}
 
 	// Generate cmake config.
@@ -155,8 +157,8 @@ func (b BuildConfig) CheckAndRepair(url, version, buildType string, cmakeConfig 
 		cmakeConfig.Libname = b.LibName
 		cmakeConfig.BuildType = buildType
 		if err := cmakeConfig.Generate(b.InstalledDir); err != nil {
-			return err
+			return "", err
 		}
 	}
-	return nil
+	return installLogPath, nil
 }

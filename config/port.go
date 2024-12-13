@@ -1,7 +1,6 @@
 package config
 
 import (
-	"bufio"
 	"buildenv/buildsystem"
 	"buildenv/pkg/color"
 	"buildenv/pkg/io"
@@ -22,11 +21,19 @@ type Port struct {
 	BuildConfigs []buildsystem.BuildConfig `json:"build_configs"`
 
 	// Internal fields.
-	ctx      Context
-	fullName string // portName = portName + "-" + p.Version
-	infoPath string // used to record installed state
-	portDir  string // it should be `conf/ports`
-	isSubDep bool
+	ctx             Context
+	fullName        string // portName = portName + "-" + p.Version
+	installInfoFile string // used to record installed state
+	portsDir        string // it should be `conf/ports`
+	isSubDep        bool
+}
+
+func (p Port) NameVersion() string {
+	p.Version = strings.ReplaceAll(p.Version, "/", "^")
+	p.Version = strings.ReplaceAll(p.Version, ":", "^")
+	p.Version = strings.ReplaceAll(p.Version, "-", "^")
+
+	return p.Name + "-" + p.Version
 }
 
 func (p *Port) Init(ctx Context, portPath string) error {
@@ -49,16 +56,17 @@ func (p *Port) Init(ctx Context, portPath string) error {
 	}
 
 	// Info file: used to record installed state.
+	nameVersion := p.NameVersion()
 	portNameType := fmt.Sprintf("%s-%s", ctx.Platform(), ctx.BuildType())
 	fileName := fmt.Sprintf("%s-%s.list", ctx.Platform(), ctx.BuildType())
-	sourceDir := filepath.Join(Dirs.WorkspaceDir, "buildtrees", p.Name+"-"+p.Version, "src")
-	buildDir := filepath.Join(Dirs.WorkspaceDir, "buildtrees", p.Name+"-"+p.Version, portNameType)
+	sourceDir := filepath.Join(Dirs.WorkspaceDir, "buildtrees", nameVersion, "src")
+	buildDir := filepath.Join(Dirs.WorkspaceDir, "buildtrees", nameVersion, portNameType)
 	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", portNameType)
 
 	p.ctx = ctx
-	p.fullName = p.Name + "-" + p.Version
-	p.portDir = filepath.Dir(portPath)
-	p.infoPath = filepath.Join(Dirs.InstalledRootDir, fileName)
+	p.fullName = nameVersion
+	p.portsDir = filepath.Dir(portPath)
+	p.installInfoFile = filepath.Join(Dirs.InstalledRootDir, "buildenv", "info", nameVersion+"-"+fileName)
 
 	if len(p.BuildConfigs) > 0 {
 		for index := range p.BuildConfigs {
@@ -69,6 +77,7 @@ func (p *Port) Init(ctx Context, portPath string) error {
 			p.BuildConfigs[index].SourceFolder = p.SourceFolder
 			p.BuildConfigs[index].BuildDir = buildDir
 			p.BuildConfigs[index].InstalledDir = installedDir
+			p.BuildConfigs[index].InstalledRootDir = Dirs.InstalledRootDir
 			p.BuildConfigs[index].JobNum = p.ctx.JobNum()
 		}
 	}
@@ -103,28 +112,22 @@ func (p *Port) Verify() error {
 }
 
 func (p Port) Installed() bool {
-	if !io.PathExists(p.infoPath) {
+	if !io.PathExists(p.installInfoFile) {
 		return false
 	}
 
-	// Open the file and read its content.
-	file, err := os.OpenFile(p.infoPath, os.O_RDWR, os.ModePerm)
+	// File can be read?
+	bytes, err := os.ReadFile(p.installInfoFile)
 	if err != nil {
 		return false
 	}
-	defer file.Close()
 
-	// Scan through the file line by line to check if the port is installed.
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		if strings.Contains(line, p.fullName) {
-			return true
-		}
+	// No content?
+	if len(bytes) == 0 {
+		return false
 	}
 
-	return false
+	return true
 }
 
 func (p Port) CheckAndRepair(args VerifyArgs) error {
@@ -141,63 +144,61 @@ func (p Port) CheckAndRepair(args VerifyArgs) error {
 		return nil
 	}
 
-	if len(p.BuildConfigs) > 0 {
-		var matchedConfig *buildsystem.BuildConfig
-		for _, config := range p.BuildConfigs {
-			if p.matchPattern(config.Pattern) {
-				matchedConfig = &config
-				break
-			}
-		}
-		if matchedConfig == nil {
-			return fmt.Errorf("no matching build_config found to build")
-		}
-
-		// Check and repair dependencies.
-		for _, item := range matchedConfig.Depedencies {
-			if item == p.fullName {
-				return fmt.Errorf("port.dependencies contains circular dependency: %s", item)
-			}
-
-			// Check and repair dependency.
-			var port Port
-			port.isSubDep = true
-			portPath := filepath.Join(p.portDir, item+".json")
-			if err := port.Init(p.ctx, portPath); err != nil {
-				return err
-			}
-			if err := port.CheckAndRepair(args); err != nil {
-				return err
-			}
-		}
-
-		// Check and repair port.
-		if err := matchedConfig.CheckAndRepair(p.Url, p.Version, p.ctx.BuildType(), matchedConfig.CMakeConfig); err != nil {
-			return err
-		}
-	} else {
+	// No config found, download and deploy it.
+	if len(p.BuildConfigs) == 0 {
 		downloadedDir := filepath.Join(Dirs.WorkspaceDir, "downloads")
 		if err := downloadAndDeploy(p.Url, installedDir, downloadedDir); err != nil {
 			return err
 		}
 	}
 
-	// Mkdir if not exists.
-	if err := os.MkdirAll(filepath.Dir(p.infoPath), os.ModePerm); err != nil {
-		return err
+	// Find matched config.
+	var matchedConfig *buildsystem.BuildConfig
+	for _, config := range p.BuildConfigs {
+		if p.matchPattern(config.Pattern) {
+			matchedConfig = &config
+			break
+		}
+	}
+	if matchedConfig == nil {
+		return fmt.Errorf("no matching build_config found to build")
 	}
 
-	// Write info list file in append mode.
-	file, err := os.OpenFile(p.infoPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, os.ModePerm)
+	// First, we must check and repair dependency ports.
+	for _, item := range matchedConfig.Depedencies {
+		if item == p.fullName {
+			return fmt.Errorf("port.dependencies contains circular dependency: %s", item)
+		}
+
+		// Check and repair dependency.
+		var port Port
+		port.isSubDep = true
+		portPath := filepath.Join(p.portsDir, item+".json")
+		if err := port.Init(p.ctx, portPath); err != nil {
+			return err
+		}
+		if err := port.CheckAndRepair(args); err != nil {
+			return err
+		}
+	}
+
+	// Check and repair current port.
+	installLogPath, err := matchedConfig.CheckAndRepair(p.Url, p.Version, p.ctx.BuildType(), matchedConfig.CMakeConfig)
 	if err != nil {
 		return err
 	}
-	if _, err := file.Write([]byte("\n" + p.fullName)); err != nil {
+
+	// Mkdir if not exists.
+	if err := os.MkdirAll(filepath.Dir(p.installInfoFile), os.ModePerm); err != nil {
 		return err
 	}
-	if err := file.Close(); err != nil {
+
+	// Write installed file info list.
+	installedFiles, err := matchedConfig.BuildSystem.InstalledFiles(installLogPath)
+	if err != nil {
 		return err
 	}
+	os.WriteFile(p.installInfoFile, []byte(strings.Join(installedFiles, "\n")), os.ModePerm)
 
 	if !args.Silent() {
 		title := color.Sprintf(color.Green, "\n[✔] ---- Port: %s\n", p.fullName)

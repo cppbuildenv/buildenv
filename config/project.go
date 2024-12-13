@@ -27,7 +27,7 @@ func (p *Project) Init(ctx Context, projectName string) error {
 	}
 
 	// Check if project file exists.
-	projectPath := filepath.Join(Dirs.ProjectDir, projectName+".json")
+	projectPath := filepath.Join(Dirs.ProjectsDir, projectName+".json")
 	if !io.PathExists(projectPath) {
 		return fmt.Errorf("project %s does not exists", projectName)
 	}
@@ -71,7 +71,7 @@ func (p Project) Write(platformPath string) error {
 
 func (p Project) Verify(args VerifyArgs) error {
 	installPort := func(portDesc string) error {
-		portPath := filepath.Join(Dirs.PortDir, portDesc+".json")
+		portPath := filepath.Join(Dirs.PortsDir, portDesc+".json")
 		var port Port
 		if err := port.Init(p.ctx, portPath); err != nil {
 			return fmt.Errorf("%s: %w", portDesc, err)

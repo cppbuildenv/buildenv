@@ -15,13 +15,13 @@ func newProjectSelectModel(callbacks config.BuildEnvCallbacks) *projectSelectMod
 	const defaultHeight = 10
 
 	// Create projects dir if not exists.
-	if err := os.MkdirAll(config.Dirs.ProjectDir, 0755); err != nil {
+	if err := os.MkdirAll(config.Dirs.ProjectsDir, 0755); err != nil {
 		fmt.Println("Error creating projects dir:", err)
 		os.Exit(1)
 	}
 
 	// List all entities in project dir.
-	entities, err := os.ReadDir(config.Dirs.ProjectDir)
+	entities, err := os.ReadDir(config.Dirs.ProjectsDir)
 	if err != nil {
 		fmt.Println("Error reading projects dir:", err)
 		os.Exit(1)

@@ -31,3 +31,6 @@ makefile的安装路径和依赖寻找路径应该自动管理 | ✘
 支持编译库为native的  | ✘
 usage 里的颜色需要优化  | ✘
 install 三方库的时候，如果已经配置到project里了，无需指定版本  | ✘
+下载的库暂不支持生成cmake config文件  | ✘
+支持通过命令创建tool和port  | ✘
+在创建的新tool和port里添加注释  | ✘

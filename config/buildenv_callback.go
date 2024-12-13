@@ -16,7 +16,7 @@ func (c callbackImpl) OnCreatePlatform(platformName string) error {
 	}
 
 	// Create platform file.
-	platformPath := filepath.Join(Dirs.PlatformDir, platformName+".json")
+	platformPath := filepath.Join(Dirs.PlatformsDir, platformName+".json")
 	var platform Platform
 	if err := platform.Write(platformPath); err != nil {
 		return err
@@ -54,7 +54,7 @@ func (c callbackImpl) OnCreateProject(projectName string) error {
 	}
 
 	// Create project file.
-	projectPath := filepath.Join(Dirs.ProjectDir, projectName+".json")
+	projectPath := filepath.Join(Dirs.ProjectsDir, projectName+".json")
 	var project Project
 	if err := project.Write(projectPath); err != nil {
 		return err

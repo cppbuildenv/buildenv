@@ -34,7 +34,7 @@ func (c *createPlatformCmd) listen() (handled bool) {
 }
 
 func (c *createPlatformCmd) doCreate(platformName string) error {
-	platformPath := filepath.Join(config.Dirs.PlatformDir, platformName+".json")
+	platformPath := filepath.Join(config.Dirs.PlatformsDir, platformName+".json")
 
 	var platform config.Platform
 	if err := platform.Write(platformPath); err != nil {

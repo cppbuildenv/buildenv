@@ -1,9 +1,11 @@
 package buildsystem
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 )
@@ -16,13 +18,13 @@ type cmake struct {
 	BuildConfig
 }
 
-func (c cmake) Configure(buildType string) error {
+func (c cmake) Configure(buildType string) (string, error) {
 	// Remove build dir and create it for configure.
 	if err := os.RemoveAll(c.BuildDir); err != nil {
-		return err
+		return "", err
 	}
 	if err := os.MkdirAll(c.BuildDir, os.ModeDir|os.ModePerm); err != nil {
-		return err
+		return "", err
 	}
 
 	// Assemble script.
@@ -46,13 +48,13 @@ func (c cmake) Configure(buildType string) error {
 	configureLogPath := filepath.Join(filepath.Dir(c.BuildDir), filepath.Base(c.BuildDir)+"-configure.log")
 	title := fmt.Sprintf("[configure %s]", c.LibName)
 	if err := c.execute(title, configure, configureLogPath); err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return configureLogPath, nil
 }
 
-func (c cmake) Build() error {
+func (c cmake) Build() (string, error) {
 	// Assemble script.
 	command := fmt.Sprintf("cmake --build %s --parallel %d", c.BuildDir, c.JobNum)
 
@@ -60,13 +62,13 @@ func (c cmake) Build() error {
 	buildLogPath := filepath.Join(filepath.Dir(c.BuildDir), filepath.Base(c.BuildDir)+"-build.log")
 	title := fmt.Sprintf("[build %s]", c.LibName)
 	if err := c.execute(title, command, buildLogPath); err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return buildLogPath, nil
 }
 
-func (c cmake) Install() error {
+func (c cmake) Install() (string, error) {
 	// Assemble script.
 	command := fmt.Sprintf("cmake --install %s", c.BuildDir)
 
@@ -74,10 +76,36 @@ func (c cmake) Install() error {
 	installLogPath := filepath.Join(filepath.Dir(c.BuildDir), filepath.Base(c.BuildDir)+"-install.log")
 	title := fmt.Sprintf("[install %s]", c.LibName)
 	if err := c.execute(title, command, installLogPath); err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return installLogPath, nil
+}
+
+func (c cmake) InstalledFiles(installLogFile string) ([]string, error) {
+	file, err := os.OpenFile(installLogFile, os.O_RDONLY|os.O_CREATE, os.ModePerm)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var files []string                                               // All installed files.
+	reg := regexp.MustCompile(`^-- (Installing:|Up-to-date:) (\S+)`) // Installed file regex.
+
+	// Read line by line to find installed files.
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		match := reg.FindStringSubmatch(line)
+
+		if len(match) > 2 {
+			installedFile := match[2]
+			installedFile = strings.TrimPrefix(installedFile, c.InstalledRootDir+"/")
+			files = append(files, installedFile)
+		}
+	}
+
+	return files, nil
 }
 
 func (c cmake) formatBuildType(buildType string) string {
