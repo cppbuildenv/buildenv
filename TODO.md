@@ -17,6 +17,8 @@ path不存在，应该先尝试用下载后的文件解压，而不是直接重�
 menu cli的实现可以考虑用面向对象思维简化  | ✔
 git在下载代码时候没有过程log  | ✔
 添加-install参数，用于指定三方库的编译  | ✔
+--sysroot和--cross-prefix自动设置  | ✔
+git 同步代码需要优化  | ✔
 运行tools需要将内部lib路径加入到LD_LIBRARY_PATH  | ✘
 支持 buildenv -upgrade 升级  | ✘
 cli里添加命令：编译指定的某个port，最好以列表方式呈现，让用户选择  | ✘
@@ -26,8 +28,6 @@ makefile编译前不支持配置环境变量，例如：export CFLAGS="-mfpu=neo
 支持windows下工作  | ✘
 支持uninstall功能  | ✘
 makefile的安装路径和依赖寻找路径应该自动管理 | ✘
-git 同步代码需要优化  | ✘
 支持编译库为native的  | ✘
 usage 里的颜色需要优化  | ✘
 install 三方库的时候，如果已经配置到project里了，无需指定版本  | ✘
---host，--host和--cross-prefix自动设置  | ✘

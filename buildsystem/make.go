@@ -56,7 +56,8 @@ func (m make) Configure(buildType string) error {
 
 	// Execute configure.
 	configureLogPath := filepath.Join(filepath.Dir(m.BuildDir), filepath.Base(m.BuildDir)+"-configure.log")
-	if err := m.execute("[buildenv configure]", configure, configureLogPath); err != nil {
+	title := fmt.Sprintf("[configure %s]", m.LibName)
+	if err := m.execute(title, configure, configureLogPath); err != nil {
 		return err
 	}
 
@@ -69,7 +70,8 @@ func (m make) Build() error {
 
 	// Execute build.
 	buildLogPath := filepath.Join(filepath.Dir(m.BuildDir), filepath.Base(m.BuildDir)+"-build.log")
-	if err := m.execute("[buildenv build]", command, buildLogPath); err != nil {
+	title := fmt.Sprintf("[build %s]", m.LibName)
+	if err := m.execute(title, command, buildLogPath); err != nil {
 		return err
 	}
 
@@ -82,7 +84,8 @@ func (m make) Install() error {
 
 	// Execute install.
 	installLogPath := filepath.Join(filepath.Dir(m.BuildDir), filepath.Base(m.BuildDir)+"-install.log")
-	if err := m.execute("[buildenv install]", command, installLogPath); err != nil {
+	title := fmt.Sprintf("[install %s]", m.LibName)
+	if err := m.execute(title, command, installLogPath); err != nil {
 		return err
 	}
 	return nil

@@ -66,16 +66,16 @@ func (b BuildConfig) Clone(repoUrl, repoRef string) error {
 
 	// Execute clone command.
 	commandLine := strings.Join(commands, " && ")
-
-	if err := b.execute("[buildenv clone]", commandLine, ""); err != nil {
+	title := fmt.Sprintf("[clone %s]", b.LibName)
+	if err := b.execute(title, commandLine, ""); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (b BuildConfig) execute(summary, command, logPath string) error {
-	fmt.Print(color.Sprintf(color.Blue, "\n%s: %s\n\n", summary, command))
+func (b BuildConfig) execute(title, command, logPath string) error {
+	fmt.Print(color.Sprintf(color.Blue, "\n%s: %s\n\n", title, command))
 
 	// Create command for windows and linux.
 	var cmd *exec.Cmd
@@ -97,7 +97,7 @@ func (b BuildConfig) execute(summary, command, logPath string) error {
 		defer logFile.Close()
 
 		// Write command summary as header content of file.
-		io.WriteString(logFile, fmt.Sprintf("%s: %s\n\n", summary, command))
+		io.WriteString(logFile, fmt.Sprintf("%s: %s\n\n", title, command))
 
 		cmd.Stdout = io.MultiWriter(os.Stdout, logFile)
 		cmd.Stderr = io.MultiWriter(os.Stderr, logFile)

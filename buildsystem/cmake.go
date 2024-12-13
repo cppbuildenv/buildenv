@@ -44,7 +44,8 @@ func (c cmake) Configure(buildType string) error {
 
 	// Execute configure.
 	configureLogPath := filepath.Join(filepath.Dir(c.BuildDir), filepath.Base(c.BuildDir)+"-configure.log")
-	if err := c.execute("[buildenv configure]", configure, configureLogPath); err != nil {
+	title := fmt.Sprintf("[configure %s]", c.LibName)
+	if err := c.execute(title, configure, configureLogPath); err != nil {
 		return err
 	}
 
@@ -57,7 +58,8 @@ func (c cmake) Build() error {
 
 	// Execute build.
 	buildLogPath := filepath.Join(filepath.Dir(c.BuildDir), filepath.Base(c.BuildDir)+"-build.log")
-	if err := c.execute("[buildenv build]", command, buildLogPath); err != nil {
+	title := fmt.Sprintf("[build %s]", c.LibName)
+	if err := c.execute(title, command, buildLogPath); err != nil {
 		return err
 	}
 
@@ -70,7 +72,8 @@ func (c cmake) Install() error {
 
 	// Execute install.
 	installLogPath := filepath.Join(filepath.Dir(c.BuildDir), filepath.Base(c.BuildDir)+"-install.log")
-	if err := c.execute("[buildenv install]", command, installLogPath); err != nil {
+	title := fmt.Sprintf("[install %s]", c.LibName)
+	if err := c.execute(title, command, installLogPath); err != nil {
 		return err
 	}
 
