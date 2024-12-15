@@ -37,6 +37,6 @@ func (c *integrateCmd) listen() (handled bool) {
 		os.Exit(1)
 	}
 
-	fmt.Print(config.IntegrateSuccess())
+	fmt.Print(config.IntegrateSuccessfully())
 	return true
 }

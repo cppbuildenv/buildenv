@@ -63,5 +63,5 @@ func (i integrateModel) integrate() {
 		os.Exit(1)
 	}
 
-	fmt.Print(config.IntegrateSuccess())
+	fmt.Print(config.IntegrateSuccessfully())
 }

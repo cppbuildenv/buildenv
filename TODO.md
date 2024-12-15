@@ -34,3 +34,6 @@ install 三方库的时候，如果已经配置到project里了，无需指定�
 下载的库暂不支持生成cmake config文件  | ✘
 支持通过命令创建tool和port  | ✘
 在创建的新tool和port里添加注释  | ✘
+cmd/cli缺少创建和选择project的功能  | ✘
+uninstall时候版本号支持用*代替，即可以删除所有版本  | ✘
+一个项目配置同名不同版本的port是禁止的  | ✘

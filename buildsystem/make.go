@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 )
 
@@ -135,8 +136,11 @@ func (m make) InstalledFiles(installLogFile string) ([]string, error) {
 					continue
 				}
 
+				// Some makefile install may contains duplicated files.
 				path = strings.TrimPrefix(path, m.InstalledRootDir+"/")
-				files = append(files, path)
+				if slices.Index(files, path) == -1 {
+					files = append(files, path)
+				}
 			}
 		} else if len(matchLn) > 2 {
 			line := matchLn[2]

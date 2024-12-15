@@ -57,11 +57,11 @@ func (p *Port) Init(ctx Context, portPath string) error {
 
 	// Info file: used to record installed state.
 	nameVersion := p.NameVersion()
-	portNameType := fmt.Sprintf("%s-%s", ctx.Platform(), ctx.BuildType())
-	fileName := fmt.Sprintf("%s-%s.list", ctx.Platform(), ctx.BuildType())
+	platformBuildType := fmt.Sprintf("%s-%s", ctx.Platform().Name, ctx.BuildType())
+	fileName := fmt.Sprintf("%s-%s.list", ctx.Platform().Name, ctx.BuildType())
 	sourceDir := filepath.Join(Dirs.WorkspaceDir, "buildtrees", nameVersion, "src")
-	buildDir := filepath.Join(Dirs.WorkspaceDir, "buildtrees", nameVersion, portNameType)
-	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", portNameType)
+	buildDir := filepath.Join(Dirs.WorkspaceDir, "buildtrees", nameVersion, platformBuildType)
+	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", platformBuildType)
 
 	p.ctx = ctx
 	p.fullName = nameVersion
@@ -135,7 +135,7 @@ func (p Port) CheckAndRepair(args VerifyArgs) error {
 		return nil
 	}
 
-	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.ctx.Platform()+"-"+p.ctx.BuildType())
+	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.ctx.Platform().Name+"-"+p.ctx.BuildType())
 	if p.Installed() {
 		if !args.Silent() {
 			title := color.Sprintf(color.Green, "\n[✔] ---- Port: %s\n", p.fullName)
@@ -233,7 +233,7 @@ func (p Port) matchPattern(pattern string) bool {
 		return true
 	}
 
-	platformName := p.ctx.Platform()
+	platformName := p.ctx.Platform().Name
 	if pattern[0] == '*' && pattern[len(pattern)-1] == '*' {
 		return strings.Contains(platformName, pattern[1:len(pattern)-1])
 	}

@@ -13,8 +13,8 @@ type Project struct {
 	Ports []string `json:"ports"`
 
 	// Internal fields.
-	ctx         Context
-	projectName string
+	Name string
+	ctx  Context
 }
 
 func (p *Project) Init(ctx Context, projectName string) error {
@@ -42,7 +42,7 @@ func (p *Project) Init(ctx Context, projectName string) error {
 	}
 
 	// Set values of internal fields.
-	p.projectName = projectName
+	p.Name = projectName
 	return nil
 }
 
@@ -88,18 +88,10 @@ func (p Project) Verify(args VerifyArgs) error {
 		return nil
 	}
 
-	// Check if only to install port or uninstall port.
-	portToInstall := args.PortToInstall()
-	if portToInstall != "" {
-		if err := installPort(portToInstall); err != nil {
+	// Verify dependencies.
+	for _, item := range p.Ports {
+		if err := installPort(item); err != nil {
 			return err
-		}
-	} else {
-		// Verify dependencies.
-		for _, item := range p.Ports {
-			if err := installPort(item); err != nil {
-				return err
-			}
 		}
 	}
 

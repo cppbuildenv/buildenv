@@ -14,7 +14,8 @@ import (
 
 type Context interface {
 	BuildEnvDir() string
-	Platform() string
+	Platform() Platform
+	Project() Project
 	Toolchain() *Toolchain
 	RootFS() *RootFS
 	SystemName() string
@@ -218,8 +219,12 @@ func (b buildenv) BuildEnvDir() string {
 	return filepath.Join(Dirs.WorkspaceDir, "conf")
 }
 
-func (b buildenv) Platform() string {
-	return b.configData.PlatformName
+func (b buildenv) Platform() Platform {
+	return b.platform
+}
+
+func (b buildenv) Project() Project {
+	return b.project
 }
 
 func (b buildenv) Toolchain() *Toolchain {

@@ -54,20 +54,24 @@ func ProjectSelectedFailed(platform string, err error) string {
 	}
 }
 
-func IntegrateSuccess() string {
-	return color.Sprintf(color.Magenta, "\n[✔] ======== buildenv is integrated ========\n\n")
+func IntegrateSuccessfully() string {
+	return color.Sprintf(color.Magenta, "\n[✔] ======== buildenv is integrated. ========\n\n")
 }
 
 func IntegrateFailed(err error) string {
 	return color.Sprintf(color.Red, "\n[✘] buildenv integrate failed.\n[☛] %s.\n\n", err)
 }
 
+func InstallSuccessfully(port string) string {
+	return color.Sprintf(color.Magenta, "\n[✔] ======== %s install successfully. ========\n\n", port)
+}
+
 func InstallFailed(port string, err error) string {
 	return color.Sprintf(color.Red, "\n[✘] %s install failed.\n[☛] %s.\n\n", port, err)
 }
 
-func UninstallSuccess(port string) string {
-	return color.Sprintf(color.Magenta, "\n[✔] %s uninstall successfully.\n\n", port)
+func UninstallSuccessfully(port string) string {
+	return color.Sprintf(color.Magenta, "\n[✔] ======== %s uninstall successfully. ========\n\n", port)
 }
 
 func UninstallFailed(port string, err error) string {

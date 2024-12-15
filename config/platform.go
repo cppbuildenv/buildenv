@@ -25,8 +25,8 @@ type Platform struct {
 	Tools     []string   `json:"tools"`
 
 	// Internal fields.
-	platformName string
-	ctx          Context
+	Name string
+	ctx  Context
 }
 
 func (p *Platform) Init(ctx Context, platformName string) error {
@@ -54,7 +54,7 @@ func (p *Platform) Init(ctx Context, platformName string) error {
 	}
 
 	// Set values of internal fields.
-	p.platformName = platformName
+	p.Name = platformName
 	return nil
 }
 
@@ -135,7 +135,7 @@ func (p Platform) Verify(args VerifyArgs) error {
 	}
 
 	// Append $PKG_CONFIG_PATH with pkgconfig path that in installed dir.
-	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.platformName+"-"+args.BuildType())
+	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.Name+"-"+args.BuildType())
 	os.Setenv("PKG_CONFIG_PATH", installedDir+"/lib/pkgconfig"+string(os.PathListSeparator)+os.Getenv("PKG_CONFIG_PATH"))
 
 	return nil
@@ -196,7 +196,7 @@ get_filename_component(BUILDENV_ROOT_DIR "${_CURRENT_DIR}" PATH)`))
 	}
 
 	toolchain.WriteString("\n# Add `installed dir` into library search paths.\n")
-	installedDir := fmt.Sprintf("${BUILDENV_ROOT_DIR}/%s/%s", "installed", p.platformName+"-${CMAKE_BUILD_TYPE}")
+	installedDir := fmt.Sprintf("${BUILDENV_ROOT_DIR}/%s/%s", "installed", p.Name+"-${CMAKE_BUILD_TYPE}")
 	toolchain.WriteString(fmt.Sprintf("list(APPEND CMAKE_FIND_ROOT_PATH \"%s\")\n", installedDir))
 	toolchain.WriteString(fmt.Sprintf("list(APPEND CMAKE_PREFIX_PATH \"%s\")\n", installedDir))
 	toolchain.WriteString(fmt.Sprintf("set(ENV{PKG_CONFIG_PATH} \"%s/lib/pkgconfig%s$ENV{PKG_CONFIG_PATH}\")\n", installedDir, string(os.PathListSeparator)))
