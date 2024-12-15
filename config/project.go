@@ -70,25 +70,25 @@ func (p Project) Write(platformPath string) error {
 }
 
 func (p Project) Verify(args VerifyArgs) error {
-	installPort := func(portDesc string) error {
-		portPath := filepath.Join(Dirs.PortsDir, portDesc+".json")
+	installPort := func(portNameVersion string) error {
+		portPath := filepath.Join(Dirs.PortsDir, portNameVersion+".json")
 		var port Port
 		if err := port.Init(p.ctx, portPath); err != nil {
-			return fmt.Errorf("%s: %w", portDesc, err)
+			return fmt.Errorf("%s: %w", portNameVersion, err)
 		}
 
 		if err := port.Verify(); err != nil {
-			return fmt.Errorf("%s: %w", portDesc, err)
+			return fmt.Errorf("%s: %w", portNameVersion, err)
 		}
 
 		if err := port.CheckAndRepair(args); err != nil {
-			return fmt.Errorf("%s: %w", portDesc, err)
+			return fmt.Errorf("%s: %w", portNameVersion, err)
 		}
 
 		return nil
 	}
 
-	// Check if only to verify one port.
+	// Check if only to install port or uninstall port.
 	portToInstall := args.PortToInstall()
 	if portToInstall != "" {
 		if err := installPort(portToInstall); err != nil {

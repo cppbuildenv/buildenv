@@ -23,6 +23,7 @@ var (
 	selectPlatform = newSelectPlatformCmd(config.Callbacks)
 	verify         = newVerifyCmd()
 	install        = newInstallCmd()
+	uninstall      = newUninstallCmd()
 	about          = newAboutCmd(config.Callbacks)
 )
 var commands = []reisterable{
@@ -33,6 +34,7 @@ var commands = []reisterable{
 	selectPlatform,
 	verify,
 	install,
+	uninstall,
 	about,
 }
 

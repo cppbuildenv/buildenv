@@ -26,7 +26,7 @@ cli里添加命令：编译指定的某个port，最好以列表方式呈现，�
 makefile编译前不支持配置环境变量，例如：export CFLAGS="-mfpu=neon"  | ✘
 动态生成的cmake config文件（windows还没测试）| ✘
 支持windows下工作  | ✘
-支持uninstall功能  | ✘
+支持uninstall功能, 同时支持recursive 模式  | ✘
 makefile的安装路径和依赖寻找路径应该自动管理 | ✘
 支持编译库为native的  | ✘
 usage 里的颜色需要优化  | ✘

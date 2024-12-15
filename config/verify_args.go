@@ -8,10 +8,10 @@ type VerifyArgs interface {
 }
 
 type verifyArgs struct {
-	silent         bool   // Always called from toolchain.cmake
-	checkAndRepair bool   // Called to check integrity and fix build environment.
-	buildType      string // CMAKE_BUILD_TYPE, default is 'Release'
-	portToInstall  string // If not empty, it means only this port should be installed.
+	silent          bool   // Always called from toolchain.cmake
+	checkAndRepair  bool   // Called to check integrity and fix build environment.
+	buildType       string // CMAKE_BUILD_TYPE, default is 'Release'
+	portToInstall   string // If not empty, it means only this port should be installed.
 }
 
 func (v verifyArgs) Silent() bool {
