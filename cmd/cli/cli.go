@@ -19,8 +19,10 @@ var (
 	silent         = newSilentModeCmd()
 	buildType      = newBuildTypeCmd()
 	sync           = newSyncCmd()
-	createPlatform = newCreatePlatformCmd()
-	selectPlatform = newSelectPlatformCmd(config.Callbacks)
+	platformCreate = newPlatformCreateCmd()
+	platformSelect = newPlatformSelectCmd(config.Callbacks)
+	projectCreate  = newProjectCreateCmd()
+	projectSelect  = newProjectSelectCmd(config.Callbacks)
 	verify         = newVerifyCmd()
 	install        = newInstallCmd()
 	uninstall      = newUninstallCmd()
@@ -31,8 +33,10 @@ var commands = []reisterable{
 	silent,
 	buildType,
 	sync,
-	createPlatform,
-	selectPlatform,
+	platformCreate,
+	platformSelect,
+	projectCreate,
+	projectSelect,
 	verify,
 	install,
 	uninstall,

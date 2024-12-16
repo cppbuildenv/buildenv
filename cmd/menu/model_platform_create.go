@@ -4,6 +4,7 @@ import (
 	"buildenv/config"
 	"buildenv/pkg/color"
 	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -48,6 +49,11 @@ func (p platformCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return MenuModel, nil
 
 		case "enter":
+			// Clean platform name.
+			platformName := strings.TrimSpace(p.textInput.Value())
+			platformName = strings.TrimSuffix(platformName, ".json")
+			p.textInput.SetValue(platformName)
+
 			if err := p.callbacks.OnCreatePlatform(p.textInput.Value()); err != nil {
 				p.err = err
 				p.created = false

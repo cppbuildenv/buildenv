@@ -13,8 +13,8 @@ type Project struct {
 	Ports []string `json:"ports"`
 
 	// Internal fields.
-	Name string
-	ctx  Context
+	Name string  `json:"-"`
+	ctx  Context `json:"-"`
 }
 
 func (p *Project) Init(ctx Context, projectName string) error {

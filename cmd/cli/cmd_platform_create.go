@@ -5,35 +5,40 @@ import (
 	"flag"
 	"fmt"
 	"path/filepath"
+	"strings"
 )
 
-func newCreatePlatformCmd() *createPlatformCmd {
-	return &createPlatformCmd{}
+func newPlatformCreateCmd() *platformCreateCmd {
+	return &platformCreateCmd{}
 }
 
-type createPlatformCmd struct {
+type platformCreateCmd struct {
 	platformName string
 }
 
-func (c *createPlatformCmd) register() {
-	flag.StringVar(&c.platformName, "create_platform", "", "create a new platform with template.")
+func (p *platformCreateCmd) register() {
+	flag.StringVar(&p.platformName, "create_platform", "", "create a new platform with template.")
 }
 
-func (c *createPlatformCmd) listen() (handled bool) {
-	if c.platformName == "" {
+func (p *platformCreateCmd) listen() (handled bool) {
+	if p.platformName == "" {
 		return false
 	}
 
-	if err := c.doCreate(c.platformName); err != nil {
-		fmt.Print(config.PlatformCreateFailed(c.platformName, err))
+	// Clean platform name.
+	p.platformName = strings.TrimSpace(p.platformName)
+	p.platformName = strings.TrimSuffix(p.platformName, ".json")
+
+	if err := p.doCreate(p.platformName); err != nil {
+		fmt.Print(config.PlatformCreateFailed(p.platformName, err))
 		return true
 	}
 
-	fmt.Print(config.PlatformCreated(c.platformName))
+	fmt.Print(config.PlatformCreated(p.platformName))
 	return true
 }
 
-func (c *createPlatformCmd) doCreate(platformName string) error {
+func (p *platformCreateCmd) doCreate(platformName string) error {
 	platformPath := filepath.Join(config.Dirs.PlatformsDir, platformName+".json")
 
 	var platform config.Platform

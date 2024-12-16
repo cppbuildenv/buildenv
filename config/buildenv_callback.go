@@ -29,13 +29,27 @@ func (c callbackImpl) OnSelectPlatform(platformName string) error {
 	// In config mode, we always regard build type as `Release`.
 	buildType := "Release"
 
+	// Init buildenv with "buildenv.json"
 	buildenv := NewBuildEnv(buildType)
-	if err := buildenv.ChangePlatform(platformName); err != nil {
+	buildEnvPath := filepath.Join(Dirs.WorkspaceDir, "buildenv.json")
+	if err := buildenv.init(buildEnvPath); err != nil {
 		return err
 	}
 
-	// Verify buildenv to check if all the required fields are set for generate toolchain file.
-	if err := buildenv.Verify(NewVerifyArgs(false, false, buildType)); err != nil {
+	// Init platform with specified platform name.
+	buildenv.platform.Name = platformName
+	if err := buildenv.platform.Init(buildenv, buildenv.platform.Name); err != nil {
+		return err
+	}
+
+	// Verify platform.
+	args := NewVerifyArgs(false, false, buildType)
+	if err := buildenv.platform.Verify(args); err != nil {
+		return err
+	}
+
+	// Do change platform.
+	if err := buildenv.ChangePlatform(platformName); err != nil {
 		return err
 	}
 
@@ -67,13 +81,27 @@ func (c callbackImpl) OnSelectProject(projectName string) error {
 	// In config mode, we always regard build type as `Release`.
 	buildType := "Release"
 
+	// Init buildenv with "buildenv.json"
 	buildenv := NewBuildEnv(buildType)
-	if err := buildenv.ChangeProject(projectName); err != nil {
+	buildEnvPath := filepath.Join(Dirs.WorkspaceDir, "buildenv.json")
+	if err := buildenv.init(buildEnvPath); err != nil {
 		return err
 	}
 
-	// Verify buildenv to check if all the required fields are set for generate toolchain file.
-	if err := buildenv.Verify(NewVerifyArgs(false, false, buildType)); err != nil {
+	// Init project with specified project name.
+	buildenv.platform.Name = projectName
+	if err := buildenv.project.Init(buildenv, buildenv.platform.Name); err != nil {
+		return err
+	}
+
+	// Verify project with specified project name.
+	args := NewVerifyArgs(false, false, buildType)
+	if err := buildenv.project.Verify(args); err != nil {
+		return err
+	}
+
+	// Do change project.
+	if err := buildenv.ChangeProject(projectName); err != nil {
 		return err
 	}
 

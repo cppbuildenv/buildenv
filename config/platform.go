@@ -25,8 +25,8 @@ type Platform struct {
 	Tools     []string   `json:"tools"`
 
 	// Internal fields.
-	Name string
-	ctx  Context
+	Name string  `json:"-"`
+	ctx  Context `json:"-"`
 }
 
 func (p *Platform) Init(ctx Context, platformName string) error {
