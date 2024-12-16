@@ -70,7 +70,7 @@ func (p Project) Write(platformPath string) error {
 }
 
 func (p Project) Verify(args VerifyArgs) error {
-	installPort := func(portNameVersion string) error {
+	verifyPort := func(portNameVersion string) error {
 		portPath := filepath.Join(Dirs.PortsDir, portNameVersion+".json")
 		var port Port
 		if err := port.Init(p.ctx, portPath); err != nil {
@@ -90,7 +90,7 @@ func (p Project) Verify(args VerifyArgs) error {
 
 	// Verify dependencies.
 	for _, item := range p.Ports {
-		if err := installPort(item); err != nil {
+		if err := verifyPort(item); err != nil {
 			return err
 		}
 	}

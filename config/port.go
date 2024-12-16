@@ -22,7 +22,6 @@ type Port struct {
 
 	// Internal fields.
 	ctx             Context
-	fullName        string // portName = portName + "-" + p.Version
 	installInfoFile string // used to record installed state
 	portsDir        string // it should be `conf/ports`
 	isSubDep        bool
@@ -64,7 +63,6 @@ func (p *Port) Init(ctx Context, portPath string) error {
 	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", platformBuildType)
 
 	p.ctx = ctx
-	p.fullName = nameVersion
 	p.portsDir = filepath.Dir(portPath)
 	p.installInfoFile = filepath.Join(Dirs.InstalledRootDir, "buildenv", "info", nameVersion+"-"+fileName)
 
@@ -99,7 +97,7 @@ func (p *Port) Verify() error {
 	}
 
 	for _, config := range p.BuildConfigs {
-		if !p.matchPattern(config.Pattern) {
+		if !p.MatchPattern(config.Pattern) {
 			continue
 		}
 
@@ -138,7 +136,7 @@ func (p Port) CheckAndRepair(args VerifyArgs) error {
 	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.ctx.Platform().Name+"-"+p.ctx.BuildType())
 	if p.Installed() {
 		if !args.Silent() {
-			title := color.Sprintf(color.Green, "\n[✔] ---- Port: %s\n", p.fullName)
+			title := color.Sprintf(color.Green, "\n[✔] ---- Port: %s\n", p.NameVersion())
 			fmt.Printf("%sLocation: %s\n", title, installedDir)
 		}
 		return nil
@@ -155,7 +153,7 @@ func (p Port) CheckAndRepair(args VerifyArgs) error {
 	// Find matched config.
 	var matchedConfig *buildsystem.BuildConfig
 	for _, config := range p.BuildConfigs {
-		if p.matchPattern(config.Pattern) {
+		if p.MatchPattern(config.Pattern) {
 			matchedConfig = &config
 			break
 		}
@@ -166,7 +164,7 @@ func (p Port) CheckAndRepair(args VerifyArgs) error {
 
 	// First, we must check and repair dependency ports.
 	for _, item := range matchedConfig.Depedencies {
-		if item == p.fullName {
+		if strings.HasPrefix(item, p.Name) {
 			return fmt.Errorf("port.dependencies contains circular dependency: %s", item)
 		}
 
@@ -175,6 +173,9 @@ func (p Port) CheckAndRepair(args VerifyArgs) error {
 		port.isSubDep = true
 		portPath := filepath.Join(p.portsDir, item+".json")
 		if err := port.Init(p.ctx, portPath); err != nil {
+			return err
+		}
+		if err := port.Verify(); err != nil {
 			return err
 		}
 		if err := port.CheckAndRepair(args); err != nil {
@@ -201,9 +202,10 @@ func (p Port) CheckAndRepair(args VerifyArgs) error {
 	os.WriteFile(p.installInfoFile, []byte(strings.Join(installedFiles, "\n")), os.ModePerm)
 
 	if !args.Silent() {
-		title := color.Sprintf(color.Green, "\n[✔] ---- Port: %s\n", p.fullName)
+		title := color.Sprintf(color.Green, "\n[✔] ---- Port: %s\n", p.NameVersion())
 		fmt.Printf("%sLocation: %s\n", title, installedDir)
 	}
+
 	return nil
 }
 
@@ -226,7 +228,7 @@ func downloadAndDeploy(url, installedDir, downloadedDir string) error {
 	return nil
 }
 
-func (p Port) matchPattern(pattern string) bool {
+func (p Port) MatchPattern(pattern string) bool {
 	pattern = strings.TrimSpace(pattern)
 
 	if pattern == "" || pattern == "*" {

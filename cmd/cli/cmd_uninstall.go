@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bufio"
+	"buildenv/buildsystem"
 	"buildenv/config"
 	"buildenv/pkg/io"
 	"flag"
@@ -65,19 +66,89 @@ func (u *uninstallCmd) listen() (handled bool) {
 		portToUninstall = buildenv.Project().Ports[index]
 	}
 
-	// Check if port is installed.
-	platformBuildType := fmt.Sprintf("%s-%s", buildenv.Platform().Name, buildenv.BuildType())
-	installInfoFile := filepath.Join(config.Dirs.InstalledRootDir, "buildenv", "info", portToUninstall+"-"+platformBuildType+".list")
-	if !io.PathExists(installInfoFile) {
-		fmt.Print(config.UninstallFailed(portToUninstall, fmt.Errorf("%s is not installed", portToUninstall)))
+	// Uninstall port.
+	if err := u.uninstallPort(buildenv, portToUninstall, recursive.recursive); err != nil {
+		fmt.Print(config.UninstallFailed(portToUninstall, err))
 		return true
+	}
+
+	fmt.Print(config.UninstallSuccessfully(portToUninstall))
+
+	return true
+}
+
+func (u uninstallCmd) uninstallPort(ctx config.Context, portNameVersion string, recursively bool) error {
+	// Check port is configured ok.
+	var port config.Port
+	portPath := filepath.Join(config.Dirs.PortsDir, portNameVersion+".json")
+	if err := port.Init(ctx, portPath); err != nil {
+		return err
+	}
+	if err := port.Verify(); err != nil {
+		return err
+	}
+
+	// No config found, download and deploy it.
+	if len(port.BuildConfigs) == 0 {
+		return nil
+	}
+
+	// Find matched config.
+	var matchedConfig *buildsystem.BuildConfig
+	for _, config := range port.BuildConfigs {
+		if port.MatchPattern(config.Pattern) {
+			matchedConfig = &config
+			break
+		}
+	}
+	if matchedConfig == nil {
+		return fmt.Errorf("no matching build_config found to build")
+	}
+
+	// Try to uninstall dependencies firstly.
+	if recursively {
+		for _, item := range matchedConfig.Depedencies {
+			if strings.HasPrefix(item, port.Name) {
+				return fmt.Errorf("port.dependencies contains circular dependency: %s", item)
+			}
+
+			// Check and verify dependency.
+			var port config.Port
+			portPath := filepath.Join(config.Dirs.PortsDir, item+".json")
+			if err := port.Init(ctx, portPath); err != nil {
+				return err
+			}
+			if err := port.Verify(); err != nil {
+				return err
+			}
+
+			// Uninstall dependency.
+			if err := u.uninstallPort(ctx, item, recursively); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Do uninstall port itself.
+	if err := u.doUninsallPort(ctx, port.NameVersion()); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u uninstallCmd) doUninsallPort(ctx config.Context, portNameVersion string) error {
+	// Check if port is installed.
+	platformBuildType := fmt.Sprintf("%s-%s", ctx.Platform().Name, ctx.BuildType())
+	installInfoFile := filepath.Join(config.Dirs.InstalledRootDir, "buildenv", "info", portNameVersion+"-"+platformBuildType+".list")
+	if !io.PathExists(installInfoFile) {
+		return fmt.Errorf("%s is not installed", portNameVersion)
 	}
 
 	// Open install info file.
 	file, err := os.OpenFile(installInfoFile, os.O_RDONLY, os.ModePerm)
 	if err != nil {
-		fmt.Print(config.UninstallFailed(portToUninstall, fmt.Errorf("cannot open install info file: %s", err)))
-		return true
+		return fmt.Errorf("cannot open install info file: %s", err)
 	}
 	defer file.Close()
 
@@ -93,47 +164,48 @@ func (u *uninstallCmd) listen() (handled bool) {
 		if !io.PathExists(line) {
 			fileToRemove = filepath.Join(config.Dirs.InstalledRootDir, line)
 		}
-
 		if err := os.Remove(fileToRemove); err != nil {
-			fmt.Print(config.UninstallFailed(portToUninstall, err))
-			return true
+			return fmt.Errorf("cannot remove file: %s", err)
 		}
 
 		// Try remove parent folder if it's empty.
-		if err := u.removeParentRecursively(filepath.Dir(fileToRemove)); err != nil {
-			fmt.Print(config.UninstallFailed(portToUninstall, err))
-			return true
+		if err := u.removeFolderRecursively(filepath.Dir(fileToRemove)); err != nil {
+			return fmt.Errorf("cannot remove parent folder: %s", err)
 		}
 
 		fmt.Printf("remove %s\n", fileToRemove)
 	}
 
 	// Remove generated cmake config if exist.
-	portName := strings.Split(portToUninstall, "-")[0]
+	portName := strings.Split(portNameVersion, "-")[0]
 	installedDir := filepath.Join(config.Dirs.InstalledRootDir, platformBuildType)
-	if err := os.RemoveAll(filepath.Join(installedDir, "lib", "cmake", portName)); err != nil {
-		fmt.Print(config.UninstallFailed(portToUninstall, err))
-		return true
+	cmakeConfigDir := filepath.Join(installedDir, "lib", "cmake", portName)
+	if err := os.RemoveAll(cmakeConfigDir); err != nil {
+		return fmt.Errorf("cannot remove cmake config folder: %s", err)
+	}
+	if err := u.removeFolderRecursively(filepath.Dir(cmakeConfigDir)); err != nil {
+		return fmt.Errorf("cannot clean cmake config folder: %s", err)
 	}
 
 	// Remove install info file.
 	if err := os.Remove(installInfoFile); err != nil {
-		fmt.Print(config.UninstallFailed(portToUninstall, err))
-		return true
+		return fmt.Errorf("cannot remove install info file: %s", err)
 	}
 
-	// Try remove installed dir.
-	if err := u.removeParentRecursively(filepath.Dir(installInfoFile)); err != nil {
-		fmt.Print(config.UninstallFailed(portToUninstall, err))
-		return true
+	// Try to clean installed dir.
+	if err := u.removeFolderRecursively(filepath.Dir(installInfoFile)); err != nil {
+		return fmt.Errorf("cannot remove parent folder: %s", err)
 	}
 
-	fmt.Print(config.UninstallSuccessfully(portToUninstall))
-
-	return true
+	return nil
 }
 
-func (u uninstallCmd) removeParentRecursively(path string) error {
+func (u uninstallCmd) removeFolderRecursively(path string) error {
+	// Not exists, skip.
+	if !io.PathExists(path) {
+		return nil
+	}
+
 	entities, err := os.ReadDir(path)
 	if err != nil {
 		return err
@@ -146,7 +218,7 @@ func (u uninstallCmd) removeParentRecursively(path string) error {
 		}
 
 		// Remove parent folder if it's empty.
-		if err := u.removeParentRecursively(filepath.Dir(path)); err != nil {
+		if err := u.removeFolderRecursively(filepath.Dir(path)); err != nil {
 			return err
 		}
 
