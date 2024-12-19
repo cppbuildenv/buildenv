@@ -32,15 +32,15 @@ func (m make) Configure(buildType string) (string, error) {
 	}
 
 	var (
-		crossPrefix = os.Getenv("CROSS_PREFIX")
-		sysroot     = os.Getenv("SYSROOT")
-		host        = os.Getenv("HOST")
+		toolchainPrefix = os.Getenv("TOOLCHAIN_PREFIX")
+		sysroot         = os.Getenv("SYSROOT")
+		host            = os.Getenv("HOST")
 	)
 
 	// Append common variables for cross compiling.
 	m.Arguments = append(m.Arguments, fmt.Sprintf("--prefix=%s", m.InstalledDir))
 	m.Arguments = append(m.Arguments, fmt.Sprintf("--sysroot=%s", sysroot))
-	m.Arguments = append(m.Arguments, fmt.Sprintf("--cross-prefix=%s", crossPrefix))
+	m.Arguments = append(m.Arguments, fmt.Sprintf("--cross-prefix=%s", toolchainPrefix))
 
 	// Replace placeholders with real paths.
 	for index, argument := range m.Arguments {

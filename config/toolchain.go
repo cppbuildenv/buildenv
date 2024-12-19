@@ -17,7 +17,7 @@ type Toolchain struct {
 	SystemName      string `json:"system_name"`            // It would be "Windows", "Linux", "Android" and so on.
 	SystemProcessor string `json:"system_processor"`       // It would be "x86_64", "aarch64" and so on.
 	Host            string `json:"host"`                   // It would be "x86_64-linux-gnu", "aarch64-linux-gnu" and so on.
-	CrossPrefix     string `json:"cross_prefix"`           // It would be like "x86_64-linux-gnu-"
+	ToolchainPrefix string `json:"toolchain_prefix"`       // It would be like "x86_64-linux-gnu-"
 	CC              string `json:"cc"`
 	CXX             string `json:"cxx"`
 	FC              string `json:"fc"`
@@ -59,7 +59,7 @@ func (t *Toolchain) Verify() error {
 	}
 
 	// Verify toolchain prefix path and convert to absolute path.
-	if t.CrossPrefix == "" {
+	if t.ToolchainPrefix == "" {
 		return fmt.Errorf("toolchain.toolchain_prefix should be like 'x86_64-linux-gnu-', but it's empty")
 	}
 
@@ -99,7 +99,7 @@ func (t *Toolchain) Verify() error {
 
 	// This is used to cross-compile other ports by buildenv.
 	os.Setenv("PATH", t.fullpath+string(os.PathListSeparator)+os.Getenv("PATH"))
-	os.Setenv("CROSS_PREFIX", t.CrossPrefix)
+	os.Setenv("TOOLCHAIN_PREFIX", t.ToolchainPrefix)
 	os.Setenv("HOST", t.Host)
 	os.Setenv("CC", t.CC)
 	os.Setenv("CXX", t.CXX)

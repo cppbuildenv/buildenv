@@ -11,9 +11,10 @@ import (
 )
 
 type RootFS struct {
-	Url         string `json:"url"`                    // Download url.
-	ArchiveName string `json:"archive_name,omitempty"` // Archive name can be changed to avoid conflict.
-	Path        string `json:"path"`                   // Runtime path of tool, it's relative path  and would be converted to absolute path later.
+	Url             string   `json:"url"`                    // Download url.
+	ArchiveName     string   `json:"archive_name,omitempty"` // Archive name can be changed to avoid conflict.
+	Path            string   `json:"path"`                   // Runtime path of tool, it's relative path  and would be converted to absolute path later.
+	PkgConfigLibdir []string `json:"pkg_config_libdir"`
 
 	// Internal fields.
 	fullpath  string `json:"-"`
@@ -38,6 +39,20 @@ func (r *RootFS) Verify() error {
 	r.cmakepath = fmt.Sprintf("${BUILDENV_ROOT_DIR}/downloads/tools/%s", r.Path)
 
 	os.Setenv("SYSROOT", r.fullpath)
+
+	// Add pkg-config libdir in rootfs to environment.
+	var pkgConfigLibdirs []string
+	for _, libdir := range r.PkgConfigLibdir {
+		libDirFullPath := filepath.Join(r.fullpath, libdir)
+		if !io.PathExists(libDirFullPath) {
+			continue
+		}
+
+		pkgConfigLibdirs = append(pkgConfigLibdirs, libDirFullPath)
+	}
+	pkgConfigLibdirPaths := strings.Join(pkgConfigLibdirs, string(os.PathListSeparator))
+	os.Setenv("PKG_CONFIG_LIBDIR", pkgConfigLibdirPaths)
+
 	return nil
 }
 
@@ -131,6 +146,18 @@ func (r RootFS) generate(toolchain, environment *strings.Builder) error {
 
 	toolchain.WriteString("\n# Set pkg-config path for cross-compile.\n")
 	toolchain.WriteString("set(ENV{PKG_CONFIG_SYSROOT_DIR} \"${CMAKE_SYSROOT}\")\n")
+
+	// Add pkg-config libdir in rootfs to environment.
+	var pkgConfigLibdirs []string
+	for _, libdir := range r.PkgConfigLibdir {
+		libDirFullPath := filepath.Join(r.fullpath, libdir)
+		if !io.PathExists(libDirFullPath) {
+			continue
+		}
+		pkgConfigLibdirs = append(pkgConfigLibdirs, libDirFullPath)
+	}
+	pkgConfigLibdirPaths := strings.Join(pkgConfigLibdirs, string(os.PathListSeparator))
+	toolchain.WriteString(fmt.Sprintf("set(ENV{PKG_CONFIG_LIBDIR} \"%s\")\n", pkgConfigLibdirPaths))
 
 	// Write variables to environment
 	environment.WriteString("\n# Set rootfs for cross compile.\n")
