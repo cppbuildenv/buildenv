@@ -101,10 +101,11 @@ func (m make) InstalledFiles(installLogFile string) ([]string, error) {
 	}
 	defer file.Close()
 
-	var files []string // All installed files.
-	installReg1 := regexp.MustCompile(`^install -m \d{3} (.+)`)
-	installReg2 := regexp.MustCompile(`^INSTALL\s+(.+)`)
-	lnReg := regexp.MustCompile(`^ln\s+-f\s+-s? (.+) (.+)$`)
+	installReg1 := regexp.MustCompile(`^install -m \d{3} (.+)`) // case like x264
+	installReg2 := regexp.MustCompile(`^INSTALL\s+(.+)`)        // case like ffmpeg
+	lnReg := regexp.MustCompile(`^ln\s+-f\s+-s? (.+) (.+)$`)    // case like x264
+
+	var installedFiles []string
 
 	// Read line by line to find installed files.
 	scanner := bufio.NewScanner(file)
@@ -138,8 +139,8 @@ func (m make) InstalledFiles(installLogFile string) ([]string, error) {
 
 				// Some makefile install may contains duplicated files.
 				path = strings.TrimPrefix(path, m.InstalledRootDir+"/")
-				if slices.Index(files, path) == -1 {
-					files = append(files, path)
+				if slices.Index(installedFiles, path) == -1 {
+					installedFiles = append(installedFiles, path)
 				}
 			}
 		} else if len(matchLn) > 2 {
@@ -151,11 +152,11 @@ func (m make) InstalledFiles(installLogFile string) ([]string, error) {
 			}
 
 			path = strings.TrimPrefix(path, m.InstalledRootDir+"/")
-			files = append(files, path)
+			installedFiles = append(installedFiles, path)
 		}
 	}
 
-	return files, nil
+	return installedFiles, nil
 }
 
 func (m make) findInstalledFile(parentDir, filename string) (string, error) {

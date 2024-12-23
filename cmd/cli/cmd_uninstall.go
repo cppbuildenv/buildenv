@@ -57,7 +57,7 @@ func (u *uninstallCmd) listen() (handled bool) {
 	if index == -1 {
 		if !strings.Contains(u.uninstall, "-") {
 			fmt.Print(config.UninstallFailed(u.uninstall,
-				fmt.Errorf("cannot determine the exact port, as %s is not included in the port list of the current project", u.uninstall)))
+				fmt.Errorf("cannot determine the exact port, because %s is not included in the port list of the current project", u.uninstall)))
 			return true
 		}
 
@@ -164,7 +164,7 @@ func (u uninstallCmd) doUninsallPort(ctx config.Context, portNameVersion string)
 		if !io.PathExists(line) {
 			fileToRemove = filepath.Join(config.Dirs.InstalledRootDir, line)
 		}
-		if err := os.Remove(fileToRemove); err != nil {
+		if err := u.removeFiles(fileToRemove); err != nil {
 			return fmt.Errorf("cannot remove file: %s", err)
 		}
 
@@ -195,6 +195,27 @@ func (u uninstallCmd) doUninsallPort(ctx config.Context, portNameVersion string)
 	// Try to clean installed dir.
 	if err := u.removeFolderRecursively(filepath.Dir(installInfoFile)); err != nil {
 		return fmt.Errorf("cannot remove parent folder: %s", err)
+	}
+
+	return nil
+}
+
+// removeFiles remove files and all related shared libraries.
+func (u uninstallCmd) removeFiles(path string) error {
+	if !strings.Contains(path, "so") {
+		return os.Remove(path)
+	}
+
+	index := strings.Index(path, ".so")
+	matches, err := filepath.Glob(path[:index] + ".so*")
+	if err != nil {
+		return err
+	}
+
+	for _, item := range matches {
+		if err := os.Remove(item); err != nil {
+			return err
+		}
 	}
 
 	return nil
