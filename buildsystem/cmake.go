@@ -27,9 +27,10 @@ func (c cmake) Configure(buildType string) (string, error) {
 		return "", err
 	}
 
-	// Assemble script.
+	// Append extra global args.
 	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_PREFIX_PATH=%s", c.InstalledDir))
 	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_INSTALL_PREFIX=%s", c.InstalledDir))
+	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_POSITION_INDEPENDENT_CODE=%s", "ON"))
 
 	// Append 'CMAKE_BUILD_TYPE' if not contains it.
 	containBuildType := slices.ContainsFunc(c.Arguments, func(arg string) bool {
@@ -40,7 +41,7 @@ func (c cmake) Configure(buildType string) (string, error) {
 		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_BUILD_TYPE=%s", buildType))
 	}
 
-	// Assemble args into a string.
+	// Assemble args into a single command string.
 	joinedArgs := strings.Join(c.Arguments, " ")
 	configure := fmt.Sprintf("cmake -S %s -B %s %s", filepath.Join(c.SourceDir, c.SourceFolder), c.BuildDir, joinedArgs)
 
