@@ -34,6 +34,8 @@ type Toolchain struct {
 }
 
 func (t *Toolchain) Verify() error {
+	rootfs := os.Getenv("SYSROOT")
+
 	// Verify toolchain download url.
 	if t.Url == "" {
 		return fmt.Errorf("toolchain.url would be http url or local file url, but it's empty")
@@ -46,9 +48,9 @@ func (t *Toolchain) Verify() error {
 	if t.Path == "" {
 		return fmt.Errorf("toolchain.path is empty")
 	}
-
 	t.fullpath = filepath.Join(Dirs.ExtractedToolsDir, t.Path)
 	t.cmakepath = fmt.Sprintf("${BUILDENV_ROOT_DIR}/downloads/tools/%s", t.Path)
+	os.Setenv("PATH", t.fullpath+string(os.PathListSeparator)+os.Getenv("PATH"))
 
 	if t.SystemName == "" {
 		return fmt.Errorf("toolchain.system_name is empty")
@@ -62,47 +64,50 @@ func (t *Toolchain) Verify() error {
 	if t.ToolchainPrefix == "" {
 		return fmt.Errorf("toolchain.toolchain_prefix should be like 'x86_64-linux-gnu-', but it's empty")
 	}
+	os.Setenv("TOOLCHAIN_PREFIX", t.ToolchainPrefix)
 
 	if t.Host == "" {
 		return fmt.Errorf("toolchain.host should be like 'x86_64-linux-gnu', but it's empty")
 	}
+	os.Setenv("HOST", t.Host)
 
 	if t.CC == "" {
 		return fmt.Errorf("toolchain.cc is empty")
 	}
+	os.Setenv("CC", fmt.Sprintf("%s --sysroot=%s", t.CC, rootfs))
 
 	if t.CXX == "" {
 		return fmt.Errorf("toolchain.cxx is empty")
 	}
+	os.Setenv("CXX", fmt.Sprintf("%s --sysroot=%s", t.CXX, rootfs))
 
 	if t.FC != "" {
 		os.Setenv("FC", t.FC)
 	}
+
 	if t.RANLIB != "" {
 		os.Setenv("RANLIB", t.RANLIB)
 	}
+
 	if t.AR != "" {
 		os.Setenv("AR", t.AR)
 	}
+
 	if t.LD != "" {
-		os.Setenv("LD", t.LD)
+		os.Setenv("CXX", fmt.Sprintf("%s --sysroot=%s", t.LD, rootfs))
 	}
+
 	if t.NM != "" {
 		os.Setenv("NM", t.NM)
 	}
+
 	if t.OBJDUMP != "" {
 		os.Setenv("OBJDUMP", t.OBJDUMP)
 	}
+
 	if t.STRIP != "" {
 		os.Setenv("STRIP", t.STRIP)
 	}
-
-	// This is used to cross-compile other ports by buildenv.
-	os.Setenv("PATH", t.fullpath+string(os.PathListSeparator)+os.Getenv("PATH"))
-	os.Setenv("TOOLCHAIN_PREFIX", t.ToolchainPrefix)
-	os.Setenv("HOST", t.Host)
-	os.Setenv("CC", t.CC)
-	os.Setenv("CXX", t.CXX)
 
 	return nil
 }
