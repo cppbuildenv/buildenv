@@ -56,27 +56,33 @@ func (p *Port) Init(ctx Context, portPath string) error {
 
 	// Info file: used to record installed state.
 	nameVersion := p.NameVersion()
-	platformBuildType := fmt.Sprintf("%s-%s", ctx.Platform().Name, ctx.BuildType())
 	fileName := fmt.Sprintf("%s-%s.list", ctx.Platform().Name, ctx.BuildType())
-	sourceDir := filepath.Join(Dirs.WorkspaceDir, "buildtrees", nameVersion, "src")
-	buildDir := filepath.Join(Dirs.WorkspaceDir, "buildtrees", nameVersion, platformBuildType)
-	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", platformBuildType)
 
 	p.ctx = ctx
 	p.portsDir = filepath.Dir(portPath)
 	p.installInfoFile = filepath.Join(Dirs.InstalledRootDir, "buildenv", "info", nameVersion+"-"+fileName)
 
+	// Init build config with rootfs, toolchain info.
+	platformBuildType := fmt.Sprintf("%s-%s", ctx.Platform().Name, ctx.BuildType())
+	portConfig := buildsystem.PortConfig{
+		SystemName:       ctx.SystemName(),
+		SystemProcessor:  ctx.SystemProcessor(),
+		Host:             ctx.Host(),
+		RootFS:           ctx.RootFSPath(),
+		ToolchainPrefix:  ctx.ToolchainPrefix(),
+		LibName:          p.Name,
+		LibVersion:       p.Version,
+		SourceDir:        filepath.Join(Dirs.WorkspaceDir, "buildtrees", p.NameVersion(), "src"),
+		SourceFolder:     p.SourceFolder,
+		BuildDir:         filepath.Join(Dirs.WorkspaceDir, "buildtrees", p.NameVersion(), platformBuildType),
+		InstalledDir:     filepath.Join(Dirs.WorkspaceDir, "installed", platformBuildType),
+		InstalledRootDir: Dirs.InstalledRootDir,
+		JobNum:           ctx.JobNum(),
+	}
+
 	if len(p.BuildConfigs) > 0 {
 		for index := range p.BuildConfigs {
-			p.BuildConfigs[index].Version = p.Version
-			p.BuildConfigs[index].SystemName = ctx.SystemName()
-			p.BuildConfigs[index].LibName = p.Name
-			p.BuildConfigs[index].SourceDir = sourceDir
-			p.BuildConfigs[index].SourceFolder = p.SourceFolder
-			p.BuildConfigs[index].BuildDir = buildDir
-			p.BuildConfigs[index].InstalledDir = installedDir
-			p.BuildConfigs[index].InstalledRootDir = Dirs.InstalledRootDir
-			p.BuildConfigs[index].JobNum = p.ctx.JobNum()
+			p.BuildConfigs[index].SetPortConfig(portConfig)
 		}
 	}
 
@@ -195,7 +201,7 @@ func (p Port) CheckAndRepair(args VerifyArgs) error {
 	}
 
 	// Write installed file info list.
-	installedFiles, err := matchedConfig.BuildSystem.InstalledFiles(installLogPath)
+	installedFiles, err := matchedConfig.BuildSystem().InstalledFiles(installLogPath)
 	if err != nil {
 		return err
 	}

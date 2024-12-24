@@ -20,46 +20,46 @@ type make struct {
 
 func (m make) Configure(buildType string) (string, error) {
 	// Remove build dir and create it for configure.
-	if err := os.RemoveAll(m.BuildDir); err != nil {
+	if err := os.RemoveAll(m.portConfig.BuildDir); err != nil {
 		return "", err
 	}
-	if err := os.MkdirAll(m.BuildDir, os.ModeDir|os.ModePerm); err != nil {
-		return "", err
-	}
-
-	if err := os.Chdir(m.BuildDir); err != nil {
+	if err := os.MkdirAll(m.portConfig.BuildDir, os.ModeDir|os.ModePerm); err != nil {
 		return "", err
 	}
 
-	var (
-		toolchainPrefix = os.Getenv("TOOLCHAIN_PREFIX")
-		sysroot         = os.Getenv("SYSROOT")
-		host            = os.Getenv("HOST")
-	)
+	if err := os.Chdir(m.portConfig.BuildDir); err != nil {
+		return "", err
+	}
 
 	// Append common variables for cross compiling.
-	m.Arguments = append(m.Arguments, fmt.Sprintf("--prefix=%s", m.InstalledDir))
-	m.Arguments = append(m.Arguments, fmt.Sprintf("--sysroot=%s", sysroot))
-	m.Arguments = append(m.Arguments, fmt.Sprintf("--cross-prefix=%s", toolchainPrefix))
+	m.Arguments = append(m.Arguments, fmt.Sprintf("--prefix=%s", m.portConfig.InstalledDir))
+	m.Arguments = append(m.Arguments, fmt.Sprintf("--sysroot=%s", m.portConfig.RootFS))
+	m.Arguments = append(m.Arguments, fmt.Sprintf("--cross-prefix=%s", m.portConfig.ToolchainPrefix))
 
 	// Replace placeholders with real paths.
 	for index, argument := range m.Arguments {
-		if strings.Contains(argument, "${INSTALLED_DIR}") {
-			m.Arguments[index] = strings.ReplaceAll(argument, "${INSTALLED_DIR}", m.InstalledDir)
+		if strings.Contains(argument, "${HOST}") {
+			m.Arguments[index] = strings.ReplaceAll(argument, "${HOST}", m.portConfig.Host)
 		}
 
-		if strings.Contains(argument, "${HOST}") {
-			m.Arguments[index] = strings.ReplaceAll(argument, "${HOST}", host)
+		if strings.Contains(argument, "${SYSTEM_NAME}") {
+			m.Arguments[index] = strings.ReplaceAll(argument, "${SYSTEM_NAME}", strings.ToLower(m.portConfig.SystemName))
+		}
+
+		if strings.Contains(argument, "${SYSTEM_PROCESSOR}") {
+			m.Arguments[index] = strings.ReplaceAll(argument, "${SYSTEM_PROCESSOR}", m.portConfig.SystemProcessor)
 		}
 	}
 
 	// Join args into a string.
 	joinedArgs := strings.Join(m.Arguments, " ")
-	configure := fmt.Sprintf("%s/configure %s", m.SourceDir, joinedArgs)
+	configure := fmt.Sprintf("%s/configure %s", m.portConfig.SourceDir, joinedArgs)
 
 	// Execute configure.
-	configureLogPath := filepath.Join(filepath.Dir(m.BuildDir), filepath.Base(m.BuildDir)+"-configure.log")
-	title := fmt.Sprintf("[configure %s]", m.LibName)
+	parentDir := filepath.Dir(m.portConfig.BuildDir)
+	fileName := filepath.Base(m.portConfig.BuildDir) + "-configure.log"
+	configureLogPath := filepath.Join(parentDir, fileName)
+	title := fmt.Sprintf("[configure %s]", m.portConfig.LibName)
 	if err := m.execute(title, configure, configureLogPath); err != nil {
 		return "", err
 	}
@@ -69,11 +69,13 @@ func (m make) Configure(buildType string) (string, error) {
 
 func (m make) Build() (string, error) {
 	// Assemble script.
-	command := fmt.Sprintf("make -j %d", m.JobNum)
+	command := fmt.Sprintf("make -j %d", m.portConfig.JobNum)
 
 	// Execute build.
-	buildLogPath := filepath.Join(filepath.Dir(m.BuildDir), filepath.Base(m.BuildDir)+"-build.log")
-	title := fmt.Sprintf("[build %s]", m.LibName)
+	parentDir := filepath.Dir(m.portConfig.BuildDir)
+	fileName := filepath.Base(m.portConfig.BuildDir) + "-build.log"
+	buildLogPath := filepath.Join(parentDir, fileName)
+	title := fmt.Sprintf("[build %s]", m.portConfig.LibName)
 	if err := m.execute(title, command, buildLogPath); err != nil {
 		return "", err
 	}
@@ -86,8 +88,10 @@ func (m make) Install() (string, error) {
 	command := "make install"
 
 	// Execute install.
-	installLogPath := filepath.Join(filepath.Dir(m.BuildDir), filepath.Base(m.BuildDir)+"-install.log")
-	title := fmt.Sprintf("[install %s]", m.LibName)
+	parentDir := filepath.Dir(m.portConfig.BuildDir)
+	fileName := filepath.Base(m.portConfig.BuildDir) + "-install.log"
+	installLogPath := filepath.Join(parentDir, fileName)
+	title := fmt.Sprintf("[install %s]", m.portConfig.LibName)
 	if err := m.execute(title, command, installLogPath); err != nil {
 		return "", err
 	}
@@ -126,7 +130,7 @@ func (m make) InstalledFiles(installLogFile string) ([]string, error) {
 
 			segments := strings.Split(line, " ")
 			for _, segment := range segments {
-				if strings.HasPrefix(segment, m.InstalledDir) {
+				if strings.HasPrefix(segment, m.portConfig.InstalledDir) {
 					continue
 				}
 
@@ -138,7 +142,7 @@ func (m make) InstalledFiles(installLogFile string) ([]string, error) {
 				}
 
 				// Some makefile install may contains duplicated files.
-				path = strings.TrimPrefix(path, m.InstalledRootDir+"/")
+				path = strings.TrimPrefix(path, m.portConfig.InstalledRootDir+"/")
 				if slices.Index(installedFiles, path) == -1 {
 					installedFiles = append(installedFiles, path)
 				}
@@ -151,7 +155,7 @@ func (m make) InstalledFiles(installLogFile string) ([]string, error) {
 				return nil, err
 			}
 
-			path = strings.TrimPrefix(path, m.InstalledRootDir+"/")
+			path = strings.TrimPrefix(path, m.portConfig.InstalledRootDir+"/")
 			installedFiles = append(installedFiles, path)
 		}
 	}
@@ -162,7 +166,7 @@ func (m make) InstalledFiles(installLogFile string) ([]string, error) {
 func (m make) findInstalledFile(parentDir, filename string) (string, error) {
 	var filePaths []string
 
-	if err := filepath.Walk(m.InstalledDir, func(path string, info os.FileInfo, err error) error {
+	if err := filepath.Walk(m.portConfig.InstalledDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}

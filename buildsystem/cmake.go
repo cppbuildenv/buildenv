@@ -20,16 +20,16 @@ type cmake struct {
 
 func (c cmake) Configure(buildType string) (string, error) {
 	// Remove build dir and create it for configure.
-	if err := os.RemoveAll(c.BuildDir); err != nil {
+	if err := os.RemoveAll(c.portConfig.BuildDir); err != nil {
 		return "", err
 	}
-	if err := os.MkdirAll(c.BuildDir, os.ModeDir|os.ModePerm); err != nil {
+	if err := os.MkdirAll(c.portConfig.BuildDir, os.ModeDir|os.ModePerm); err != nil {
 		return "", err
 	}
 
 	// Append extra global args.
-	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_PREFIX_PATH=%s", c.InstalledDir))
-	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_INSTALL_PREFIX=%s", c.InstalledDir))
+	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_PREFIX_PATH=%s", c.portConfig.InstalledDir))
+	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_INSTALL_PREFIX=%s", c.portConfig.InstalledDir))
 	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_POSITION_INDEPENDENT_CODE=%s", "ON"))
 
 	// Append 'CMAKE_BUILD_TYPE' if not contains it.
@@ -43,11 +43,14 @@ func (c cmake) Configure(buildType string) (string, error) {
 
 	// Assemble args into a single command string.
 	joinedArgs := strings.Join(c.Arguments, " ")
-	configure := fmt.Sprintf("cmake -S %s -B %s %s", filepath.Join(c.SourceDir, c.SourceFolder), c.BuildDir, joinedArgs)
+	sourceDir := filepath.Join(c.portConfig.SourceDir, c.portConfig.SourceFolder)
+	configure := fmt.Sprintf("cmake -S %s -B %s %s", sourceDir, c.portConfig.BuildDir, joinedArgs)
 
 	// Execute configure.
-	configureLogPath := filepath.Join(filepath.Dir(c.BuildDir), filepath.Base(c.BuildDir)+"-configure.log")
-	title := fmt.Sprintf("[configure %s]", c.LibName)
+	parentDir := filepath.Dir(c.portConfig.BuildDir)
+	fileName := filepath.Base(c.portConfig.BuildDir) + "-configure.log"
+	configureLogPath := filepath.Join(parentDir, fileName)
+	title := fmt.Sprintf("[configure %s]", c.portConfig.LibName)
 	if err := c.execute(title, configure, configureLogPath); err != nil {
 		return "", err
 	}
@@ -57,11 +60,13 @@ func (c cmake) Configure(buildType string) (string, error) {
 
 func (c cmake) Build() (string, error) {
 	// Assemble script.
-	command := fmt.Sprintf("cmake --build %s --parallel %d", c.BuildDir, c.JobNum)
+	command := fmt.Sprintf("cmake --build %s --parallel %d", c.portConfig.BuildDir, c.portConfig.JobNum)
 
 	// Execute build.
-	buildLogPath := filepath.Join(filepath.Dir(c.BuildDir), filepath.Base(c.BuildDir)+"-build.log")
-	title := fmt.Sprintf("[build %s]", c.LibName)
+	parentDir := filepath.Dir(c.portConfig.BuildDir)
+	fileName := filepath.Base(c.portConfig.BuildDir) + "-build.log"
+	buildLogPath := filepath.Join(parentDir, fileName)
+	title := fmt.Sprintf("[build %s]", c.portConfig.LibName)
 	if err := c.execute(title, command, buildLogPath); err != nil {
 		return "", err
 	}
@@ -71,11 +76,13 @@ func (c cmake) Build() (string, error) {
 
 func (c cmake) Install() (string, error) {
 	// Assemble script.
-	command := fmt.Sprintf("cmake --install %s", c.BuildDir)
+	command := fmt.Sprintf("cmake --install %s", c.portConfig.BuildDir)
 
 	// Execute install.
-	installLogPath := filepath.Join(filepath.Dir(c.BuildDir), filepath.Base(c.BuildDir)+"-install.log")
-	title := fmt.Sprintf("[install %s]", c.LibName)
+	parentDir := filepath.Dir(c.portConfig.BuildDir)
+	fileName := filepath.Base(c.portConfig.BuildDir) + "-install.log"
+	installLogPath := filepath.Join(parentDir, fileName)
+	title := fmt.Sprintf("[install %s]", c.portConfig.LibName)
 	if err := c.execute(title, command, installLogPath); err != nil {
 		return "", err
 	}
@@ -101,7 +108,7 @@ func (c cmake) InstalledFiles(installLogFile string) ([]string, error) {
 
 		if len(match) > 2 {
 			installedFile := match[2]
-			installedFile = strings.TrimPrefix(installedFile, c.InstalledRootDir+"/")
+			installedFile = strings.TrimPrefix(installedFile, c.portConfig.InstalledRootDir+"/")
 			files = append(files, installedFile)
 		}
 	}

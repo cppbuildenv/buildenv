@@ -18,9 +18,14 @@ type Context interface {
 	Project() Project
 	Toolchain() *Toolchain
 	RootFS() *RootFS
-	SystemName() string
 	BuildType() string
 	JobNum() int
+
+	SystemName() string
+	SystemProcessor() string
+	Host() string
+	ToolchainPrefix() string
+	RootFSPath() string
 }
 
 func NewBuildEnv(buildType string) *buildenv {
@@ -241,6 +246,46 @@ func (b buildenv) SystemName() string {
 	}
 
 	return b.Toolchain().SystemName
+}
+
+func (b buildenv) SystemProcessor() string {
+	if b.Toolchain() == nil {
+		return runtime.GOARCH
+	}
+	return b.Toolchain().SystemProcessor
+}
+
+func (b buildenv) Host() string {
+	if b.Toolchain() == nil {
+		if runtime.GOOS == "windows" {
+			return "x86_64-w64-mingw32"
+		} else if runtime.GOOS == "darwin" {
+			return "x86_64-apple-darwin"
+		} else {
+			return "x86_64-linux-gnu"
+		}
+	}
+	return b.Toolchain().Host
+}
+
+func (b buildenv) ToolchainPrefix() string {
+	if b.Toolchain() == nil {
+		if runtime.GOOS == "windows" {
+			return "x86_64-w64-mingw32-"
+		} else if runtime.GOOS == "darwin" {
+			return "x86_64-apple-darwin-"
+		} else {
+			return "x86_64-linux-gnu-"
+		}
+	}
+	return b.Toolchain().ToolchainPrefix
+}
+
+func (b buildenv) RootFSPath() string {
+	if b.RootFS() == nil {
+		return ""
+	}
+	return b.RootFS().fullpath
 }
 
 func (b buildenv) BuildType() string {
