@@ -26,13 +26,13 @@ install 三方库的时候，如果已经配置到project里了，无需指定�
 cmd/cli缺少创建和选择project的功能  | ✔
 一个项目配置同名不同版本的port是禁止的  | ✔
 支持编译库为native的  | ✔
+usage 里的颜色需要优化  | ✔
 运行tools需要将内部lib路径加入到LD_LIBRARY_PATH  | ✘
 支持 buildenv -upgrade 升级  | ✘
 有的toolchain或者tool不是绿色版，不能托管到buildenv里，需要绝对路径指向  | ✘
 makefile编译前不支持配置环境变量，例如：export CFLAGS="-mfpu=neon"  | ✘
 动态生成的cmake config文件（windows还没测试）| ✘
 支持windows下工作  | ✘
-usage 里的颜色需要优化  | ✘
 下载的库暂不支持生成cmake config文件  | ✘
 支持通过命令创建tool和port  | ✘
 在创建的新tool和port里添加注释  | ✘
@@ -40,3 +40,4 @@ usage 里的颜色需要优化  | ✘
 支持autotools  | ✘
 支持meson  | ✘
 支持ninja  | ✘
+支持ccache  | ✘

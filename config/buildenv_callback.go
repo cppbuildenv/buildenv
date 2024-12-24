@@ -117,6 +117,8 @@ func (c callbackImpl) OnSelectProject(projectName string) error {
 func (c callbackImpl) About(version string) string {
 	toolchainPath, _ := filepath.Abs("script/toolchain_file.cmake")
 	environmentPath, _ := filepath.Abs("script/environment")
+	environmentPath = color.Sprintf(color.Magenta, "%s", environmentPath)
+	toolchainPath = color.Sprintf(color.Magenta, "%s", toolchainPath)
 
 	return fmt.Sprintf("\nWelcome to buildenv (%s).\n"+
 		"---------------------------------------\n"+
