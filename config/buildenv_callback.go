@@ -55,7 +55,7 @@ func (c callbackImpl) OnSelectPlatform(platformName string) error {
 
 	// Generate toolchain file.
 	scriptDir := filepath.Join(Dirs.WorkspaceDir, "script")
-	if _, err := buildenv.platform.GenerateToolchainFile(scriptDir); err != nil {
+	if _, err := buildenv.GenerateToolchainFile(scriptDir); err != nil {
 		return err
 	}
 
@@ -107,7 +107,7 @@ func (c callbackImpl) OnSelectProject(projectName string) error {
 
 	// Generate toolchain file.
 	scriptDir := filepath.Join(Dirs.WorkspaceDir, "script")
-	if _, err := buildenv.platform.GenerateToolchainFile(scriptDir); err != nil {
+	if _, err := buildenv.GenerateToolchainFile(scriptDir); err != nil {
 		return err
 	}
 
