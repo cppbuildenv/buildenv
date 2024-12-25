@@ -153,14 +153,14 @@ func (r RootFS) generate(toolchain, environment *strings.Builder) error {
 	// Add pkg-config libdir in rootfs to environment.
 	var pkgConfigLibdirs []string
 	for _, libdir := range r.PkgConfigLibdir {
-		libDirFullPath := filepath.Join(r.fullpath, libdir)
-		if !io.PathExists(libDirFullPath) {
-			continue
+		if io.PathExists(filepath.Join(r.fullpath, libdir)) {
+			pkgConfigLibdirs = append(pkgConfigLibdirs, filepath.Join(r.cmakepath, libdir))
 		}
-		pkgConfigLibdirs = append(pkgConfigLibdirs, libDirFullPath)
 	}
-	pkgConfigLibdirPaths := strings.Join(pkgConfigLibdirs, string(os.PathListSeparator))
-	toolchain.WriteString(fmt.Sprintf("set(ENV{PKG_CONFIG_LIBDIR} \"%s\")\n", pkgConfigLibdirPaths))
+	if len(pkgConfigLibdirs) > 0 {
+		pkgConfigLibdirPaths := strings.Join(pkgConfigLibdirs, string(os.PathListSeparator))
+		toolchain.WriteString(fmt.Sprintf("set(ENV{PKG_CONFIG_LIBDIR} \"%s\")\n", pkgConfigLibdirPaths))
+	}
 
 	// Write variables to environment
 	environment.WriteString("\n# Set rootfs for cross compile.\n")
