@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"unicode"
 )
 
 type PortConfig struct {
@@ -31,6 +32,7 @@ type PortConfig struct {
 
 type BuildSystem interface {
 	Clone(repoUrl, repoRef string) error
+	SourceEnvs() error
 	Configure(buildType string) (string, error)
 	Build() (string, error)
 	Install() (string, error)
@@ -40,6 +42,7 @@ type BuildSystem interface {
 type BuildConfig struct {
 	Pattern     string                 `json:"pattern"`
 	BuildTool   string                 `json:"build_tool"`
+	EnvVars     []string               `json:"env_vars"`
 	Arguments   []string               `json:"arguments"`
 	Depedencies []string               `json:"dependencies"`
 	CMakeConfig *generator.CMakeConfig `json:"cmake_config"`
@@ -85,6 +88,28 @@ func (b BuildConfig) Clone(repoUrl, repoRef string) error {
 	return nil
 }
 
+func (b BuildConfig) SourceEnvs() error {
+	for _, item := range b.EnvVars {
+		item = strings.TrimSpace(item)
+
+		index := strings.Index(item, "=")
+		if index == -1 {
+			return fmt.Errorf("invalid env var: %s", item)
+		}
+
+		key := strings.TrimSpace(item[:index])
+		value := strings.TrimSpace(item[index+1:])
+
+		if err := b.validateEnv(key); err != nil {
+			return err
+		}
+
+		os.Setenv(key, value)
+	}
+
+	return nil
+}
+
 func (b *BuildConfig) CheckAndRepair(url, version, buildType string, cmakeConfig *generator.CMakeConfig) (string, error) {
 	switch b.BuildTool {
 	case "cmake":
@@ -104,15 +129,15 @@ func (b *BuildConfig) CheckAndRepair(url, version, buildType string, cmakeConfig
 	if err := b.buildSystem.Clone(url, version); err != nil {
 		return "", err
 	}
-
+	if err := b.buildSystem.SourceEnvs(); err != nil {
+		return "", err
+	}
 	if _, err := b.buildSystem.Configure(buildType); err != nil {
 		return "", err
 	}
-
 	if _, err := b.buildSystem.Build(); err != nil {
 		return "", err
 	}
-
 	installLogPath, err := b.buildSystem.Install()
 	if err != nil {
 		return "", err
@@ -176,5 +201,25 @@ func (b BuildConfig) execute(title, command, logPath string) error {
 		return err
 	}
 
+	return nil
+}
+
+func (b BuildConfig) validateEnv(envVar string) error {
+	envVar = strings.TrimSpace(envVar)
+	parts := strings.Split(envVar, "=")
+	if len(parts) == 1 {
+		if strings.Contains(envVar, " ") ||
+			strings.Contains(envVar, "-") ||
+			strings.Contains(envVar, "&") ||
+			strings.Contains(envVar, "!") ||
+			strings.Contains(envVar, "\\") ||
+			strings.Contains(envVar, "|") ||
+			strings.Contains(envVar, ";") ||
+			strings.Contains(envVar, "'") ||
+			strings.Contains(envVar, "#") ||
+			unicode.IsDigit(rune(envVar[0])) {
+			return fmt.Errorf("invalid env key: %s", envVar)
+		}
+	}
 	return nil
 }
