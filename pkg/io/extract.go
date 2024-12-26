@@ -9,6 +9,14 @@ import (
 	"strings"
 )
 
+func IsSupportedArchive(filePath string) bool {
+	return strings.HasSuffix(filePath, ".tar.gz") ||
+		strings.HasSuffix(filePath, ".tar.xz") ||
+		strings.HasSuffix(filePath, ".tar.bz2") ||
+		strings.HasSuffix(filePath, ".zip") ||
+		strings.HasSuffix(filePath, ".7z")
+}
+
 func Extract(archiveFile, destDir string) error {
 	fileName := filepath.Base(archiveFile)
 	PrintInline(fmt.Sprintf("\rExtracting:  %s...", fileName))

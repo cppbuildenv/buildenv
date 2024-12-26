@@ -70,13 +70,13 @@ func (r RootFS) CheckAndRepair(args VerifyArgs) error {
 	if r.ArchiveName != "" {
 		folderName = io.FileBaseName(r.ArchiveName)
 	}
-	extractedPath := filepath.Join(Dirs.ExtractedToolsDir, folderName)
+	location := filepath.Join(Dirs.ExtractedToolsDir, folderName)
 
 	// Check if tool exists.
 	if io.PathExists(r.fullpath) {
 		if !args.Silent() {
 			title := color.Sprintf(color.Green, "\n[✔] ---- Rootfs: %s\n", io.FileBaseName(r.Url))
-			fmt.Printf("%sLocation: %s\n", title, extractedPath)
+			fmt.Printf("%sLocation: %s\n", title, location)
 		}
 		return nil
 	}
@@ -87,47 +87,16 @@ func (r RootFS) CheckAndRepair(args VerifyArgs) error {
 		archiveName = r.ArchiveName
 	}
 
-	// Check if need to download file.
-	downloaded := filepath.Join(Dirs.DownloadRootDir, archiveName)
-	if io.PathExists(downloaded) {
-		// Redownload if remote file size and local file size not match.
-		fileSize, err := io.FileSize(r.Url)
-		if err != nil {
-			return fmt.Errorf("%s: get remote filesize failed: %w", archiveName, err)
-		}
-		info, err := os.Stat(downloaded)
-		if err != nil {
-			return fmt.Errorf("%s: get local filesize failed: %w", archiveName, err)
-		}
-		if info.Size() != fileSize {
-			downloadRequest := io.NewDownloadRequest(r.Url, Dirs.DownloadRootDir)
-			downloadRequest.SetArchiveName(archiveName)
-			if _, err := downloadRequest.Download(); err != nil {
-				return fmt.Errorf("%s: download failed: %w", archiveName, err)
-			}
-		}
-	} else {
-		downloadRequest := io.NewDownloadRequest(r.Url, Dirs.DownloadRootDir)
-		downloadRequest.SetArchiveName(archiveName)
-		if _, err := downloadRequest.Download(); err != nil {
-			return fmt.Errorf("%s: download failed: %w", archiveName, err)
-		}
-	}
-
-	// Extract archive file.
-	if err := io.Extract(downloaded, filepath.Join(Dirs.ExtractedToolsDir, folderName)); err != nil {
-		return fmt.Errorf("%s: extract rootfs failed: %w", downloaded, err)
-	}
-
-	// Check if has nested folder (handling case where there's an extra nested folder).
-	if err := io.MoveNestedFolderIfExist(extractedPath); err != nil {
-		return fmt.Errorf("%s: failed to move nested folder: %w", archiveName, err)
+	// Check and repair resource.
+	repair := io.NewResourceRepair(r.Url, archiveName, folderName, Dirs.ExtractedToolsDir, Dirs.DownloadRootDir)
+	if err := repair.CheckAndRepair(); err != nil {
+		return err
 	}
 
 	// Print download & extract info.
 	if !args.Silent() {
 		title := color.Sprintf(color.Green, "\n[✔] ---- Rootfs: %s\n", io.FileBaseName(r.Url))
-		fmt.Printf("%sLocation: %s\n", title, extractedPath)
+		fmt.Printf("%sLocation: %s\n", title, location)
 	}
 	return nil
 }

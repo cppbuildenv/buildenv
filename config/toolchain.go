@@ -44,13 +44,47 @@ func (t *Toolchain) Verify() error {
 		return fmt.Errorf("toolchain.url of %s is not accessible", t.Url)
 	}
 
-	// Verify toolchain path and convert to absolute path.
-	if t.Path == "" {
-		return fmt.Errorf("toolchain.path is empty")
+	switch {
+	// Web resource file would be extracted to specified path, so path cannot be empty.
+	case strings.HasPrefix(t.Url, "http"), strings.HasPrefix(t.Url, "ftp"):
+		if t.Path == "" {
+			return fmt.Errorf("toolchain.path is empty")
+		}
+
+		t.fullpath = filepath.Join(Dirs.ExtractedToolsDir, t.Path)
+		t.cmakepath = fmt.Sprintf("${BUILDENV_ROOT_DIR}/downloads/tools/%s", t.Path)
+		os.Setenv("PATH", t.fullpath+string(os.PathListSeparator)+os.Getenv("PATH"))
+
+	case strings.HasPrefix(t.Url, "file:///"):
+		localPath := strings.TrimPrefix(t.Url, "file:///")
+		state, err := os.Stat(localPath)
+		if err != nil {
+			return fmt.Errorf("toolchain.url of %s is not accessible", t.Url)
+		}
+
+		if state.IsDir() {
+			t.fullpath = filepath.Join(localPath, t.Path)
+			t.cmakepath = t.fullpath
+			os.Setenv("PATH", t.fullpath+string(os.PathListSeparator)+os.Getenv("PATH"))
+		} else {
+			// Even local must be a archive file and path should not be empty.
+			if t.Path == "" {
+				return fmt.Errorf("toolchain.path is empty")
+			}
+
+			// Check if buildenv supported archive file.
+			if !io.IsSupportedArchive(localPath) {
+				return fmt.Errorf("toolchain.path of %s is not a archive file", t.Url)
+			}
+
+			t.fullpath = filepath.Join(Dirs.ExtractedToolsDir, t.Path)
+			t.cmakepath = fmt.Sprintf("${BUILDENV_ROOT_DIR}/downloads/tools/%s", t.Path)
+			os.Setenv("PATH", t.fullpath+string(os.PathListSeparator)+os.Getenv("PATH"))
+		}
+
+	default:
+		return fmt.Errorf("toolchain.url of %s is not accessible", t.Url)
 	}
-	t.fullpath = filepath.Join(Dirs.ExtractedToolsDir, t.Path)
-	t.cmakepath = fmt.Sprintf("${BUILDENV_ROOT_DIR}/downloads/tools/%s", t.Path)
-	os.Setenv("PATH", t.fullpath+string(os.PathListSeparator)+os.Getenv("PATH"))
 
 	if t.SystemName == "" {
 		return fmt.Errorf("toolchain.system_name is empty")
@@ -123,13 +157,13 @@ func (t Toolchain) CheckAndRepair(args VerifyArgs) error {
 	if t.ArchiveName != "" {
 		folderName = io.FileBaseName(t.ArchiveName)
 	}
-	extractedPath := filepath.Join(Dirs.ExtractedToolsDir, folderName)
+	location := filepath.Join(Dirs.ExtractedToolsDir, folderName)
 
 	// Check if tool exists.
 	if io.PathExists(t.fullpath) {
 		if !args.Silent() {
 			title := color.Sprintf(color.Green, "\n[✔] ---- Toolchain: %s\n", io.FileBaseName(t.Url))
-			fmt.Printf("%sLocation: %s\n", title, extractedPath)
+			fmt.Printf("%sLocation: %s\n", title, location)
 		}
 
 		return nil
@@ -141,47 +175,16 @@ func (t Toolchain) CheckAndRepair(args VerifyArgs) error {
 		archiveName = t.ArchiveName
 	}
 
-	// Check if need to download file.
-	downloaded := filepath.Join(Dirs.DownloadRootDir, archiveName)
-	if io.PathExists(downloaded) {
-		// Redownload if remote file size and local file size not match.
-		fileSize, err := io.FileSize(t.Url)
-		if err != nil {
-			return fmt.Errorf("%s: get remote filesize failed: %w", archiveName, err)
-		}
-		info, err := os.Stat(downloaded)
-		if err != nil {
-			return fmt.Errorf("%s: get local filesize failed: %w", archiveName, err)
-		}
-		if info.Size() != fileSize {
-			downloadRequest := io.NewDownloadRequest(t.Url, Dirs.DownloadRootDir)
-			downloadRequest.SetArchiveName(archiveName)
-			if _, err := downloadRequest.Download(); err != nil {
-				return fmt.Errorf("%s: download failed: %w", archiveName, err)
-			}
-		}
-	} else {
-		downloadRequest := io.NewDownloadRequest(t.Url, Dirs.DownloadRootDir)
-		downloadRequest.SetArchiveName(archiveName)
-		if _, err := downloadRequest.Download(); err != nil {
-			return fmt.Errorf("%s: download failed: %w", archiveName, err)
-		}
-	}
-
-	// Extract archive file.
-	if err := io.Extract(downloaded, filepath.Join(Dirs.ExtractedToolsDir, folderName)); err != nil {
-		return fmt.Errorf("%s: extract toolchain failed: %w", downloaded, err)
-	}
-
-	// Check if has nested folder (handling case where there's an extra nested folder).
-	if err := io.MoveNestedFolderIfExist(extractedPath); err != nil {
-		return fmt.Errorf("%s: failed to move nested folder: %w", archiveName, err)
+	// Check and repair resource.
+	repair := io.NewResourceRepair(t.Url, archiveName, folderName, Dirs.ExtractedToolsDir, Dirs.DownloadRootDir)
+	if err := repair.CheckAndRepair(); err != nil {
+		return err
 	}
 
 	// Print download & extract info.
 	if !args.Silent() {
 		title := color.Sprintf(color.Green, "\n[✔] ---- Toolchain: %s\n", io.FileBaseName(t.Url))
-		fmt.Printf("%sLocation: %s\n", title, extractedPath)
+		fmt.Printf("%sLocation: %s\n", title, location)
 	}
 	return nil
 }

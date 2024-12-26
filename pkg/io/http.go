@@ -14,6 +14,8 @@ func CheckAvailable(filePath string) error {
 		if !PathExists(filePath) {
 			return fmt.Errorf("file not exists: %s", filePath)
 		}
+
+		return nil
 	}
 
 	client := http.Client{
