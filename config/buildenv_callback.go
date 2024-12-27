@@ -4,6 +4,7 @@ import (
 	"buildenv/pkg/color"
 	"fmt"
 	"path/filepath"
+	"strings"
 )
 
 var Callbacks = callbackImpl{}
@@ -108,6 +109,33 @@ func (c callbackImpl) OnSelectProject(projectName string) error {
 	// Generate toolchain file.
 	scriptDir := filepath.Join(Dirs.WorkspaceDir, "script")
 	if _, err := buildenv.GenerateToolchainFile(scriptDir); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c callbackImpl) OnCreateTool(toolName string) error {
+	toolPath := filepath.Join(Dirs.ToolsDir, toolName+".json")
+
+	var tool Tool
+	if err := tool.Write(toolPath); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c callbackImpl) OnCreatePort(portNameVersion string) error {
+	parts := strings.Split(portNameVersion, "-")
+	if len(parts) != 2 {
+		return fmt.Errorf("invalid port name version")
+	}
+
+	portPath := filepath.Join(Dirs.PortsDir, portNameVersion+".json")
+
+	var port Port
+	if err := port.Write(portPath); err != nil {
 		return err
 	}
 

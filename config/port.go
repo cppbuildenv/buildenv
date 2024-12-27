@@ -134,6 +134,26 @@ func (p Port) Installed() bool {
 	return true
 }
 
+func (p Port) Write(portPath string) error {
+	p.BuildConfigs = []buildsystem.BuildConfig{}
+	bytes, err := json.MarshalIndent(p, "", "    ")
+	if err != nil {
+		return err
+	}
+
+	// Check if tool exists.
+	if io.PathExists(portPath) {
+		return fmt.Errorf("%s is already exists", portPath)
+	}
+
+	// Make sure the parent directory exists.
+	parentDir := filepath.Dir(portPath)
+	if err := os.MkdirAll(parentDir, 0755); err != nil {
+		return err
+	}
+	return os.WriteFile(portPath, bytes, os.ModePerm)
+}
+
 func (p Port) CheckAndRepair(args VerifyArgs) error {
 	if !args.CheckAndRepair() {
 		return nil

@@ -41,3 +41,5 @@ makefile编译前不支持配置环境变量，例如：export CFLAGS="-mfpu=neo
 支持meson  | ✘
 支持ninja  | ✘
 支持ccache  | ✘
+支持编译缓存共享  | ✘
+终端输出实现需要再简化  | ✘

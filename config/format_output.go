@@ -77,3 +77,19 @@ func UninstallSuccessfully(port string) string {
 func UninstallFailed(port string, err error) string {
 	return color.Sprintf(color.Red, "\n[✘] %s uninstall failed.\n[☛] %s.\n\n", port, err)
 }
+
+func ToolCreated(project string) string {
+	return color.Sprintf(color.Magenta, "\n[✔] ======== %s is created but need to config it later ========\n\n", project)
+}
+
+func ToolCreateFailed(project string, err error) string {
+	return color.Sprintf(color.Red, "\n[✘] %s could not be created.\n[☛] %s.\n\n", project, err)
+}
+
+func PortCreated(project string) string {
+	return color.Sprintf(color.Magenta, "\n[✔] ======== %s is created but need to config it later ========\n\n", project)
+}
+
+func PortCreateFailed(project string, err error) string {
+	return color.Sprintf(color.Red, "\n[✘] %s could not be created.\n[☛] %s.\n\n", project, err)
+}

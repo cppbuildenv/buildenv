@@ -14,6 +14,8 @@ type BuildEnvCallbacks interface {
 	OnSelectPlatform(platformName string) error
 	OnCreateProject(projectName string) error
 	OnSelectProject(projectName string) error
+	OnCreateTool(toolName string) error
+	OnCreatePort(portNameVersion string) error
 	About(version string) string
 }
 

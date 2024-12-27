@@ -16,6 +16,8 @@ const (
 	menuPlatformSelect string = "Select your current platform."
 	menuProjectCreate  string = "Create a new project."
 	menuProjectSelect  string = "Select your current project."
+	menuToolCreate     string = "Create a new tool."
+	menuPortCreate     string = "Create a new port."
 	menuIntegrate      string = "Integrate buildenv, then you can run it everywhere."
 	menuAbout          string = "About and usage."
 )
@@ -26,13 +28,15 @@ var menus = []string{
 	menuPlatformSelect,
 	menuProjectCreate,
 	menuProjectSelect,
+	menuToolCreate,
+	menuPortCreate,
 	menuIntegrate,
 	menuAbout,
 }
 
 func newMenuModel(callabcks config.BuildEnvCallbacks) *menuModel {
 	const defaultWidth = 100
-	const defaultHeight = 15
+	const defaultHeight = 18
 
 	var items []list.Item
 	for _, menu := range menus {
@@ -63,6 +67,8 @@ func newMenuModel(callabcks config.BuildEnvCallbacks) *menuModel {
 	menuModel.models[menuPlatformSelect] = newPlatformSelectModel(callabcks)
 	menuModel.models[menuProjectCreate] = newProjectCreateModel(callabcks)
 	menuModel.models[menuProjectSelect] = newProjectSelectModel(callabcks)
+	menuModel.models[menuToolCreate] = newToolCreateModel(callabcks)
+	menuModel.models[menuPortCreate] = newPortCreateModel(callabcks)
 	menuModel.models[menuIntegrate] = newIntegrateModel()
 	menuModel.models[menuAbout] = newAboutModel(callabcks)
 

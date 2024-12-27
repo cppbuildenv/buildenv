@@ -106,3 +106,22 @@ func (t Tool) CheckAndRepair(args VerifyArgs) error {
 	}
 	return nil
 }
+
+func (t Tool) Write(toolPath string) error {
+	bytes, err := json.MarshalIndent(t, "", "    ")
+	if err != nil {
+		return err
+	}
+
+	// Check if tool exists.
+	if io.PathExists(toolPath) {
+		return fmt.Errorf("%s is already exists", toolPath)
+	}
+
+	// Make sure the parent directory exists.
+	parentDir := filepath.Dir(toolPath)
+	if err := os.MkdirAll(parentDir, 0755); err != nil {
+		return err
+	}
+	return os.WriteFile(toolPath, bytes, os.ModePerm)
+}
