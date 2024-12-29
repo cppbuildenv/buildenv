@@ -43,3 +43,4 @@ makefile编译前不支持配置环境变量，例如：export CFLAGS="-mfpu=neo
 支持ccache  | ✘
 支持编译缓存共享  | ✘
 终端输出实现需要再简化  | ✘
+当tool不存在，在执行install的时候不会触发下载  | ✘
