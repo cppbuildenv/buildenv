@@ -2,7 +2,6 @@ package menu
 
 import (
 	"buildenv/config"
-	"buildenv/pkg/color"
 	"fmt"
 	"strings"
 
@@ -11,24 +10,26 @@ import (
 )
 
 func newPortCreateModel(callbacks config.BuildEnvCallbacks) *portCreateModel {
-	ti := textinput.New()
-	ti.Placeholder = "your port's name..."
-	ti.Focus()
-	ti.CharLimit = 100
-	ti.Width = 100
-	ti.TextStyle = styleImpl.focusedStyle
-	ti.PromptStyle = styleImpl.focusedStyle
-	ti.Cursor.Style = styleImpl.focusedStyle
+	textInput := textinput.New()
+	textInput.Placeholder = "your port's name..."
+	textInput.Focus()
+	textInput.CharLimit = 100
+	textInput.Width = 100
+	textInput.TextStyle = focusedStyle
+	textInput.PromptStyle = focusedStyle
+	textInput.Cursor.Style = focusedStyle
 
 	return &portCreateModel{
-		textInput: ti,
+		textInput: textInput,
+		finished:  false,
+		err:       nil,
 		callbacks: callbacks,
 	}
 }
 
 type portCreateModel struct {
 	textInput textinput.Model
-	created   bool
+	finished  bool
 	err       error
 
 	callbacks config.BuildEnvCallbacks
@@ -46,6 +47,7 @@ func (t portCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return t, tea.Quit
 
 		case "esc":
+			t.reset()
 			return MenuModel, nil
 
 		case "enter":
@@ -56,9 +58,9 @@ func (t portCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			if err := t.callbacks.OnCreatePort(t.textInput.Value()); err != nil {
 				t.err = err
-				t.created = false
+				t.finished = false
 			} else {
-				t.created = true
+				t.finished = true
 			}
 
 			return t, tea.Quit
@@ -71,7 +73,7 @@ func (t portCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (t portCreateModel) View() string {
-	if t.created {
+	if t.finished {
 		return config.PortCreated(t.textInput.Value())
 	}
 
@@ -80,14 +82,14 @@ func (t portCreateModel) View() string {
 	}
 
 	return fmt.Sprintf("\n%s\n\n%s\n\n%s\n",
-		color.Sprintf(color.Blue, "Please enter your port's name: "),
+		titleStyle.Width(50).Render("Please enter your port's name:"),
 		t.textInput.View(),
-		color.Sprintf(color.Gray, "[esc -> back | ctrl+c/q -> quit]"),
+		actionBarStyle.Render("[enter -> execute | esc -> back | ctrl+c/q -> quit]"),
 	)
 }
 
-func (t *portCreateModel) Reset() {
+func (t *portCreateModel) reset() {
 	t.textInput.Reset()
-	t.created = false
+	t.finished = false
 	t.err = nil
 }

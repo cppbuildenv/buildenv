@@ -11,7 +11,7 @@ import (
 var MenuModel = newMenuModel(config.Callbacks)
 
 const (
-	menuSync           string = "Init or sync buildenv's config repo."
+	menuInit           string = "Init buildenv with conf repo."
 	menuPlatformCreate string = "Create a new platform."
 	menuPlatformSelect string = "Select your current platform."
 	menuProjectCreate  string = "Create a new project."
@@ -23,7 +23,7 @@ const (
 )
 
 var menus = []string{
-	menuSync,
+	menuInit,
 	menuPlatformCreate,
 	menuPlatformSelect,
 	menuProjectCreate,
@@ -34,6 +34,8 @@ var menus = []string{
 	menuAbout,
 }
 
+type errMsg error
+
 func newMenuModel(callabcks config.BuildEnvCallbacks) *menuModel {
 	const defaultWidth = 100
 	const defaultHeight = 18
@@ -43,26 +45,23 @@ func newMenuModel(callabcks config.BuildEnvCallbacks) *menuModel {
 		items = append(items, listItem(menu))
 	}
 
-	styles := createStyles()
-
-	l := list.New(items, listDelegate{styles}, defaultWidth, defaultHeight)
+	l := list.New(items, listDelegate{}, defaultWidth, defaultHeight)
 	l.Title = "Welcome to buildenv! \nPlease choose an option from the menu below..."
 
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
 
-	l.Styles.Title = styles.titleStyle
-	l.Styles.PaginationStyle = styles.paginationStyle
-	l.Styles.HelpStyle = styles.helpStyle
+	l.Styles.Title = titleStyle
+	l.Styles.PaginationStyle = paginationStyle
+	l.Styles.HelpStyle = helpStyle
 
 	menuModel := menuModel{
 		list:   l,
-		styles: styles,
 		models: make(map[string]tea.Model),
 	}
 
 	// init models
-	menuModel.models[menuSync] = newSyncModel()
+	menuModel.models[menuInit] = newInitModel(callabcks)
 	menuModel.models[menuPlatformCreate] = newPlatformCreateModel(callabcks)
 	menuModel.models[menuPlatformSelect] = newPlatformSelectModel(callabcks)
 	menuModel.models[menuProjectCreate] = newProjectCreateModel(callabcks)
@@ -77,7 +76,6 @@ func newMenuModel(callabcks config.BuildEnvCallbacks) *menuModel {
 
 type menuModel struct {
 	list   list.Model
-	styles styles
 	models map[string]tea.Model
 }
 

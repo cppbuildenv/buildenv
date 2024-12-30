@@ -16,7 +16,7 @@ type BuildEnvCallbacks interface {
 	OnSelectProject(projectName string) error
 	OnCreateTool(toolName string) error
 	OnCreatePort(portNameVersion string) error
-	OnInitBuildEnv(configUrl string) error
+	OnInitBuildEnv(confRepoUrl, confRepoRef string) (string, error)
 	About(version string) string
 }
 

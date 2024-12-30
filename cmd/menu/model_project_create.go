@@ -2,7 +2,6 @@ package menu
 
 import (
 	"buildenv/config"
-	"buildenv/pkg/color"
 	"fmt"
 	"strings"
 
@@ -11,24 +10,26 @@ import (
 )
 
 func newProjectCreateModel(callbacks config.BuildEnvCallbacks) *projectCreateModel {
-	ti := textinput.New()
-	ti.Placeholder = "your project's name..."
-	ti.Focus()
-	ti.CharLimit = 100
-	ti.Width = 100
-	ti.TextStyle = styleImpl.focusedStyle
-	ti.PromptStyle = styleImpl.focusedStyle
-	ti.Cursor.Style = styleImpl.focusedStyle
+	textInput := textinput.New()
+	textInput.Placeholder = "your project's name..."
+	textInput.Focus()
+	textInput.CharLimit = 100
+	textInput.Width = 100
+	textInput.TextStyle = focusedStyle
+	textInput.PromptStyle = focusedStyle
+	textInput.Cursor.Style = focusedStyle
 
 	return &projectCreateModel{
-		textInput: ti,
+		textInput: textInput,
+		finished:  false,
+		err:       nil,
 		callbacks: callbacks,
 	}
 }
 
 type projectCreateModel struct {
 	textInput textinput.Model
-	created   bool
+	finished  bool
 	err       error
 
 	callbacks config.BuildEnvCallbacks
@@ -46,6 +47,7 @@ func (p projectCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return p, tea.Quit
 
 		case "esc":
+			p.reset()
 			return MenuModel, nil
 
 		case "enter":
@@ -56,9 +58,9 @@ func (p projectCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			if err := p.callbacks.OnCreateProject(p.textInput.Value()); err != nil {
 				p.err = err
-				p.created = false
+				p.finished = false
 			} else {
-				p.created = true
+				p.finished = true
 			}
 
 			return p, tea.Quit
@@ -71,7 +73,7 @@ func (p projectCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (p projectCreateModel) View() string {
-	if p.created {
+	if p.finished {
 		return config.ProjectCreated(p.textInput.Value())
 	}
 
@@ -80,14 +82,14 @@ func (p projectCreateModel) View() string {
 	}
 
 	return fmt.Sprintf("\n%s\n\n%s\n\n%s\n",
-		color.Sprintf(color.Blue, "Please enter your project's name: "),
+		titleStyle.Width(50).Render("Please enter your project's name:"),
 		p.textInput.View(),
-		color.Sprintf(color.Gray, "[esc -> back | ctrl+c/q -> quit]"),
+		actionBarStyle.Render("[enter -> execute | esc -> back | ctrl+c/q -> quit]"),
 	)
 }
 
-func (p *projectCreateModel) Reset() {
+func (p *projectCreateModel) reset() {
 	p.textInput.Reset()
-	p.created = false
+	p.finished = false
 	p.err = nil
 }

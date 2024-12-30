@@ -11,5 +11,5 @@ type buildTypeCmd struct {
 }
 
 func (b *buildTypeCmd) register() {
-	flag.StringVar(&b.buildType, "build_type", "Release", "set CMAKE_BUILD_TYPE, it works with -verify.")
+	flag.StringVar(&b.buildType, "build_type", "Release", "set CMAKE_BUILD_TYPE, it works with other commands.")
 }

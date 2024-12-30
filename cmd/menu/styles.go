@@ -10,31 +10,16 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-var styleImpl = createStyles()
-
-// =============================== styles =============================== //
-
-type styles struct {
-	titleStyle        lipgloss.Style
-	itemStyle         lipgloss.Style
-	focusedStyle      lipgloss.Style
-	selectedItemStyle lipgloss.Style
-	paginationStyle   lipgloss.Style
-	helpStyle         lipgloss.Style
-	resultTextStyle   lipgloss.Style
-}
-
-func createStyles() styles {
-	return styles{
-		titleStyle:        lipgloss.NewStyle().MarginLeft(2),
-		itemStyle:         lipgloss.NewStyle().PaddingLeft(4),
-		focusedStyle:      lipgloss.NewStyle().Foreground(lipgloss.Color("205")),
-		selectedItemStyle: lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("170")),
-		paginationStyle:   list.DefaultStyles().PaginationStyle.PaddingLeft(4),
-		helpStyle:         list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1),
-		resultTextStyle:   lipgloss.NewStyle().Margin(1, 0, 2, 2),
-	}
-}
+var (
+	titleStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("#1976d2")).Padding(0, 1).Bold(true)
+	inputStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF06B7"))
+	actionBarStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("#767676"))
+	itemStyle         = lipgloss.NewStyle().PaddingLeft(4)
+	focusedStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	selectedItemStyle = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("#9c27b0"))
+	paginationStyle   = list.DefaultStyles().PaginationStyle.PaddingLeft(4)
+	helpStyle         = list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1)
+)
 
 // =============================== listItem =============================== //
 
@@ -45,7 +30,6 @@ func (o listItem) FilterValue() string { return "" }
 // =============================== ListDelegate =============================== //
 
 type listDelegate struct {
-	styles styles
 }
 
 func (l listDelegate) Height() int { return 1 }
@@ -58,10 +42,10 @@ func (l listDelegate) Render(w io.Writer, m list.Model, index int, item list.Ite
 	if i, ok := item.(listItem); ok {
 		str := fmt.Sprintf("%d. %s", index+1, i)
 
-		fn := l.styles.itemStyle.Render
+		fn := itemStyle.Render
 		if index == m.Index() {
 			fn = func(s ...string) string {
-				return l.styles.selectedItemStyle.Render("> " + strings.Join(s, " "))
+				return selectedItemStyle.Render("> " + strings.Join(s, " "))
 			}
 		}
 

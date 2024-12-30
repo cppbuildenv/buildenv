@@ -2,7 +2,6 @@ package menu
 
 import (
 	"buildenv/config"
-	"buildenv/pkg/color"
 	"fmt"
 	"strings"
 
@@ -11,24 +10,27 @@ import (
 )
 
 func newPlatformCreateModel(callbacks config.BuildEnvCallbacks) *platformCreateModel {
-	ti := textinput.New()
-	ti.Placeholder = "for example: x86_64-linux-ubuntu-20.04..."
-	ti.Focus()
-	ti.CharLimit = 100
-	ti.Width = 100
-	ti.TextStyle = styleImpl.focusedStyle
-	ti.PromptStyle = styleImpl.focusedStyle
-	ti.Cursor.Style = styleImpl.focusedStyle
+	textInput := textinput.New()
+	textInput.Placeholder = "for example: x86_64-linux-ubuntu-20.04..."
+	textInput.Focus()
+	textInput.CharLimit = 100
+	textInput.Width = 100
+
+	textInput.TextStyle = focusedStyle
+	textInput.PromptStyle = focusedStyle
+	textInput.Cursor.Style = focusedStyle
 
 	return &platformCreateModel{
-		textInput: ti,
+		textInput: textInput,
+		finished:  false,
+		err:       nil,
 		callbacks: callbacks,
 	}
 }
 
 type platformCreateModel struct {
 	textInput textinput.Model
-	created   bool
+	finished  bool
 	err       error
 
 	callbacks config.BuildEnvCallbacks
@@ -56,9 +58,9 @@ func (p platformCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			if err := p.callbacks.OnCreatePlatform(p.textInput.Value()); err != nil {
 				p.err = err
-				p.created = false
+				p.finished = false
 			} else {
-				p.created = true
+				p.finished = true
 			}
 
 			return p, tea.Quit
@@ -71,7 +73,7 @@ func (p platformCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (p platformCreateModel) View() string {
-	if p.created {
+	if p.finished {
 		return config.PlatformCreated(p.textInput.Value())
 	}
 
@@ -80,14 +82,14 @@ func (p platformCreateModel) View() string {
 	}
 
 	return fmt.Sprintf("\n%s\n\n%s\n\n%s\n",
-		color.Sprintf(color.Blue, "Please enter your platform name: "),
+		titleStyle.Width(50).Render("Please enter your platform's name:"),
 		p.textInput.View(),
-		color.Sprintf(color.Gray, "[esc -> back | ctrl+c/q -> quit]"),
+		actionBarStyle.Render("[enter -> execute | esc -> back | ctrl+c/q -> quit]"),
 	)
 }
 
 func (p *platformCreateModel) Reset() {
 	p.textInput.Reset()
-	p.created = false
+	p.finished = false
 	p.err = nil
 }

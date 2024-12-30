@@ -2,7 +2,6 @@ package menu
 
 import (
 	"buildenv/config"
-	"buildenv/pkg/color"
 	"fmt"
 	"strings"
 
@@ -11,17 +10,17 @@ import (
 )
 
 func newToolCreateModel(callbacks config.BuildEnvCallbacks) *toolCreateModel {
-	ti := textinput.New()
-	ti.Placeholder = "your tool's name..."
-	ti.Focus()
-	ti.CharLimit = 100
-	ti.Width = 100
-	ti.TextStyle = styleImpl.focusedStyle
-	ti.PromptStyle = styleImpl.focusedStyle
-	ti.Cursor.Style = styleImpl.focusedStyle
+	textInput := textinput.New()
+	textInput.Placeholder = "your tool's name..."
+	textInput.Focus()
+	textInput.CharLimit = 100
+	textInput.Width = 100
+	textInput.TextStyle = focusedStyle
+	textInput.PromptStyle = focusedStyle
+	textInput.Cursor.Style = focusedStyle
 
 	return &toolCreateModel{
-		textInput: ti,
+		textInput: textInput,
 		callbacks: callbacks,
 	}
 }
@@ -46,6 +45,7 @@ func (t toolCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return t, tea.Quit
 
 		case "esc":
+			t.reset()
 			return MenuModel, nil
 
 		case "enter":
@@ -80,13 +80,13 @@ func (t toolCreateModel) View() string {
 	}
 
 	return fmt.Sprintf("\n%s\n\n%s\n\n%s\n",
-		color.Sprintf(color.Blue, "Please enter your tool's name: "),
+		titleStyle.Width(50).Render("Please enter your tool's name:"),
 		t.textInput.View(),
-		color.Sprintf(color.Gray, "[esc -> back | ctrl+c/q -> quit]"),
+		actionBarStyle.Render("[enter -> execute | esc -> back | ctrl+c/q -> quit]"),
 	)
 }
 
-func (t *toolCreateModel) Reset() {
+func (t *toolCreateModel) reset() {
 	t.textInput.Reset()
 	t.created = false
 	t.err = nil

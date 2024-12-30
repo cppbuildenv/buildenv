@@ -30,17 +30,12 @@ type Context interface {
 	RootFSPath() string
 }
 
-func NewBuildEnv(buildType string) *buildenv {
-	// Set default build type if not specified.
-	if strings.TrimSpace(buildType) == "" {
-		buildType = "Release"
-	}
-
+func NewBuildEnv() *buildenv {
 	return &buildenv{
 		configData: configData{
 			JobNum: runtime.NumCPU(),
 		},
-		buildType: buildType,
+		buildType: "Release",
 	}
 }
 
@@ -95,6 +90,15 @@ func (b *buildenv) ChangeProject(projectName string) error {
 	}
 
 	return nil
+}
+
+func (b *buildenv) SetBuildType(buildType string) *buildenv {
+	if buildType == "" {
+		buildType = "Release"
+	}
+
+	b.buildType = buildType
+	return b
 }
 
 func (b *buildenv) Verify(args VerifyArgs) error {

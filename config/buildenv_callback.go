@@ -14,9 +14,8 @@ var Callbacks = callbackImpl{}
 
 type callbackImpl struct{}
 
-func (c callbackImpl) OnInitBuildEnv(configUrl string) (string, error) {
-	// In cli ui mode, buildType is always `Release`.
-	buildenv := NewBuildEnv("Release")
+func (c callbackImpl) OnInitBuildEnv(confRepoUrl, confRepoRef string) (string, error) {
+	buildenv := NewBuildEnv()
 
 	// Create buildenv.json if not exist.
 	confPath := filepath.Join(Dirs.WorkspaceDir, "buildenv.json")
@@ -25,7 +24,8 @@ func (c callbackImpl) OnInitBuildEnv(configUrl string) (string, error) {
 			return "", err
 		}
 
-		buildenv.ConfRepoUrl = configUrl
+		buildenv.ConfRepoUrl = confRepoUrl
+		buildenv.ConfRepoRef = confRepoRef
 		bytes, err := json.MarshalIndent(buildenv, "", "    ")
 		if err != nil {
 			return "", err
@@ -33,8 +33,6 @@ func (c callbackImpl) OnInitBuildEnv(configUrl string) (string, error) {
 		if err := os.WriteFile(confPath, []byte(bytes), os.ModePerm); err != nil {
 			return "", err
 		}
-
-		return "", nil
 	}
 
 	// Sync conf repo with repo url.
@@ -46,6 +44,16 @@ func (c callbackImpl) OnInitBuildEnv(configUrl string) (string, error) {
 	// Unmarshall with buildenv.json.
 	if err := json.Unmarshal(bytes, &buildenv); err != nil {
 		return "", err
+	}
+
+	// Override buildenv.json with repo url and repo ref.
+	if confRepoUrl != "" && confRepoRef != "" {
+		buildenv.ConfRepoUrl = confRepoUrl
+		buildenv.ConfRepoRef = confRepoRef
+
+		if err := os.WriteFile(confPath, []byte(bytes), os.ModePerm); err != nil {
+			return "", err
+		}
 	}
 
 	// Sync repo.
@@ -68,11 +76,8 @@ func (c callbackImpl) OnCreatePlatform(platformName string) error {
 }
 
 func (c callbackImpl) OnSelectPlatform(platformName string) error {
-	// In config mode, we always regard build type as `Release`.
-	buildType := "Release"
-
 	// Init buildenv with "buildenv.json"
-	buildenv := NewBuildEnv(buildType)
+	buildenv := NewBuildEnv()
 	buildEnvPath := filepath.Join(Dirs.WorkspaceDir, "buildenv.json")
 	if err := buildenv.init(buildEnvPath); err != nil {
 		return err
@@ -85,7 +90,7 @@ func (c callbackImpl) OnSelectPlatform(platformName string) error {
 	}
 
 	// Verify platform.
-	args := NewVerifyArgs(false, false, buildType)
+	args := NewVerifyArgs(false, false, "Release")
 	if err := buildenv.platform.Verify(args); err != nil {
 		return err
 	}
@@ -120,11 +125,8 @@ func (c callbackImpl) OnCreateProject(projectName string) error {
 }
 
 func (c callbackImpl) OnSelectProject(projectName string) error {
-	// In config mode, we always regard build type as `Release`.
-	buildType := "Release"
-
 	// Init buildenv with "buildenv.json"
-	buildenv := NewBuildEnv(buildType)
+	buildenv := NewBuildEnv()
 	buildEnvPath := filepath.Join(Dirs.WorkspaceDir, "buildenv.json")
 	if err := buildenv.init(buildEnvPath); err != nil {
 		return err
@@ -137,7 +139,7 @@ func (c callbackImpl) OnSelectProject(projectName string) error {
 	}
 
 	// Verify project with specified project name.
-	args := NewVerifyArgs(false, false, buildType)
+	args := NewVerifyArgs(false, false, "Release")
 	if err := buildenv.project.Verify(args); err != nil {
 		return err
 	}

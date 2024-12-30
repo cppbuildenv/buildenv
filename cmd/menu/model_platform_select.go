@@ -36,19 +36,18 @@ func newPlatformSelectModel(callbacks config.BuildEnvCallbacks) *platformSelectM
 		}
 	}
 
-	l := list.New(items, listDelegate{styleImpl}, defaultWidth, defaultHeight)
+	l := list.New(items, listDelegate{}, defaultWidth, defaultHeight)
 	l.Title = "Select your current platform:"
 
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
 
-	l.Styles.Title = styleImpl.titleStyle
-	l.Styles.PaginationStyle = styleImpl.paginationStyle
-	l.Styles.HelpStyle = styleImpl.helpStyle
+	l.Styles.Title = titleStyle
+	l.Styles.PaginationStyle = paginationStyle
+	l.Styles.HelpStyle = helpStyle
 
 	return &platformSelectModel{
 		list:      l,
-		styles:    styleImpl,
 		callbacks: callbacks,
 	}
 }
@@ -58,7 +57,6 @@ type platformSelectModel struct {
 	trySelected string
 	selected    string
 	err         error
-	styles      styles
 	callbacks   config.BuildEnvCallbacks
 }
 

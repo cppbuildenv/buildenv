@@ -6,9 +6,7 @@ import (
 
 func TestBuildGFlags(t *testing.T) {
 	portPath := "testdata/conf/ports/gflags-v2.2.2.json"
-	buildType := "Release"
-
-	buildenv := NewBuildEnv(buildType)
+	buildenv := NewBuildEnv()
 
 	var port Port
 	if err := port.Init(buildenv, portPath); err != nil {

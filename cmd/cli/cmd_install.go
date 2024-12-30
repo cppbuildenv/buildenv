@@ -27,8 +27,8 @@ func (i *installCmd) listen() (handled bool) {
 	}
 
 	// Configure, build and install a port.
-	verifyArgs := config.NewVerifyArgs(silent.silent, false, buildType.buildType)
-	buildenv := config.NewBuildEnv(buildType.buildType)
+	verifyArgs := config.NewVerifyArgs(verify.silent, false, buildType.buildType)
+	buildenv := config.NewBuildEnv().SetBuildType(buildType.buildType)
 	if err := buildenv.Verify(verifyArgs); err != nil {
 		fmt.Print(config.InstallFailed(i.install, err))
 		return true
@@ -65,7 +65,7 @@ func (i *installCmd) listen() (handled bool) {
 		fmt.Print(config.InstallFailed(i.install, err))
 		return true
 	}
-	installArgs := config.NewVerifyArgs(silent.silent, true, buildType.buildType)
+	installArgs := config.NewVerifyArgs(verify.silent, true, buildType.buildType)
 	if err := port.CheckAndRepair(installArgs); err != nil {
 		fmt.Print(config.InstallFailed(i.install, err))
 		return true

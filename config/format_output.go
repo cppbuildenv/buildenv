@@ -2,18 +2,6 @@ package config
 
 import "buildenv/pkg/color"
 
-func SyncSuccess(repoUrlInside bool) string {
-	if repoUrlInside {
-		return color.Sprintf(color.Magenta, "\n[✔] ======== conf repo is synchronized ========\n\n")
-	} else {
-		return color.Sprintf(color.Magenta, "\n[✔] ======== buildenv.json is created but need to config it later ========\n\n")
-	}
-}
-
-func SyncFailed(err error) string {
-	return color.Sprintf(color.Red, "\n[✘] buildenv.json is invalid.\n[☛] %s.\n\n", err)
-}
-
 func PlatformCreated(platform string) string {
 	return color.Sprintf(color.Magenta, "\n[✔] ======== %s is created but need to config it later ========\n\n", platform)
 }
@@ -94,8 +82,8 @@ func PortCreateFailed(project string, err error) string {
 	return color.Sprintf(color.Red, "\n[✘] %s could not be created.\n[☛] %s.\n\n", project, err)
 }
 
-func ConfigInitialized(configUrl string) string {
-	return color.Sprintf(color.Magenta, "\n[✔] ======== init buildenv successfully with %s ========\n\n", configUrl)
+func ConfigInitialized() string {
+	return color.Sprintf(color.Magenta, "\n[✔] ======== init buildenv successfully ========\n\n")
 }
 
 func ConfigInitFailed(configUrl string, err error) string {
