@@ -2,6 +2,8 @@ package config
 
 import (
 	"buildenv/pkg/color"
+	"buildenv/pkg/io"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,6 +13,44 @@ import (
 var Callbacks = callbackImpl{}
 
 type callbackImpl struct{}
+
+func (c callbackImpl) OnInitBuildEnv(configUrl string) (string, error) {
+	// In cli ui mode, buildType is always `Release`.
+	buildenv := NewBuildEnv("Release")
+
+	// Create buildenv.json if not exist.
+	confPath := filepath.Join(Dirs.WorkspaceDir, "buildenv.json")
+	if !io.PathExists(confPath) {
+		if err := os.MkdirAll(filepath.Dir(confPath), os.ModePerm); err != nil {
+			return "", err
+		}
+
+		buildenv.ConfRepoUrl = configUrl
+		bytes, err := json.MarshalIndent(buildenv, "", "    ")
+		if err != nil {
+			return "", err
+		}
+		if err := os.WriteFile(confPath, []byte(bytes), os.ModePerm); err != nil {
+			return "", err
+		}
+
+		return "", nil
+	}
+
+	// Sync conf repo with repo url.
+	bytes, err := os.ReadFile(confPath)
+	if err != nil {
+		return "", err
+	}
+
+	// Unmarshall with buildenv.json.
+	if err := json.Unmarshal(bytes, &buildenv); err != nil {
+		return "", err
+	}
+
+	// Sync repo.
+	return buildenv.Synchronize(buildenv.ConfRepoUrl, buildenv.ConfRepoRef)
+}
 
 func (c callbackImpl) OnCreatePlatform(platformName string) error {
 	if platformName == "" {

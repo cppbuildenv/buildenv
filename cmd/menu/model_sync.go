@@ -12,7 +12,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func newSyncModel() *syncModel {
+func newSyncModel() *initModel {
 	content := fmt.Sprintf("\nClone or synch repo of conf.\n"+
 		"-----------------------------------\n"+
 		"%s.\n\n"+
@@ -20,20 +20,20 @@ func newSyncModel() *syncModel {
 		color.Sprintf(color.Blue, "This will create a buildenv.json if not exist, otherwise it'll checkout the latest commit."),
 		color.Sprintf(color.Gray, "[↵ -> execute | ctrl+c/q -> quit]"))
 
-	return &syncModel{
+	return &initModel{
 		content: content,
 	}
 }
 
-type syncModel struct {
+type initModelsyncModel struct {
 	content string
 }
 
-func (s syncModel) Init() tea.Cmd {
+func (s initModel) Init() tea.Cmd {
 	return nil
 }
 
-func (s syncModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (s initModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -41,7 +41,7 @@ func (s syncModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return s, tea.Quit
 
 		case "enter":
-			if output, err := s.syncRepo(); err != nil {
+			if output, err := s.initModel(); err != nil {
 				s.content += "\r" + color.Sprintf(color.Red, err.Error())
 			} else {
 				s.content += "\r" + output + "\n" + config.SyncSuccess(true)
@@ -55,11 +55,11 @@ func (s syncModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return s, nil
 }
 
-func (s syncModel) View() string {
+func (s initModel) View() string {
 	return s.content
 }
 
-func (s syncModel) syncRepo() (string, error) {
+func (s initModel) syncRepo() (string, error) {
 	// In cli ui mode, buildType is always `Release`.
 	buildenv := config.NewBuildEnv("Release")
 

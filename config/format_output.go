@@ -93,3 +93,11 @@ func PortCreated(project string) string {
 func PortCreateFailed(project string, err error) string {
 	return color.Sprintf(color.Red, "\n[✘] %s could not be created.\n[☛] %s.\n\n", project, err)
 }
+
+func ConfigInitialized(configUrl string) string {
+	return color.Sprintf(color.Magenta, "\n[✔] ======== init buildenv successfully with %s ========\n\n", configUrl)
+}
+
+func ConfigInitFailed(configUrl string, err error) string {
+	return color.Sprintf(color.Red, "\n[✘] failed to init buildenv with %s.\n[☛] %s.\n\n", configUrl, err)
+}
