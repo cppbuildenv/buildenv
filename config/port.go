@@ -23,19 +23,15 @@ type Port struct {
 	// Internal fields.
 	ctx             Context
 	installInfoFile string // used to record installed state
-	portsDir        string // it should be `conf/ports`
 	isSubDep        bool
 }
 
 func (p Port) NameVersion() string {
-	p.Version = strings.ReplaceAll(p.Version, "/", "^")
-	p.Version = strings.ReplaceAll(p.Version, ":", "^")
-	p.Version = strings.ReplaceAll(p.Version, "-", "^")
-
-	return p.Name + "-" + p.Version
+	return p.Name + "@" + p.Version
 }
 
 func (p *Port) Init(ctx Context, portPath string) error {
+	portPath = strings.ReplaceAll(portPath, "@", "/")
 	if !io.PathExists(portPath) {
 		portName := io.FileBaseName(portPath)
 		if p.isSubDep {
@@ -59,7 +55,6 @@ func (p *Port) Init(ctx Context, portPath string) error {
 	fileName := fmt.Sprintf("%s-%s.list", ctx.Platform().Name, ctx.BuildType())
 
 	p.ctx = ctx
-	p.portsDir = filepath.Dir(portPath)
 	p.installInfoFile = filepath.Join(Dirs.InstalledRootDir, "buildenv", "info", nameVersion+"-"+fileName)
 
 	// Init build config with rootfs, toolchain info.
@@ -197,7 +192,7 @@ func (p Port) CheckAndRepair(args VerifyArgs) error {
 		// Check and repair dependency.
 		var port Port
 		port.isSubDep = true
-		portPath := filepath.Join(p.portsDir, item+".json")
+		portPath := filepath.Join(Dirs.PortsDir, item+".json")
 		if err := port.Init(p.ctx, portPath); err != nil {
 			return err
 		}

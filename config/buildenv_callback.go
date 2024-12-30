@@ -127,7 +127,7 @@ func (c callbackImpl) OnCreateTool(toolName string) error {
 }
 
 func (c callbackImpl) OnCreatePort(portNameVersion string) error {
-	parts := strings.Split(portNameVersion, "-")
+	parts := strings.Split(portNameVersion, "@")
 	if len(parts) != 2 {
 		return fmt.Errorf("invalid port name version")
 	}

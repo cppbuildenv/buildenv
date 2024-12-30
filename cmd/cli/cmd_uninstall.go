@@ -45,7 +45,7 @@ func (u *uninstallCmd) listen() (handled bool) {
 		}
 
 		// name match and the name must be someone of the ports in the project.
-		if strings.Split(item, "-")[0] == u.uninstall {
+		if strings.Split(item, "@")[0] == u.uninstall {
 			return true
 		}
 
@@ -55,7 +55,7 @@ func (u *uninstallCmd) listen() (handled bool) {
 	// Get the port to uninstall.
 	var portToUninstall string
 	if index == -1 {
-		if !strings.Contains(u.uninstall, "-") {
+		if !strings.Contains(u.uninstall, "@") {
 			fmt.Print(config.UninstallFailed(u.uninstall,
 				fmt.Errorf("cannot determine the exact port, because %s is not included in the port list of the current project", u.uninstall)))
 			return true
@@ -177,7 +177,7 @@ func (u uninstallCmd) doUninsallPort(ctx config.Context, portNameVersion string)
 	}
 
 	// Remove generated cmake config if exist.
-	portName := strings.Split(portNameVersion, "-")[0]
+	portName := strings.Split(portNameVersion, "@")[0]
 	installedDir := filepath.Join(config.Dirs.InstalledRootDir, platformBuildType)
 	cmakeConfigDir := filepath.Join(installedDir, "lib", "cmake", portName)
 	if err := os.RemoveAll(cmakeConfigDir); err != nil {

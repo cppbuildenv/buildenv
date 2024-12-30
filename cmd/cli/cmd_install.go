@@ -42,7 +42,7 @@ func (i *installCmd) listen() (handled bool) {
 		}
 
 		// name match and the name must be someone of the ports in the project.
-		if strings.Split(item, "-")[0] == i.install {
+		if strings.Split(item, "@")[0] == i.install {
 			return true
 		}
 

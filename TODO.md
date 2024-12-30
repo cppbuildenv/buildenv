@@ -30,6 +30,7 @@ usage 里的颜色需要优化  | ✔
 有的toolchain或者tool不是绿色版，不能托管到buildenv里，需要绝对路径指向  | ✔
 在project中支持配置cmake变量和C++宏  | ✔
 makefile编译前不支持配置环境变量，例如：export CFLAGS="-mfpu=neon"  | ✔
+三方库以目录方式维护，内部放不同版本的配置  | ✔
 运行tools需要将内部lib路径加入到LD_LIBRARY_PATH  | ✘
 支持 buildenv -upgrade 升级  | ✘
 动态生成的cmake config文件（windows还没测试）| ✘
@@ -44,3 +45,4 @@ makefile编译前不支持配置环境变量，例如：export CFLAGS="-mfpu=neo
 支持编译缓存共享  | ✘
 终端输出实现需要再简化  | ✘
 当tool不存在，在执行install的时候不会触发下载  | ✘
+第一次使用交互需要优化  | ✘
