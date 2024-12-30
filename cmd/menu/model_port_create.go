@@ -74,11 +74,11 @@ func (t portCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (t portCreateModel) View() string {
 	if t.finished {
-		return config.PortCreated(t.textInput.Value())
+		return config.SprintSuccess("%s is created but need to config it later.", t.textInput.Value())
 	}
 
 	if t.err != nil {
-		return config.PortCreateFailed(t.textInput.Value(), t.err)
+		return config.SprintError(t.err, "%s could not be created.", t.textInput.Value())
 	}
 
 	return fmt.Sprintf("\n%s\n\n%s\n\n%s\n",

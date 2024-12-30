@@ -3,7 +3,6 @@ package cli
 import (
 	"buildenv/config"
 	"flag"
-	"fmt"
 )
 
 func newVerifyCmd() *verifyCmd {
@@ -29,12 +28,16 @@ func (v *verifyCmd) listen() (handled bool) {
 	buildenv := config.NewBuildEnv().SetBuildType(buildType.buildType)
 
 	if err := buildenv.Verify(args); err != nil {
-		fmt.Print(config.PlatformSelectedFailed(buildenv.PlatformName, err))
+		if buildenv.PlatformName == "" {
+			config.PrintError(err, "failed to select platform.")
+		} else {
+			config.PrintError(err, "%s is broken.", buildenv.PlatformName)
+		}
 		return true
 	}
 
 	if !v.silent {
-		fmt.Print(config.ProjectSelected(buildenv.ProjectName))
+		config.PrintSuccess("buildenv is ready for project: %s.", buildenv.ProjectName)
 	}
 
 	return true

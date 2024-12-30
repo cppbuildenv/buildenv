@@ -102,11 +102,15 @@ func (p projectSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (p projectSelectModel) View() string {
 	if p.err != nil {
-		return config.ProjectSelectedFailed(p.trySelected, p.err)
+		if p.trySelected == "" {
+			config.PrintError(p.err, "failed to select project.")
+		} else {
+			config.PrintError(p.err, "%s is broken.", p.trySelected)
+		}
 	}
 
 	if p.selected != "" {
-		return config.ProjectSelected(p.selected)
+		return config.SprintSuccess("buildenv is ready for project: %s.", p.selected)
 	}
 
 	return "\n" + p.list.View()

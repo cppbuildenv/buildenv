@@ -30,7 +30,7 @@ func (i *installCmd) listen() (handled bool) {
 	verifyArgs := config.NewVerifyArgs(verify.silent, false, buildType.buildType)
 	buildenv := config.NewBuildEnv().SetBuildType(buildType.buildType)
 	if err := buildenv.Verify(verifyArgs); err != nil {
-		fmt.Print(config.InstallFailed(i.install, err))
+		config.PrintError(err, "%s install failed.", i.install)
 		return true
 	}
 
@@ -49,7 +49,7 @@ func (i *installCmd) listen() (handled bool) {
 		return false
 	})
 	if index == -1 {
-		fmt.Print(config.InstallFailed(i.install, fmt.Errorf("port %s is not found", i.install)))
+		config.PrintError(fmt.Errorf("port %s is not found", i.install), "%s install failed.", i.install)
 		return true
 	}
 
@@ -58,19 +58,19 @@ func (i *installCmd) listen() (handled bool) {
 	var port config.Port
 	portPath := filepath.Join(config.Dirs.PortsDir, portToInstall+".json")
 	if err := port.Init(buildenv, portPath); err != nil {
-		fmt.Print(config.InstallFailed(i.install, err))
+		config.PrintError(err, "%s install failed.", i.install)
 		return true
 	}
 	if err := port.Verify(); err != nil {
-		fmt.Print(config.InstallFailed(i.install, err))
+		config.PrintError(err, "%s install failed.", i.install)
 		return true
 	}
 	installArgs := config.NewVerifyArgs(verify.silent, true, buildType.buildType)
 	if err := port.CheckAndRepair(installArgs); err != nil {
-		fmt.Print(config.InstallFailed(i.install, err))
+		config.PrintError(err, "%s install failed.", i.install)
 		return true
 	}
 
-	fmt.Print(config.InstallSuccessfully(portToInstall))
+	config.PrintSuccess("%s install successfully.", portToInstall)
 	return true
 }

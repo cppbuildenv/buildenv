@@ -3,7 +3,6 @@ package cli
 import (
 	"buildenv/config"
 	"flag"
-	"fmt"
 	"path/filepath"
 	"strings"
 )
@@ -30,11 +29,11 @@ func (p *projectCreateCmd) listen() (handled bool) {
 	p.projectName = strings.TrimSuffix(p.projectName, ".json")
 
 	if err := p.doCreate(p.projectName); err != nil {
-		fmt.Print(config.ProjectCreateFailed(p.projectName, err))
+		config.PrintSuccess("%s could not be created.", p.projectName)
 		return true
 	}
 
-	fmt.Print(config.ProjectCreated(p.projectName))
+	config.PrintSuccess("%s is created but need to config it later.", p.projectName)
 	return true
 }
 

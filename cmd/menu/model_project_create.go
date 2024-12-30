@@ -74,11 +74,11 @@ func (p projectCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (p projectCreateModel) View() string {
 	if p.finished {
-		return config.ProjectCreated(p.textInput.Value())
+		return config.SprintSuccess("%s is created but need to config it later.", p.textInput.Value())
 	}
 
 	if p.err != nil {
-		return config.ProjectCreateFailed(p.textInput.Value(), p.err)
+		return config.SprintError(p.err, "%s could not be created.", p.textInput.Value())
 	}
 
 	return fmt.Sprintf("\n%s\n\n%s\n\n%s\n",

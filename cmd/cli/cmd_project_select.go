@@ -3,7 +3,6 @@ package cli
 import (
 	"buildenv/config"
 	"flag"
-	"fmt"
 	"strings"
 )
 
@@ -32,10 +31,14 @@ func (p *projectSelectCmd) listen() (handled bool) {
 	p.projectName = strings.TrimSuffix(p.projectName, ".json")
 
 	if err := p.callbacks.OnSelectProject(p.projectName); err != nil {
-		fmt.Print(config.ProjectSelectedFailed(p.projectName, err))
+		if p.projectName == "" {
+			config.PrintError(err, "failed to select project.")
+		} else {
+			config.PrintError(err, "%s is broken.", p.projectName)
+		}
 		return true
 	}
 
-	fmt.Print(config.ProjectSelected(p.projectName))
+	config.PrintSuccess("buildenv is ready for project: %s.", p.projectName)
 	return true
 }

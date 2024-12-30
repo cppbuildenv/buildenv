@@ -4,7 +4,6 @@ import (
 	"buildenv/config"
 	"buildenv/pkg/env"
 	"flag"
-	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -28,15 +27,15 @@ func (c *integrateCmd) listen() (handled bool) {
 
 	exePath, err := os.Executable()
 	if err != nil {
-		fmt.Print(config.IntegrateFailed(err))
+		config.PrintError(err, "buildenv integrate failed.")
 		os.Exit(1)
 	}
 
 	if err := env.UpdateRunPath(filepath.Dir(exePath)); err != nil {
-		fmt.Print(config.IntegrateFailed(err))
+		config.PrintError(err, "buildenv integrate failed.")
 		os.Exit(1)
 	}
 
-	fmt.Print(config.IntegrateSuccessfully())
+	config.PrintSuccess("buildenv is integrated.")
 	return true
 }

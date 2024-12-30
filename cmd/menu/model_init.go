@@ -112,11 +112,11 @@ func (i initModel) View() string {
 	repoUrl := i.textInputs[repo_url].Value()
 
 	if i.finished {
-		return config.ConfigInitialized()
+		return config.SprintSuccess("init buildenv successfully.")
 	}
 
 	if i.err != nil {
-		return config.ConfigInitFailed(repoUrl, i.err)
+		return config.SprintError(i.err, "failed to init buildenv with %s.", repoUrl)
 	}
 
 	return fmt.Sprintf("\nInitializing buildenv:\n\n%s\n%s\n\n%s\n%s\n\n%s\n",

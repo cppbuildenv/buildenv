@@ -33,7 +33,7 @@ func (u *uninstallCmd) listen() (handled bool) {
 	args := config.NewVerifyArgs(false, false, buildType.buildType)
 	buildenv := config.NewBuildEnv().SetBuildType(buildType.buildType)
 	if err := buildenv.Verify(args); err != nil {
-		fmt.Print(config.UninstallFailed(u.uninstall, err))
+		config.PrintError(err, "%s uninstall failed.", u.uninstall)
 		return true
 	}
 
@@ -56,8 +56,8 @@ func (u *uninstallCmd) listen() (handled bool) {
 	var portToUninstall string
 	if index == -1 {
 		if !strings.Contains(u.uninstall, "@") {
-			fmt.Print(config.UninstallFailed(u.uninstall,
-				fmt.Errorf("cannot determine the exact port, because %s is not included in the port list of the current project", u.uninstall)))
+			config.PrintError(fmt.Errorf("cannot determine the exact port, because %s is not included in the port list of the current project", u.uninstall),
+				"%s uninstall failed.", u.uninstall)
 			return true
 		}
 
@@ -68,11 +68,11 @@ func (u *uninstallCmd) listen() (handled bool) {
 
 	// Uninstall port.
 	if err := u.uninstallPort(buildenv, portToUninstall, recursive.recursive); err != nil {
-		fmt.Print(config.UninstallFailed(portToUninstall, err))
+		config.PrintError(err, "%s uninstall failed.", u.uninstall)
 		return true
 	}
 
-	fmt.Print(config.UninstallSuccessfully(portToUninstall))
+	config.PrintSuccess("%s uninstall successfully.", portToUninstall)
 
 	return true
 }

@@ -102,11 +102,15 @@ func (p platformSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (p platformSelectModel) View() string {
 	if p.err != nil {
-		return config.PlatformSelectedFailed(p.trySelected, p.err)
+		if p.trySelected == "" {
+			return config.SprintError(p.err, "failed to select platform")
+		} else {
+			return config.SprintError(p.err, "%s is broken.", p.trySelected)
+		}
 	}
 
 	if p.selected != "" {
-		return config.PlatformSelected(p.selected)
+		return config.SprintSuccess("current platform: %s.", p.selected)
 	}
 
 	return "\n" + p.list.View()

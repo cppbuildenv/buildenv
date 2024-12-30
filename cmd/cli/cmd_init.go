@@ -32,12 +32,12 @@ func (i *initConfCmd) listen() (handled bool) {
 
 	output, err := i.callbacks.OnInitBuildEnv(i.confRepoUrl, i.confRepoRef)
 	if err != nil {
-		fmt.Println(config.ConfigInitFailed(i.confRepoUrl, err))
+		config.PrintError(err, "failed to init buildenv with %s.", i.confRepoUrl)
 		return
 	}
 
 	fmt.Println(output)
-	fmt.Print(config.ConfigInitialized())
+	config.PrintSuccess("init buildenv successfully.")
 
 	return true
 }

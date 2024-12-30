@@ -3,7 +3,6 @@ package cli
 import (
 	"buildenv/config"
 	"flag"
-	"fmt"
 	"strings"
 )
 
@@ -32,10 +31,10 @@ func (t *toolCreateCmd) listen() (handled bool) {
 	t.toolName = strings.TrimSuffix(t.toolName, ".json")
 
 	if err := t.callbacks.OnCreateTool(t.toolName); err != nil {
-		fmt.Print(config.ToolCreateFailed(t.toolName, err))
+		config.PrintError(err, "%s could not be created.", t.toolName)
 		return true
 	}
 
-	fmt.Print(config.ToolCreated(t.toolName))
+	config.PrintSuccess(" %s is created but need to config it later.", t.toolName)
 	return true
 }

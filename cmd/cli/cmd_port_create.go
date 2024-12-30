@@ -3,7 +3,6 @@ package cli
 import (
 	"buildenv/config"
 	"flag"
-	"fmt"
 	"strings"
 )
 
@@ -32,10 +31,10 @@ func (p *portCreateCmd) listen() (handled bool) {
 	p.portNameVersion = strings.TrimSuffix(p.portNameVersion, ".json")
 
 	if err := p.callbacks.OnCreatePort(p.portNameVersion); err != nil {
-		fmt.Print(config.PortCreateFailed(p.portNameVersion, err))
+		config.PrintError(err, "%s could not be created.", p.portNameVersion)
 		return true
 	}
 
-	fmt.Print(config.PortCreated(p.portNameVersion))
+	config.PrintSuccess("%s is created but need to config it later.", p.portNameVersion)
 	return true
 }

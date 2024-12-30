@@ -72,11 +72,11 @@ func (t toolCreateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (t toolCreateModel) View() string {
 	if t.created {
-		return config.ToolCreated(t.textInput.Value())
+		return config.SprintSuccess("%s is created but need to config it later.", t.textInput.Value())
 	}
 
 	if t.err != nil {
-		return config.ToolCreateFailed(t.textInput.Value(), t.err)
+		return config.SprintError(t.err, "%s could not be created.", t.textInput.Value())
 	}
 
 	return fmt.Sprintf("\n%s\n\n%s\n\n%s\n",
