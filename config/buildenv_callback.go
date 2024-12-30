@@ -3,6 +3,7 @@ package config
 import (
 	"buildenv/pkg/color"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -132,7 +133,11 @@ func (c callbackImpl) OnCreatePort(portNameVersion string) error {
 		return fmt.Errorf("invalid port name version")
 	}
 
-	portPath := filepath.Join(Dirs.PortsDir, portNameVersion+".json")
+	parentDir := filepath.Join(Dirs.PortsDir, parts[0])
+	if err := os.MkdirAll(parentDir, os.ModePerm); err != nil {
+		return err
+	}
+	portPath := filepath.Join(parentDir, parts[1]+".json")
 
 	var port Port
 	if err := port.Write(portPath); err != nil {
