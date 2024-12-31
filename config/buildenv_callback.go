@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -79,30 +80,48 @@ func (c callbackImpl) OnSelectPlatform(platformName string) error {
 	// Init buildenv with "buildenv.json"
 	buildenv := NewBuildEnv()
 	buildEnvPath := filepath.Join(Dirs.WorkspaceDir, "buildenv.json")
-	if err := buildenv.init(buildEnvPath); err != nil {
-		return err
+
+	if !io.PathExists(buildEnvPath) { // Create buildenv.json if not exist.
+		// Create conf directory.
+		if err := os.MkdirAll(filepath.Dir(buildEnvPath), os.ModeDir|os.ModePerm); err != nil {
+			return err
+		}
+
+		// Create buildenv conf file with default values.
+		buildenv.configData.JobNum = runtime.NumCPU()
+		bytes, err := json.MarshalIndent(buildenv, "", "    ")
+		if err != nil {
+			return fmt.Errorf("cannot marshal buildenv conf: %w", err)
+		}
+		if err := os.WriteFile(buildEnvPath, bytes, os.ModePerm); err != nil {
+			return err
+		}
+	} else { // Read buildenv.json.
+		bytes, err := os.ReadFile(buildEnvPath)
+		if err != nil {
+			return err
+		}
+		if err := json.Unmarshal(bytes, &buildenv); err != nil {
+			return fmt.Errorf("cannot unmarshal buildenv conf: %w", err)
+		}
 	}
 
-	// Init platform with specified platform name.
-	buildenv.platform.Name = platformName
-	if err := buildenv.platform.Init(buildenv, buildenv.platform.Name); err != nil {
+	// Init and verify platform.
+	args := NewVerifyArgs(false, false)
+	if err := buildenv.platform.Init(buildenv, platformName); err != nil {
 		return err
 	}
-
-	// Verify platform.
-	args := NewVerifyArgs(false, false, "Release")
+	buildenv.configData.PlatformName = platformName
 	if err := buildenv.platform.Verify(args); err != nil {
 		return err
 	}
 
 	// Do change platform.
-	if err := buildenv.ChangePlatform(platformName); err != nil {
-		return err
+	bytes, err := json.MarshalIndent(buildenv, "", "    ")
+	if err != nil {
+		return fmt.Errorf("cannot marshal buildenv conf: %w", err)
 	}
-
-	// Generate toolchain file.
-	scriptDir := filepath.Join(Dirs.WorkspaceDir, "script")
-	if _, err := buildenv.GenerateToolchainFile(scriptDir); err != nil {
+	if err := os.WriteFile(buildEnvPath, bytes, os.ModePerm); err != nil {
 		return err
 	}
 
@@ -128,24 +147,63 @@ func (c callbackImpl) OnSelectProject(projectName string) error {
 	// Init buildenv with "buildenv.json"
 	buildenv := NewBuildEnv()
 	buildEnvPath := filepath.Join(Dirs.WorkspaceDir, "buildenv.json")
-	if err := buildenv.init(buildEnvPath); err != nil {
+
+	if !io.PathExists(buildEnvPath) { // Create buildenv.json if not exist.
+		// Create conf directory.
+		if err := os.MkdirAll(filepath.Dir(buildEnvPath), os.ModeDir|os.ModePerm); err != nil {
+			return err
+		}
+
+		// Create buildenv conf file with default values.
+		buildenv.configData.JobNum = runtime.NumCPU()
+		bytes, err := json.MarshalIndent(buildenv, "", "    ")
+		if err != nil {
+			return fmt.Errorf("cannot marshal buildenv conf: %w", err)
+		}
+		if err := os.WriteFile(buildEnvPath, bytes, os.ModePerm); err != nil {
+			return err
+		}
+
+		return fmt.Errorf("please select a platform first")
+	}
+
+	// Read buildenv.json to check if platform is selected.
+	bytes, err := os.ReadFile(buildEnvPath)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(bytes, &buildenv); err != nil {
+		return fmt.Errorf("cannot unmarshal buildenv conf: %w", err)
+	}
+	if buildenv.PlatformName == "" {
+		return fmt.Errorf("please select a platform first")
+	}
+
+	args := NewVerifyArgs(false, false)
+
+	// Read platform file and verify it.
+	if err := buildenv.platform.Init(buildenv, buildenv.PlatformName); err != nil {
+		return err
+	}
+	if err := buildenv.platform.Verify(args); err != nil {
 		return err
 	}
 
-	// Init project with specified project name.
-	buildenv.platform.Name = projectName
-	if err := buildenv.project.Init(buildenv, buildenv.platform.Name); err != nil {
+	// Read project file and verify it.
+	if err := buildenv.project.Init(buildenv, projectName); err != nil {
 		return err
 	}
-
-	// Verify project with specified project name.
-	args := NewVerifyArgs(false, false, "Release")
+	buildenv.ProjectName = projectName
 	if err := buildenv.project.Verify(args); err != nil {
 		return err
 	}
 
 	// Do change project.
-	if err := buildenv.ChangeProject(projectName); err != nil {
+	bytes, err = json.MarshalIndent(buildenv, "", "    ")
+	if err != nil {
+		return fmt.Errorf("cannot marshal buildenv conf: %w", err)
+	}
+	if err := os.WriteFile(buildEnvPath, bytes, os.ModePerm); err != nil {
 		return err
 	}
 

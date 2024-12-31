@@ -56,42 +56,6 @@ type configData struct {
 	JobNum       int    `json:"job_num"`
 }
 
-func (b *buildenv) ChangePlatform(platformName string) error {
-	buildEnvPath := filepath.Join(Dirs.WorkspaceDir, "buildenv.json")
-	if err := b.init(buildEnvPath); err != nil {
-		return err
-	}
-
-	b.configData.PlatformName = platformName
-	bytes, err := json.MarshalIndent(b, "", "    ")
-	if err != nil {
-		return fmt.Errorf("cannot marshal buildenv conf: %w", err)
-	}
-	if err := os.WriteFile(buildEnvPath, bytes, os.ModePerm); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (b *buildenv) ChangeProject(projectName string) error {
-	buildEnvPath := filepath.Join(Dirs.WorkspaceDir, "buildenv.json")
-	if err := b.init(buildEnvPath); err != nil {
-		return err
-	}
-
-	b.configData.ProjectName = projectName
-	bytes, err := json.MarshalIndent(b, "", "    ")
-	if err != nil {
-		return fmt.Errorf("cannot marshal buildenv conf: %w", err)
-	}
-	if err := os.WriteFile(buildEnvPath, bytes, os.ModePerm); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (b *buildenv) SetBuildType(buildType string) *buildenv {
 	if buildType == "" {
 		buildType = "Release"

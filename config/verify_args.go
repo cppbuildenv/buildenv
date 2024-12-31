@@ -7,9 +7,9 @@ type VerifyArgs interface {
 }
 
 type verifyArgs struct {
-	silent          bool   // Always called from toolchain.cmake
-	checkAndRepair  bool   // Called to check integrity and fix build environment.
-	buildType       string // CMAKE_BUILD_TYPE, default is 'Release'
+	silent         bool   // Always called from toolchain.cmake
+	checkAndRepair bool   // Called to check integrity and fix build environment.
+	buildType      string // CMAKE_BUILD_TYPE, default is 'Release'
 }
 
 func (v verifyArgs) Silent() bool {
@@ -24,10 +24,15 @@ func (v verifyArgs) BuildType() string {
 	return v.buildType
 }
 
-func NewVerifyArgs(silent, checkAndRepair bool, buildType string) *verifyArgs {
+func (v *verifyArgs) SetBuildType(buildType string) *verifyArgs {
+	v.buildType = buildType
+	return v
+}
+
+func NewVerifyArgs(silent, checkAndRepair bool) *verifyArgs {
 	return &verifyArgs{
 		silent:         silent,
 		checkAndRepair: checkAndRepair,
-		buildType:      buildType,
+		buildType:      "Release",
 	}
 }

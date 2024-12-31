@@ -24,7 +24,7 @@ func (v *verifyCmd) listen() (handled bool) {
 		return false
 	}
 
-	args := config.NewVerifyArgs(v.silent, true, buildType.buildType)
+	args := config.NewVerifyArgs(v.silent, true).SetBuildType(buildType.buildType)
 	buildenv := config.NewBuildEnv().SetBuildType(buildType.buildType)
 
 	if err := buildenv.Verify(args); err != nil {
