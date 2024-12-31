@@ -86,14 +86,14 @@ func (p Platform) Write(platformPath string) error {
 	return os.WriteFile(platformPath, bytes, os.ModePerm)
 }
 
-func (p Platform) Verify(args VerifyArgs) error {
+func (p Platform) Verify(request VerifyRequest) error {
 	// RootFS maybe nil when platform is native.
 	if p.RootFS != nil {
 		if err := p.RootFS.Verify(); err != nil {
 			return err
 		}
 
-		if err := p.RootFS.CheckAndRepair(args); err != nil {
+		if err := p.RootFS.CheckAndRepair(request); err != nil {
 			return fmt.Errorf("buildenv.rootfs check and repair error: %w", err)
 		}
 	}
@@ -104,7 +104,7 @@ func (p Platform) Verify(args VerifyArgs) error {
 			return fmt.Errorf("buildenv.toolchain error: %w", err)
 		}
 
-		if err := p.Toolchain.CheckAndRepair(args); err != nil {
+		if err := p.Toolchain.CheckAndRepair(request); err != nil {
 			return fmt.Errorf("buildenv.toolchain check and repair error: %w", err)
 		}
 	}
@@ -122,7 +122,7 @@ func (p Platform) Verify(args VerifyArgs) error {
 			return fmt.Errorf("buildenv.tools[%s] verify error: %w", item, err)
 		}
 
-		if err := tool.CheckAndRepair(args); err != nil {
+		if err := tool.CheckAndRepair(request); err != nil {
 			return fmt.Errorf("buildenv.tools[%s] check and repair error: %w", item, err)
 		}
 
@@ -136,7 +136,7 @@ func (p Platform) Verify(args VerifyArgs) error {
 	}
 
 	// Append $PKG_CONFIG_PATH with pkgconfig path that in installed dir.
-	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.Name+"-"+args.BuildType())
+	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.Name+"-"+request.BuildType())
 	os.Setenv("PKG_CONFIG_PATH", installedDir+"/lib/pkgconfig"+string(os.PathListSeparator)+os.Getenv("PKG_CONFIG_PATH"))
 
 	return nil

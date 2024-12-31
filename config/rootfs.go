@@ -59,8 +59,8 @@ func (r *RootFS) Verify() error {
 	return nil
 }
 
-func (r RootFS) CheckAndRepair(args VerifyArgs) error {
-	if !args.CheckAndRepair() {
+func (r RootFS) CheckAndRepair(request VerifyRequest) error {
+	if !request.RepairBuildenv() {
 		return nil
 	}
 
@@ -74,7 +74,7 @@ func (r RootFS) CheckAndRepair(args VerifyArgs) error {
 
 	// Check if tool exists.
 	if io.PathExists(r.fullpath) {
-		if !args.Silent() {
+		if !request.Silent() {
 			title := color.Sprintf(color.Green, "\n[✔] ---- Rootfs: %s\n", io.FileBaseName(r.Url))
 			fmt.Printf("%sLocation: %s\n", title, location)
 		}
@@ -94,7 +94,7 @@ func (r RootFS) CheckAndRepair(args VerifyArgs) error {
 	}
 
 	// Print download & extract info.
-	if !args.Silent() {
+	if !request.Silent() {
 		title := color.Sprintf(color.Green, "\n[✔] ---- Rootfs: %s\n", io.FileBaseName(r.Url))
 		fmt.Printf("%sLocation: %s\n", title, location)
 	}

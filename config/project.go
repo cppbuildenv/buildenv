@@ -72,7 +72,7 @@ func (p Project) Write(platformPath string) error {
 	return os.WriteFile(platformPath, bytes, os.ModePerm)
 }
 
-func (p Project) Verify(args VerifyArgs) error {
+func (p Project) Verify(request VerifyRequest) error {
 	verifyPort := func(portNameVersion string) error {
 		portPath := filepath.Join(Dirs.PortsDir, portNameVersion+".json")
 		var port Port
@@ -84,8 +84,10 @@ func (p Project) Verify(args VerifyArgs) error {
 			return fmt.Errorf("%s: %w", portNameVersion, err)
 		}
 
-		if err := port.CheckAndRepair(args); err != nil {
-			return fmt.Errorf("%s: %w", portNameVersion, err)
+		if request.InstallPorts() {
+			if err := port.Install(request.Silent()); err != nil {
+				return fmt.Errorf("%s: %w", portNameVersion, err)
+			}
 		}
 
 		return nil

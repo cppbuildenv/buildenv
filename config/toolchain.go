@@ -146,8 +146,8 @@ func (t *Toolchain) Verify() error {
 	return nil
 }
 
-func (t Toolchain) CheckAndRepair(args VerifyArgs) error {
-	if !args.CheckAndRepair() {
+func (t Toolchain) CheckAndRepair(request VerifyRequest) error {
+	if !request.RepairBuildenv() {
 		return nil
 	}
 
@@ -161,7 +161,7 @@ func (t Toolchain) CheckAndRepair(args VerifyArgs) error {
 
 	// Check if tool exists.
 	if io.PathExists(t.fullpath) {
-		if !args.Silent() {
+		if !request.Silent() {
 			title := color.Sprintf(color.Green, "\n[✔] ---- Toolchain: %s\n", io.FileBaseName(t.Url))
 			fmt.Printf("%sLocation: %s\n", title, location)
 		}
@@ -182,7 +182,7 @@ func (t Toolchain) CheckAndRepair(args VerifyArgs) error {
 	}
 
 	// Print download & extract info.
-	if !args.Silent() {
+	if !request.Silent() {
 		title := color.Sprintf(color.Green, "\n[✔] ---- Toolchain: %s\n", io.FileBaseName(t.Url))
 		fmt.Printf("%sLocation: %s\n", title, location)
 	}

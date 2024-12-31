@@ -65,9 +65,9 @@ func (b *buildenv) SetBuildType(buildType string) *buildenv {
 	return b
 }
 
-func (b *buildenv) Verify(args VerifyArgs) error {
+func (b *buildenv) Verify(request VerifyRequest) error {
 	buildEnvPath := filepath.Join(Dirs.WorkspaceDir, "buildenv.json")
-	if err := b.init(buildEnvPath); err != nil {
+	if err := b.Init(buildEnvPath); err != nil {
 		return err
 	}
 
@@ -75,15 +75,15 @@ func (b *buildenv) Verify(args VerifyArgs) error {
 	if err := b.platform.Init(b, b.configData.PlatformName); err != nil {
 		return err
 	}
-	if err := b.platform.Verify(args); err != nil {
+	if err := b.platform.Verify(request); err != nil {
 		return err
 	}
 
-	// init and verify project
+	// init and verify project.
 	if err := b.project.Init(b, b.configData.ProjectName); err != nil {
 		return err
 	}
-	if err := b.project.Verify(args); err != nil {
+	if err := b.project.Verify(request); err != nil {
 		return err
 	}
 
@@ -254,7 +254,7 @@ get_filename_component(BUILDENV_ROOT_DIR "${_CURRENT_DIR}" PATH)`))
 	return toolchainPath, nil
 }
 
-func (b *buildenv) init(buildEnvPath string) error {
+func (b *buildenv) Init(buildEnvPath string) error {
 	if !io.PathExists(buildEnvPath) {
 		// Create conf directory.
 		if err := os.MkdirAll(filepath.Dir(buildEnvPath), os.ModeDir|os.ModePerm); err != nil {

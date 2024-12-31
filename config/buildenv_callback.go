@@ -107,12 +107,12 @@ func (c callbackImpl) OnSelectPlatform(platformName string) error {
 	}
 
 	// Init and verify platform.
-	args := NewVerifyArgs(false, false)
+	request := NewVerifyRequest(false, false, false)
 	if err := buildenv.platform.Init(buildenv, platformName); err != nil {
 		return err
 	}
 	buildenv.configData.PlatformName = platformName
-	if err := buildenv.platform.Verify(args); err != nil {
+	if err := buildenv.platform.Verify(request); err != nil {
 		return err
 	}
 
@@ -179,13 +179,13 @@ func (c callbackImpl) OnSelectProject(projectName string) error {
 		return fmt.Errorf("please select a platform first")
 	}
 
-	args := NewVerifyArgs(false, false)
+	request := NewVerifyRequest(false, false, false)
 
 	// Read platform file and verify it.
 	if err := buildenv.platform.Init(buildenv, buildenv.PlatformName); err != nil {
 		return err
 	}
-	if err := buildenv.platform.Verify(args); err != nil {
+	if err := buildenv.platform.Verify(request); err != nil {
 		return err
 	}
 
@@ -194,7 +194,7 @@ func (c callbackImpl) OnSelectProject(projectName string) error {
 		return err
 	}
 	buildenv.ProjectName = projectName
-	if err := buildenv.project.Verify(args); err != nil {
+	if err := buildenv.project.Verify(request); err != nil {
 		return err
 	}
 

@@ -110,7 +110,7 @@ func (b BuildConfig) SourceEnvs() error {
 	return nil
 }
 
-func (b *BuildConfig) CheckAndRepair(url, version, buildType string, cmakeConfig *generator.CMakeConfig) (string, error) {
+func (b *BuildConfig) Install(url, version, buildType string, cmakeConfig *generator.CMakeConfig) (string, error) {
 	switch b.BuildTool {
 	case "cmake":
 		b.buildSystem = NewCMake(*b)

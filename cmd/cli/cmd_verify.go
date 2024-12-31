@@ -24,10 +24,10 @@ func (v *verifyCmd) listen() (handled bool) {
 		return false
 	}
 
-	args := config.NewVerifyArgs(v.silent, true).SetBuildType(buildType.buildType)
+	request := config.NewVerifyRequest(v.silent, true, true).SetBuildType(buildType.buildType)
 	buildenv := config.NewBuildEnv().SetBuildType(buildType.buildType)
 
-	if err := buildenv.Verify(args); err != nil {
+	if err := buildenv.Verify(request); err != nil {
 		if buildenv.PlatformName == "" {
 			config.PrintError(err, "failed to select platform.")
 		} else {

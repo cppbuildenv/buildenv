@@ -30,9 +30,9 @@ func (u *uninstallCmd) listen() (handled bool) {
 		return false
 	}
 
-	args := config.NewVerifyArgs(false, false).SetBuildType(buildType.buildType)
+	request := config.NewVerifyRequest(false, false, false).SetBuildType(buildType.buildType)
 	buildenv := config.NewBuildEnv().SetBuildType(buildType.buildType)
-	if err := buildenv.Verify(args); err != nil {
+	if err := buildenv.Verify(request); err != nil {
 		config.PrintError(err, "%s uninstall failed.", u.uninstall)
 		return true
 	}

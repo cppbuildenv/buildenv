@@ -26,10 +26,17 @@ func (i *installCmd) listen() (handled bool) {
 		return false
 	}
 
-	// Configure, build and install a port.
-	verifyArgs := config.NewVerifyArgs(verify.silent, false).SetBuildType(buildType.buildType)
+	// Make sure toolchain, rootfs and tools are prepared.
+	request := config.NewVerifyRequest(verify.silent, true, false).
+		SetBuildType(buildType.buildType)
+	buildEnvPath := filepath.Join(config.Dirs.WorkspaceDir, "buildenv.json")
+
 	buildenv := config.NewBuildEnv().SetBuildType(buildType.buildType)
-	if err := buildenv.Verify(verifyArgs); err != nil {
+	if err := buildenv.Init(buildEnvPath); err != nil {
+		config.PrintError(err, "failed to init buildenv before install %s: %s.", i.install, err)
+		return true
+	}
+	if err := buildenv.Verify(request); err != nil {
 		config.PrintError(err, "%s install failed.", i.install)
 		return true
 	}
@@ -65,8 +72,7 @@ func (i *installCmd) listen() (handled bool) {
 		config.PrintError(err, "%s install failed.", i.install)
 		return true
 	}
-	installArgs := config.NewVerifyArgs(verify.silent, true).SetBuildType(buildType.buildType)
-	if err := port.CheckAndRepair(installArgs); err != nil {
+	if err := port.Install(verify.silent); err != nil {
 		config.PrintError(err, "%s install failed.", i.install)
 		return true
 	}

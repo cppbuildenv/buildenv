@@ -149,14 +149,10 @@ func (p Port) Write(portPath string) error {
 	return os.WriteFile(portPath, bytes, os.ModePerm)
 }
 
-func (p Port) CheckAndRepair(args VerifyArgs) error {
-	if !args.CheckAndRepair() {
-		return nil
-	}
-
+func (p Port) Install(silentMode bool) error {
 	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.ctx.Platform().Name+"-"+p.ctx.BuildType())
 	if p.Installed() {
-		if !args.Silent() {
+		if !silentMode {
 			title := color.Sprintf(color.Green, "\n[✔] ---- Port: %s\n", p.NameVersion())
 			fmt.Printf("%sLocation: %s\n", title, installedDir)
 		}
@@ -199,13 +195,13 @@ func (p Port) CheckAndRepair(args VerifyArgs) error {
 		if err := port.Verify(); err != nil {
 			return err
 		}
-		if err := port.CheckAndRepair(args); err != nil {
+		if err := port.Install(silentMode); err != nil {
 			return err
 		}
 	}
 
 	// Check and repair current port.
-	installLogPath, err := matchedConfig.CheckAndRepair(p.Url, p.Version, p.ctx.BuildType(), matchedConfig.CMakeConfig)
+	installLogPath, err := matchedConfig.Install(p.Url, p.Version, p.ctx.BuildType(), matchedConfig.CMakeConfig)
 	if err != nil {
 		return err
 	}
@@ -222,7 +218,7 @@ func (p Port) CheckAndRepair(args VerifyArgs) error {
 	}
 	os.WriteFile(p.installInfoFile, []byte(strings.Join(installedFiles, "\n")), os.ModePerm)
 
-	if !args.Silent() {
+	if !silentMode {
 		title := color.Sprintf(color.Green, "\n[✔] ---- Port: %s\n", p.NameVersion())
 		fmt.Printf("%sLocation: %s\n", title, installedDir)
 	}
