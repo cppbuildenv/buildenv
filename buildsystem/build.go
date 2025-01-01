@@ -33,16 +33,23 @@ type PortConfig struct {
 type BuildSystem interface {
 	Clone(repoUrl, repoRef string) error
 	SourceEnvs() error
+	Patch(repoRef string) error
 	Configure(buildType string) (string, error)
 	Build() (string, error)
 	Install() (string, error)
 	InstalledFiles(installLogFile string) ([]string, error)
 }
 
+type patch struct {
+	Mode string `json:"mode"`
+	Ref  string `json:"ref"`
+}
+
 type BuildConfig struct {
 	Pattern     string                 `json:"pattern"`
 	BuildTool   string                 `json:"build_tool"`
 	EnvVars     []string               `json:"env_vars"`
+	Patches     []patch                `json:"patches"`
 	Arguments   []string               `json:"arguments"`
 	Depedencies []string               `json:"dependencies"`
 	CMakeConfig *generator.CMakeConfig `json:"cmake_config"`
@@ -81,6 +88,44 @@ func (b BuildConfig) Clone(repoUrl, repoRef string) error {
 	// Execute clone command.
 	commandLine := strings.Join(commands, " && ")
 	title := fmt.Sprintf("[clone %s]", b.portConfig.LibName)
+	if err := b.execute(title, commandLine, ""); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (b BuildConfig) Patch(repoRef string) error {
+	if len(b.Patches) == 0 {
+		return nil
+	}
+
+	// Change to source dir to execute git command.
+	if err := os.Chdir(b.portConfig.SourceDir); err != nil {
+		return err
+	}
+
+	// Execute patch command.
+	var commands []string
+	commands = append(commands, "git reset --hard && git clean -xfd")
+	commands = append(commands, fmt.Sprintf("git -C %s fetch origin", b.portConfig.SourceDir))
+
+	for _, patch := range b.Patches {
+		switch patch.Mode {
+		case "cherry-pick":
+			commands = append(commands, fmt.Sprintf("git cherry-pick %s", patch.Ref))
+
+		case "rebase":
+			commands = append(commands, fmt.Sprintf("git checkout %s", patch.Ref))
+			commands = append(commands, fmt.Sprintf("git rebase %s", repoRef))
+
+		default:
+			return fmt.Errorf("unsupported patch mode: %s", patch.Mode)
+		}
+	}
+
+	commandLine := strings.Join(commands, " && ")
+	title := fmt.Sprintf("[patch %s]", b.portConfig.LibName)
 	if err := b.execute(title, commandLine, ""); err != nil {
 		return err
 	}
@@ -130,6 +175,9 @@ func (b *BuildConfig) Install(url, version, buildType string, cmakeConfig *gener
 		return "", err
 	}
 	if err := b.buildSystem.SourceEnvs(); err != nil {
+		return "", err
+	}
+	if err := b.buildSystem.Patch(version); err != nil {
 		return "", err
 	}
 	if _, err := b.buildSystem.Configure(buildType); err != nil {
