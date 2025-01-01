@@ -28,11 +28,7 @@ func (v *verifyCmd) listen() (handled bool) {
 	buildenv := config.NewBuildEnv().SetBuildType(buildType.buildType)
 
 	if err := buildenv.Verify(request); err != nil {
-		if buildenv.PlatformName == "" {
-			config.PrintError(err, "failed to select platform.")
-		} else {
-			config.PrintError(err, "%s is broken.", buildenv.PlatformName)
-		}
+		config.PrintError(err, "failed to verify buildenv.")
 		return true
 	}
 

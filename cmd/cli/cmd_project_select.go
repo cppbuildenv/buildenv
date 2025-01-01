@@ -31,11 +31,7 @@ func (p *projectSelectCmd) listen() (handled bool) {
 	p.projectName = strings.TrimSuffix(p.projectName, ".json")
 
 	if err := p.callbacks.OnSelectProject(p.projectName); err != nil {
-		if p.projectName == "" {
-			config.PrintError(err, "failed to select project.")
-		} else {
-			config.PrintError(err, "%s is broken.", p.projectName)
-		}
+		config.PrintError(err, "failed to select project: %s.", p.projectName)
 		return true
 	}
 

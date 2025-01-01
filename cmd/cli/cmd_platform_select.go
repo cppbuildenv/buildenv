@@ -31,11 +31,7 @@ func (p *platformSelectCmd) listen() (handled bool) {
 	p.platformName = strings.TrimSuffix(p.platformName, ".json")
 
 	if err := p.callbacks.OnSelectPlatform(p.platformName); err != nil {
-		if p.platformName == "" {
-			config.PrintError(err, "failed to select platform.")
-		} else {
-			config.PrintError(err, "%s is broken.", p.platformName)
-		}
+		config.PrintError(err, "failed to select platform: %s.", p.platformName)
 		return true
 	}
 

@@ -102,11 +102,7 @@ func (p projectSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (p projectSelectModel) View() string {
 	if p.err != nil {
-		if p.trySelected == "" {
-			config.PrintError(p.err, "failed to select project.")
-		} else {
-			config.PrintError(p.err, "%s is broken.", p.trySelected)
-		}
+		return config.SprintError(p.err, "failed to select project: %s.", p.trySelected)
 	}
 
 	if p.selected != "" {
