@@ -15,13 +15,16 @@ import (
 )
 
 type PortConfig struct {
-	SystemName       string // like: `Linux`, `Darwin`, `Windows`
-	SystemProcessor  string // like: `aarch64`, `x86_64`, `i386`
-	Host             string // like: `aarch64-linux-gnu`
-	RootFS           string // absolute path of rootfs
-	ToolchainPrefix  string // like: `aarch64-linux-gnu-`
-	LibName          string // like: `ffmpeg`
-	LibVersion       string // like: `4.4`
+	SystemName      string // like: `Linux`, `Darwin`, `Windows`
+	SystemProcessor string // like: `aarch64`, `x86_64`, `i386`
+	Host            string // like: `aarch64-linux-gnu`
+	RootFS          string // absolute path of rootfs
+	ToolchainPrefix string // like: `aarch64-linux-gnu-`
+	LibName         string // like: `ffmpeg`
+	LibVersion      string // like: `4.4`
+
+	// Internal fields
+	PortsDir         string // absolute path of ports dir
 	SourceDir        string // absolute path of source code
 	SourceFolder     string // Some thirdpartys' source code is not in the root folder, so we need to specify it.
 	BuildDir         string // absolute path of build dir
@@ -46,13 +49,13 @@ type patch struct {
 }
 
 type BuildConfig struct {
-	Pattern     string                 `json:"pattern"`
-	BuildTool   string                 `json:"build_tool"`
-	EnvVars     []string               `json:"env_vars"`
-	Patches     []patch                `json:"patches"`
-	Arguments   []string               `json:"arguments"`
-	Depedencies []string               `json:"dependencies"`
-	CMakeConfig *generator.CMakeConfig `json:"cmake_config"`
+	Pattern     string   `json:"pattern"`
+	BuildTool   string   `json:"build_tool"`
+	EnvVars     []string `json:"env_vars"`
+	Patches     []patch  `json:"patches"`
+	Arguments   []string `json:"arguments"`
+	Depedencies []string `json:"dependencies"`
+	CMakeConfig string   `json:"cmake_config"`
 
 	// Internal fields
 	buildSystem BuildSystem
@@ -155,7 +158,7 @@ func (b BuildConfig) SourceEnvs() error {
 	return nil
 }
 
-func (b *BuildConfig) Install(url, version, buildType string, cmakeConfig *generator.CMakeConfig) (string, error) {
+func (b *BuildConfig) Install(url, version, buildType string) (string, error) {
 	switch b.BuildTool {
 	case "cmake":
 		b.buildSystem = NewCMake(*b)
@@ -192,6 +195,11 @@ func (b *BuildConfig) Install(url, version, buildType string, cmakeConfig *gener
 	}
 
 	// Generate cmake config.
+	portDir := filepath.Join(b.portConfig.PortsDir, b.portConfig.LibName)
+	cmakeConfig, err := generator.FindMatchedConfig(portDir, b.CMakeConfig)
+	if err != nil {
+		return "", err
+	}
 	if cmakeConfig != nil {
 		cmakeConfig.Version = b.portConfig.LibVersion
 		cmakeConfig.SystemName = b.portConfig.SystemName

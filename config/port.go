@@ -67,6 +67,7 @@ func (p *Port) Init(ctx Context, portPath string) error {
 		ToolchainPrefix:  ctx.ToolchainPrefix(),
 		LibName:          p.Name,
 		LibVersion:       p.Version,
+		PortsDir:         Dirs.PortsDir,
 		SourceDir:        filepath.Join(Dirs.WorkspaceDir, "buildtrees", p.NameVersion(), "src"),
 		SourceFolder:     p.SourceFolder,
 		BuildDir:         filepath.Join(Dirs.WorkspaceDir, "buildtrees", p.NameVersion(), platformBuildType),
@@ -201,7 +202,7 @@ func (p Port) Install(silentMode bool) error {
 	}
 
 	// Check and repair current port.
-	installLogPath, err := matchedConfig.Install(p.Url, p.Version, p.ctx.BuildType(), matchedConfig.CMakeConfig)
+	installLogPath, err := matchedConfig.Install(p.Url, p.Version, p.ctx.BuildType())
 	if err != nil {
 		return err
 	}

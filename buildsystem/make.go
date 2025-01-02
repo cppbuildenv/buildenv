@@ -33,8 +33,6 @@ func (m make) Configure(buildType string) (string, error) {
 
 	// Append common variables for cross compiling.
 	m.Arguments = append(m.Arguments, fmt.Sprintf("--prefix=%s", m.portConfig.InstalledDir))
-	m.Arguments = append(m.Arguments, fmt.Sprintf("--sysroot=%s", m.portConfig.RootFS))
-	m.Arguments = append(m.Arguments, fmt.Sprintf("--cross-prefix=%s", m.portConfig.ToolchainPrefix))
 
 	// Replace placeholders with real paths.
 	for index, argument := range m.Arguments {
@@ -48,6 +46,14 @@ func (m make) Configure(buildType string) (string, error) {
 
 		if strings.Contains(argument, "${SYSTEM_PROCESSOR}") {
 			m.Arguments[index] = strings.ReplaceAll(argument, "${SYSTEM_PROCESSOR}", m.portConfig.SystemProcessor)
+		}
+
+		if strings.Contains(argument, "${SYSROOT}") {
+			m.Arguments[index] = strings.ReplaceAll(argument, "${SYSROOT}", m.portConfig.RootFS)
+		}
+
+		if strings.Contains(argument, "${CROSS_PREFIX}") {
+			m.Arguments[index] = strings.ReplaceAll(argument, "${CROSS_PREFIX}", m.portConfig.ToolchainPrefix)
 		}
 	}
 
