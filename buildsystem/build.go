@@ -194,6 +194,12 @@ func (b *BuildConfig) Install(url, version, buildType string) (string, error) {
 		return "", err
 	}
 
+	// Some pkg-config file may have absolute path,
+	// so we need to replace them with relative path.
+	if err := fixupPkgConfig(b.portConfig.InstalledDir); err != nil {
+		return "", fmt.Errorf("fixup pkg-config failed: %w", err)
+	}
+
 	// Generate cmake config.
 	portDir := filepath.Join(b.portConfig.PortsDir, b.portConfig.LibName)
 	cmakeConfig, err := generator.FindMatchedConfig(portDir, b.CMakeConfig)

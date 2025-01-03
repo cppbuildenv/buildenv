@@ -53,9 +53,6 @@ func (r *RootFS) Verify() error {
 	pkgConfigLibdirPaths := strings.Join(pkgConfigLibdirs, string(os.PathListSeparator))
 	os.Setenv("PKG_CONFIG_LIBDIR", pkgConfigLibdirPaths)
 
-	// TODO: this would make pkg-config cannot find libraries outside of rootfs.
-	// os.Setenv("PKG_CONFIG_SYSROOT_DIR", r.fullpath)
-
 	return nil
 }
 
