@@ -50,3 +50,4 @@ cmake_config的配置独立于version文件之外  | ✔
 支持编译缓存共享  | ✘
 支持fork到私有仓库  | ✘
 支持在project里覆盖默认port的配置  | ✘
+通过一个中间临时目录来实现收集install的文件清单  | ✘
