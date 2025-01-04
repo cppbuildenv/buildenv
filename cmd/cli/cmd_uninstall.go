@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"buildenv/buildsystem"
 	"buildenv/config"
-	"buildenv/pkg/io"
+	"buildenv/pkg/fileio"
 	"flag"
 	"fmt"
 	"os"
@@ -140,8 +140,12 @@ func (u uninstallCmd) uninstallPort(ctx config.Context, portNameVersion string, 
 func (u uninstallCmd) doUninsallPort(ctx config.Context, portNameVersion string) error {
 	// Check if port is installed.
 	platformBuildType := fmt.Sprintf("%s-%s", ctx.Platform().Name, ctx.BuildType())
-	installInfoFile := filepath.Join(config.Dirs.InstalledRootDir, "buildenv", "info", portNameVersion+"-"+platformBuildType+".list")
-	if !io.PathExists(installInfoFile) {
+	installInfoFile := filepath.Join(config.Dirs.WorkspaceDir,
+		"installed",
+		"buildenv",
+		"info",
+		portNameVersion+"-"+platformBuildType+".list")
+	if !fileio.PathExists(installInfoFile) {
 		return fmt.Errorf("%s is not installed", portNameVersion)
 	}
 
@@ -161,8 +165,8 @@ func (u uninstallCmd) doUninsallPort(ctx config.Context, portNameVersion string)
 		// it would be like "/home/phil/.cmake/packages/gflags/4fbe0d242b1c0f095b87a43a7aeaf0d6",
 		// We'll try to remove it also.
 		fileToRemove := line
-		if !io.PathExists(line) {
-			fileToRemove = filepath.Join(config.Dirs.InstalledRootDir, line)
+		if !fileio.PathExists(line) {
+			fileToRemove = filepath.Join(config.Dirs.WorkspaceDir, "installed", line)
 		}
 		if err := u.removeFiles(fileToRemove); err != nil {
 			return fmt.Errorf("cannot remove file: %s", err)
@@ -178,8 +182,8 @@ func (u uninstallCmd) doUninsallPort(ctx config.Context, portNameVersion string)
 
 	// Remove generated cmake config if exist.
 	portName := strings.Split(portNameVersion, "@")[0]
-	installedDir := filepath.Join(config.Dirs.InstalledRootDir, platformBuildType)
-	cmakeConfigDir := filepath.Join(installedDir, "lib", "cmake", portName)
+	cmakeConfigDir := filepath.Join(config.Dirs.InstalledDir,
+		platformBuildType, "lib", "cmake", portName)
 	if err := os.RemoveAll(cmakeConfigDir); err != nil {
 		return fmt.Errorf("cannot remove cmake config folder: %s", err)
 	}
@@ -223,7 +227,7 @@ func (u uninstallCmd) removeFiles(path string) error {
 
 func (u uninstallCmd) removeFolderRecursively(path string) error {
 	// Not exists, skip.
-	if !io.PathExists(path) {
+	if !fileio.PathExists(path) {
 		return nil
 	}
 

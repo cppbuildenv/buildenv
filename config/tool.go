@@ -2,7 +2,7 @@ package config
 
 import (
 	"buildenv/pkg/color"
-	"buildenv/pkg/io"
+	"buildenv/pkg/fileio"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -23,7 +23,7 @@ type Tool struct {
 
 func (t *Tool) Init(toolpath string) error {
 	// Check if tool.json exists.
-	if !io.PathExists(toolpath) {
+	if !fileio.PathExists(toolpath) {
 		return fmt.Errorf("%s doesn't exists", toolpath)
 	}
 
@@ -46,7 +46,7 @@ func (t *Tool) Verify() error {
 	if t.Url == "" {
 		return fmt.Errorf("url of %s is empty", t.toolName)
 	}
-	if err := io.CheckAvailable(t.Url); err != nil {
+	if err := fileio.CheckAvailable(t.Url); err != nil {
 		return fmt.Errorf("tool.url of %s is not accessible", t.Url)
 	}
 
@@ -73,15 +73,15 @@ func (t Tool) CheckAndRepair(request VerifyRequest) error {
 	// it also can be specified by archiveName.
 	folderName := strings.Split(t.Path, string(filepath.Separator))[0]
 	if t.ArchiveName != "" {
-		folderName = io.FileBaseName(t.ArchiveName)
+		folderName = fileio.FileBaseName(t.ArchiveName)
 	}
 
 	location := filepath.Join(Dirs.ExtractedToolsDir, folderName)
 
 	// Check if tool exists.
-	if io.PathExists(t.fullpath) {
+	if fileio.PathExists(t.fullpath) {
 		if !request.Silent() {
-			title := color.Sprintf(color.Green, "\n[✔] ---- Tool: %s\n", io.FileBaseName(t.Url))
+			title := color.Sprintf(color.Green, "\n[✔] ---- Tool: %s\n", fileio.FileBaseName(t.Url))
 			fmt.Printf("%sLocation: %s\n", title, location)
 		}
 		return nil
@@ -94,14 +94,14 @@ func (t Tool) CheckAndRepair(request VerifyRequest) error {
 	}
 
 	// Check and repair resource.
-	repair := io.NewResourceRepair(t.Url, archiveName, folderName, Dirs.ExtractedToolsDir, Dirs.DownloadRootDir)
+	repair := fileio.NewResourceRepair(t.Url, archiveName, folderName, Dirs.ExtractedToolsDir, Dirs.DownloadRootDir)
 	if err := repair.CheckAndRepair(); err != nil {
 		return err
 	}
 
 	// Print download & extract info.
 	if !request.Silent() {
-		title := color.Sprintf(color.Green, "\n[✔] ---- Tool: %s\n", io.FileBaseName(t.Url))
+		title := color.Sprintf(color.Green, "\n[✔] ---- Tool: %s\n", fileio.FileBaseName(t.Url))
 		fmt.Printf("%sLocation: %s\n", title, location)
 	}
 	return nil
@@ -114,7 +114,7 @@ func (t Tool) Write(toolPath string) error {
 	}
 
 	// Check if tool exists.
-	if io.PathExists(toolPath) {
+	if fileio.PathExists(toolPath) {
 		return fmt.Errorf("%s is already exists", toolPath)
 	}
 

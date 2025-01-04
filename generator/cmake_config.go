@@ -1,7 +1,7 @@
 package generator
 
 import (
-	"buildenv/pkg/io"
+	"buildenv/pkg/fileio"
 	"embed"
 	"encoding/json"
 	"fmt"
@@ -24,7 +24,7 @@ type CMakeConfigs struct {
 
 func FindMatchedConfig(portDir, configRefer string) (*CMakeConfig, error) {
 	configPath := filepath.Join(portDir, "cmake_config.json")
-	if !io.PathExists(configPath) {
+	if !fileio.PathExists(configPath) {
 		return nil, nil
 	}
 	if strings.TrimSpace(configRefer) == "" {
@@ -98,10 +98,10 @@ type Component struct {
 }
 
 type generate interface {
-	generate(installedDir string) error
+	generate(packagesDir string) error
 }
 
-func (gen CMakeConfig) Generate(installedDir string) error {
+func (gen CMakeConfig) Generate(packagesDir string) error {
 	gen.Libtype = strings.ToUpper(gen.Libtype)
 
 	var generators []generate
@@ -123,7 +123,7 @@ func (gen CMakeConfig) Generate(installedDir string) error {
 	}
 
 	for _, gen := range generators {
-		if err := gen.generate(installedDir); err != nil {
+		if err := gen.generate(packagesDir); err != nil {
 			return err
 		}
 	}

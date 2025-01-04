@@ -2,17 +2,17 @@ package buildsystem
 
 import (
 	"bufio"
-	"buildenv/pkg/io"
+	"buildenv/pkg/fileio"
 	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-func fixupPkgConfig(installedDir string) error {
-	pkgConfigDir := filepath.Join(installedDir, "lib", "pkgconfig")
+func fixupPkgConfig(packageDir string) error {
+	pkgConfigDir := filepath.Join(packageDir, "lib", "pkgconfig")
 
-	if !io.PathExists(pkgConfigDir) {
+	if !fileio.PathExists(pkgConfigDir) {
 		return nil
 	}
 

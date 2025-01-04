@@ -2,7 +2,7 @@ package config
 
 import (
 	"buildenv/pkg/env"
-	"buildenv/pkg/io"
+	"buildenv/pkg/fileio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -103,9 +103,9 @@ func (b buildenv) Synchronize(repo, ref string) (string, error) {
 
 	// Clone or git checkout repo.
 	confDir := filepath.Join(Dirs.WorkspaceDir, "conf")
-	if io.PathExists(confDir) {
+	if fileio.PathExists(confDir) {
 		// clean up and checkout to ref.
-		if io.PathExists(filepath.Join(confDir, ".git")) {
+		if fileio.PathExists(filepath.Join(confDir, ".git")) {
 			// cd `conf`` to execute git command.
 			if err := os.Chdir(confDir); err != nil {
 				return "", err
@@ -255,7 +255,7 @@ get_filename_component(BUILDENV_ROOT_DIR "${_CURRENT_DIR}" PATH)`))
 }
 
 func (b *buildenv) Init(buildEnvPath string) error {
-	if !io.PathExists(buildEnvPath) {
+	if !fileio.PathExists(buildEnvPath) {
 		// Create conf directory.
 		if err := os.MkdirAll(filepath.Dir(buildEnvPath), os.ModeDir|os.ModePerm); err != nil {
 			return err

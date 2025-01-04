@@ -1,7 +1,7 @@
 package config
 
 import (
-	"buildenv/pkg/io"
+	"buildenv/pkg/fileio"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -41,7 +41,7 @@ func (p *Platform) Init(ctx Context, platformName string) error {
 
 	// Check if platform file exists.
 	platformPath := filepath.Join(Dirs.PlatformsDir, platformName+".json")
-	if !io.PathExists(platformPath) {
+	if !fileio.PathExists(platformPath) {
 		return fmt.Errorf("platform %s does not exists", platformName)
 	}
 
@@ -74,7 +74,7 @@ func (p Platform) Write(platformPath string) error {
 	}
 
 	// Check if conf/buildenv.json exists.
-	if io.PathExists(platformPath) {
+	if fileio.PathExists(platformPath) {
 		return fmt.Errorf("%s is already exists", platformPath)
 	}
 

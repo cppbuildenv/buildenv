@@ -3,9 +3,10 @@ package config
 import (
 	"buildenv/buildsystem"
 	"buildenv/pkg/color"
-	"buildenv/pkg/io"
+	"buildenv/pkg/fileio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -32,8 +33,8 @@ func (p Port) NameVersion() string {
 
 func (p *Port) Init(ctx Context, portPath string) error {
 	portPath = strings.ReplaceAll(portPath, "@", "/")
-	if !io.PathExists(portPath) {
-		portName := io.FileBaseName(portPath)
+	if !fileio.PathExists(portPath) {
+		portName := fileio.FileBaseName(portPath)
 		if p.isSubDep {
 			return fmt.Errorf("sub depedency port %s does not exists", portName)
 		} else {
@@ -55,30 +56,30 @@ func (p *Port) Init(ctx Context, portPath string) error {
 	fileName := fmt.Sprintf("%s-%s.list", ctx.Platform().Name, ctx.BuildType())
 
 	p.ctx = ctx
-	p.installInfoFile = filepath.Join(Dirs.InstalledRootDir, "buildenv", "info", nameVersion+"-"+fileName)
+	p.installInfoFile = filepath.Join(Dirs.InstalledDir, "buildenv", "info", nameVersion+"-"+fileName)
 
 	// Init build config with rootfs, toolchain info.
 	platformBuildType := fmt.Sprintf("%s-%s", ctx.Platform().Name, ctx.BuildType())
 	portConfig := buildsystem.PortConfig{
-		SystemName:       ctx.SystemName(),
-		SystemProcessor:  ctx.SystemProcessor(),
-		Host:             ctx.Host(),
-		RootFS:           ctx.RootFSPath(),
-		ToolchainPrefix:  ctx.ToolchainPrefix(),
-		LibName:          p.Name,
-		LibVersion:       p.Version,
-		PortsDir:         Dirs.PortsDir,
-		SourceDir:        filepath.Join(Dirs.WorkspaceDir, "buildtrees", p.NameVersion(), "src"),
-		SourceFolder:     p.SourceFolder,
-		BuildDir:         filepath.Join(Dirs.WorkspaceDir, "buildtrees", p.NameVersion(), platformBuildType),
-		InstalledDir:     filepath.Join(Dirs.WorkspaceDir, "installed", platformBuildType),
-		InstalledRootDir: Dirs.InstalledRootDir,
-		JobNum:           ctx.JobNum(),
+		SystemName:      ctx.SystemName(),
+		SystemProcessor: ctx.SystemProcessor(),
+		Host:            ctx.Host(),
+		RootFS:          ctx.RootFSPath(),
+		ToolchainPrefix: ctx.ToolchainPrefix(),
+		JobNum:          ctx.JobNum(),
+		LibName:         p.Name,
+		LibVersion:      p.Version,
+		SourceFolder:    p.SourceFolder,
+		PortsDir:        Dirs.PortsDir,
+		SourceDir:       filepath.Join(Dirs.WorkspaceDir, "buildtrees", p.NameVersion(), "src"),
+		BuildDir:        filepath.Join(Dirs.WorkspaceDir, "buildtrees", p.NameVersion(), platformBuildType),
+		PackageDir:      filepath.Join(Dirs.WorkspaceDir, "packages", p.NameVersion()+"-"+platformBuildType),
+		InstalledDir:    filepath.Join(Dirs.InstalledDir, platformBuildType),
 	}
 
 	if len(p.BuildConfigs) > 0 {
 		for index := range p.BuildConfigs {
-			p.BuildConfigs[index].SetPortConfig(portConfig)
+			p.BuildConfigs[index].PortConfig = portConfig
 		}
 	}
 
@@ -112,7 +113,7 @@ func (p *Port) Verify() error {
 }
 
 func (p Port) Installed() bool {
-	if !io.PathExists(p.installInfoFile) {
+	if !fileio.PathExists(p.installInfoFile) {
 		return false
 	}
 
@@ -138,7 +139,7 @@ func (p Port) Write(portPath string) error {
 	}
 
 	// Check if tool exists.
-	if io.PathExists(portPath) {
+	if fileio.PathExists(portPath) {
 		return fmt.Errorf("%s is already exists", portPath)
 	}
 
@@ -163,7 +164,7 @@ func (p Port) Install(silentMode bool) error {
 	// No config found, download and deploy it.
 	if len(p.BuildConfigs) == 0 {
 		downloadedDir := filepath.Join(Dirs.WorkspaceDir, "downloads")
-		if err := downloadAndDeploy(p.Url, installedDir, downloadedDir); err != nil {
+		if err := p.downloadAndDeploy(p.Url, installedDir, downloadedDir); err != nil {
 			return err
 		}
 	}
@@ -202,8 +203,7 @@ func (p Port) Install(silentMode bool) error {
 	}
 
 	// Check and repair current port.
-	installLogPath, err := matchedConfig.Install(p.Url, p.Version, p.ctx.BuildType())
-	if err != nil {
+	if err := matchedConfig.Install(p.Url, p.Version, p.ctx.BuildType()); err != nil {
 		return err
 	}
 
@@ -213,34 +213,36 @@ func (p Port) Install(silentMode bool) error {
 	}
 
 	// Write installed file info list.
-	installedFiles, err := matchedConfig.BuildSystem().InstalledFiles(installLogPath)
+	installedFiles, err := matchedConfig.BuildSystem().InstalledFiles(
+		matchedConfig.PortConfig.PackageDir,
+		p.ctx.Platform().Name,
+		p.ctx.BuildType(),
+	)
 	if err != nil {
 		return err
 	}
-	os.WriteFile(p.installInfoFile, []byte(strings.Join(installedFiles, "\n")), os.ModePerm)
+
+	platformBuildType := fmt.Sprintf("%s-%s", p.ctx.Platform().Name, p.ctx.BuildType())
+	for _, file := range installedFiles {
+		file = strings.TrimPrefix(file, platformBuildType+"/")
+		src := filepath.Join(matchedConfig.PortConfig.PackageDir, file)
+		dest := filepath.Join(matchedConfig.PortConfig.InstalledDir, file)
+
+		if err := os.MkdirAll(filepath.Dir(dest), os.ModePerm); err != nil {
+			return err
+		}
+		if err := p.copyFile(src, dest); err != nil {
+			return err
+		}
+	}
+
+	if err := os.WriteFile(p.installInfoFile, []byte(strings.Join(installedFiles, "\n")), os.ModePerm); err != nil {
+		return err
+	}
 
 	if !silentMode {
 		title := color.Sprintf(color.Green, "\n[✔] ---- Port: %s\n", p.NameVersion())
 		fmt.Printf("%sLocation: %s\n", title, installedDir)
-	}
-
-	return nil
-}
-
-func downloadAndDeploy(url, installedDir, downloadedDir string) error {
-	// Download to fixed dir.
-	downloadRequest := io.NewDownloadRequest(url, downloadedDir)
-	downloaded, err := downloadRequest.Download()
-	if err != nil {
-		return fmt.Errorf("%s: download port failed: %w", url, err)
-	}
-
-	// Extract archive file.
-	archiveName := filepath.Base(url)
-	folderName := strings.TrimSuffix(archiveName, ".tar.gz")
-	extractPath := filepath.Join(installedDir, folderName)
-	if err := io.Extract(downloaded, extractPath); err != nil {
-		return fmt.Errorf("%s: extract %s failed: %w", archiveName, downloaded, err)
 	}
 
 	return nil
@@ -267,4 +269,60 @@ func (p Port) MatchPattern(pattern string) bool {
 	}
 
 	return platformName == pattern
+}
+
+func (p Port) downloadAndDeploy(url, installedDir, downloadedDir string) error {
+	// Download to fixed dir.
+	downloadRequest := fileio.NewDownloadRequest(url, downloadedDir)
+	downloaded, err := downloadRequest.Download()
+	if err != nil {
+		return fmt.Errorf("%s: download port failed: %w", url, err)
+	}
+
+	// Extract archive file.
+	archiveName := filepath.Base(url)
+	folderName := strings.TrimSuffix(archiveName, ".tar.gz")
+	extractPath := filepath.Join(installedDir, folderName)
+	if err := fileio.Extract(downloaded, extractPath); err != nil {
+		return fmt.Errorf("%s: extract %s failed: %w", archiveName, downloaded, err)
+	}
+
+	return nil
+}
+
+func (p Port) copyFile(src, dest string) error {
+	// Read file info.
+	info, err := os.Lstat(src)
+	if err != nil {
+		return err
+	}
+
+	// Create symlink if it's a symlink.
+	if info.Mode()&os.ModeSymlink != 0 {
+		target, err := os.Readlink(src)
+		if err != nil {
+			return err
+		}
+
+		return os.Symlink(target, dest)
+	}
+
+	// Copy normal file.
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	destFile, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+
+	if _, err := io.Copy(destFile, srcFile); err != nil {
+		return err
+	}
+
+	return nil
 }

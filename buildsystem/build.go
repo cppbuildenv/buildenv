@@ -3,7 +3,7 @@ package buildsystem
 import (
 	"buildenv/generator"
 	"buildenv/pkg/color"
-	pkgio "buildenv/pkg/io"
+	"buildenv/pkg/fileio"
 	"fmt"
 	"io"
 	"os"
@@ -24,23 +24,23 @@ type PortConfig struct {
 	LibVersion      string // like: `4.4`
 
 	// Internal fields
-	PortsDir         string // absolute path of ports dir
-	SourceDir        string // absolute path of source code
-	SourceFolder     string // Some thirdpartys' source code is not in the root folder, so we need to specify it.
-	BuildDir         string // absolute path of build dir
-	InstalledDir     string // absolute path of installed dir
-	InstalledRootDir string // absolute path of installed root dir
-	JobNum           int    // number of jobs to run in parallel
+	PortsDir     string // ${buildenv}/ports
+	SourceDir    string // for example: ${buildenv}/buildtrees/ffmpeg/src
+	SourceFolder string // Some thirdpartys' source code is not in the root folder, so we need to specify it.
+	BuildDir     string // for example: ${buildenv}/buildtrees/ffmpeg/x86_64-linux-20.04-Release
+	PackageDir   string // ${buildenv}/packages/ffmpeg@n3.4.13-x86_64-linux-20.04-Release
+	InstalledDir string // for example: ${buildenv}/installed/x86_64-linux-20.04-Release
+	JobNum       int    // number of jobs to run in parallel
 }
 
 type BuildSystem interface {
 	Clone(repoUrl, repoRef string) error
 	SourceEnvs() error
 	Patch(repoRef string) error
-	Configure(buildType string) (string, error)
-	Build() (string, error)
-	Install() (string, error)
-	InstalledFiles(installLogFile string) ([]string, error)
+	Configure(buildType string) error
+	Build() error
+	Install() error
+	InstalledFiles(packageDir, platformName, buildType string) ([]string, error)
 }
 
 type patch struct {
@@ -59,7 +59,7 @@ type BuildConfig struct {
 
 	// Internal fields
 	buildSystem BuildSystem
-	portConfig  PortConfig
+	PortConfig  PortConfig
 }
 
 func (b BuildConfig) Verify() error {
@@ -74,23 +74,23 @@ func (b BuildConfig) Clone(repoUrl, repoRef string) error {
 	var commands []string
 
 	// Clone repo or sync repo.
-	if pkgio.PathExists(b.portConfig.SourceDir) {
+	if fileio.PathExists(b.PortConfig.SourceDir) {
 		// Change to source dir to execute git command.
-		if err := os.Chdir(b.portConfig.SourceDir); err != nil {
+		if err := os.Chdir(b.PortConfig.SourceDir); err != nil {
 			return err
 		}
 
 		commands = append(commands, "git reset --hard && git clean -xfd")
-		commands = append(commands, fmt.Sprintf("git -C %s fetch origin", b.portConfig.SourceDir))
-		commands = append(commands, fmt.Sprintf("git -C %s checkout %s", b.portConfig.SourceDir, repoRef))
-		commands = append(commands, fmt.Sprintf("git -C %s pull origin %s", b.portConfig.SourceDir, repoRef))
+		commands = append(commands, fmt.Sprintf("git -C %s fetch origin", b.PortConfig.SourceDir))
+		commands = append(commands, fmt.Sprintf("git -C %s checkout %s", b.PortConfig.SourceDir, repoRef))
+		commands = append(commands, fmt.Sprintf("git -C %s pull origin %s", b.PortConfig.SourceDir, repoRef))
 	} else {
-		commands = append(commands, fmt.Sprintf("git clone --branch %s %s %s", repoRef, repoUrl, b.portConfig.SourceDir))
+		commands = append(commands, fmt.Sprintf("git clone --branch %s %s %s", repoRef, repoUrl, b.PortConfig.SourceDir))
 	}
 
 	// Execute clone command.
 	commandLine := strings.Join(commands, " && ")
-	title := fmt.Sprintf("[clone %s]", b.portConfig.LibName)
+	title := fmt.Sprintf("[clone %s]", b.PortConfig.LibName)
 	if err := b.execute(title, commandLine, ""); err != nil {
 		return err
 	}
@@ -104,14 +104,14 @@ func (b BuildConfig) Patch(repoRef string) error {
 	}
 
 	// Change to source dir to execute git command.
-	if err := os.Chdir(b.portConfig.SourceDir); err != nil {
+	if err := os.Chdir(b.PortConfig.SourceDir); err != nil {
 		return err
 	}
 
 	// Execute patch command.
 	var commands []string
 	commands = append(commands, "git reset --hard && git clean -xfd")
-	commands = append(commands, fmt.Sprintf("git -C %s fetch origin", b.portConfig.SourceDir))
+	commands = append(commands, fmt.Sprintf("git -C %s fetch origin", b.PortConfig.SourceDir))
 
 	for _, patch := range b.Patches {
 		switch patch.Mode {
@@ -128,7 +128,7 @@ func (b BuildConfig) Patch(repoRef string) error {
 	}
 
 	commandLine := strings.Join(commands, " && ")
-	title := fmt.Sprintf("[patch %s]", b.portConfig.LibName)
+	title := fmt.Sprintf("[patch %s]", b.PortConfig.LibName)
 	if err := b.execute(title, commandLine, ""); err != nil {
 		return err
 	}
@@ -158,7 +158,7 @@ func (b BuildConfig) SourceEnvs() error {
 	return nil
 }
 
-func (b *BuildConfig) Install(url, version, buildType string) (string, error) {
+func (b *BuildConfig) Install(url, version, buildType string) error {
 	switch b.BuildTool {
 	case "cmake":
 		b.buildSystem = NewCMake(*b)
@@ -171,59 +171,81 @@ func (b *BuildConfig) Install(url, version, buildType string) (string, error) {
 	case "meson":
 		b.buildSystem = NewMeson(*b)
 	default:
-		return "", fmt.Errorf("unsupported build system: %s", b.BuildTool)
+		return fmt.Errorf("unsupported build system: %s", b.BuildTool)
 	}
 
 	if err := b.buildSystem.Clone(url, version); err != nil {
-		return "", err
+		return err
 	}
 	if err := b.buildSystem.SourceEnvs(); err != nil {
-		return "", err
+		return err
 	}
 	if err := b.buildSystem.Patch(version); err != nil {
-		return "", err
+		return err
 	}
-	if _, err := b.buildSystem.Configure(buildType); err != nil {
-		return "", err
+	if err := b.buildSystem.Configure(buildType); err != nil {
+		return err
 	}
-	if _, err := b.buildSystem.Build(); err != nil {
-		return "", err
+	if err := b.buildSystem.Build(); err != nil {
+		return err
 	}
-	installLogPath, err := b.buildSystem.Install()
-	if err != nil {
-		return "", err
+	if err := b.buildSystem.Install(); err != nil {
+		return err
 	}
 
 	// Some pkg-config file may have absolute path,
 	// so we need to replace them with relative path.
-	if err := fixupPkgConfig(b.portConfig.InstalledDir); err != nil {
-		return "", fmt.Errorf("fixup pkg-config failed: %w", err)
+	if err := fixupPkgConfig(b.PortConfig.PackageDir); err != nil {
+		return fmt.Errorf("fixup pkg-config failed: %w", err)
 	}
 
 	// Generate cmake config.
-	portDir := filepath.Join(b.portConfig.PortsDir, b.portConfig.LibName)
+	portDir := filepath.Join(b.PortConfig.PortsDir, b.PortConfig.LibName)
 	cmakeConfig, err := generator.FindMatchedConfig(portDir, b.CMakeConfig)
 	if err != nil {
-		return "", err
+		return err
 	}
 	if cmakeConfig != nil {
-		cmakeConfig.Version = b.portConfig.LibVersion
-		cmakeConfig.SystemName = b.portConfig.SystemName
-		cmakeConfig.Libname = b.portConfig.LibName
+		cmakeConfig.Version = b.PortConfig.LibVersion
+		cmakeConfig.SystemName = b.PortConfig.SystemName
+		cmakeConfig.Libname = b.PortConfig.LibName
 		cmakeConfig.BuildType = buildType
-		if err := cmakeConfig.Generate(b.portConfig.InstalledDir); err != nil {
-			return "", err
+		if err := cmakeConfig.Generate(b.PortConfig.PackageDir); err != nil {
+			return err
 		}
 	}
-	return installLogPath, nil
+	return nil
+}
+
+func (b BuildConfig) InstalledFiles(packageDir, platformName, buildType string) ([]string, error) {
+	var files []string
+
+	if err := filepath.WalkDir(packageDir, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if d.IsDir() {
+			return nil
+		}
+
+		relativePath, err := filepath.Rel(packageDir, path)
+		if err != nil {
+			return err
+		}
+
+		platformBuildType := fmt.Sprintf("%s-%s", platformName, buildType)
+		files = append(files, platformBuildType+"/"+relativePath)
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return files, nil
 }
 
 func (b BuildConfig) BuildSystem() BuildSystem {
 	return b.buildSystem
-}
-
-func (b *BuildConfig) SetPortConfig(portConfig PortConfig) {
-	b.portConfig = portConfig
 }
 
 func (b BuildConfig) execute(title, command, logPath string) error {

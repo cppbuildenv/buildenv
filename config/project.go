@@ -1,7 +1,7 @@
 package config
 
 import (
-	"buildenv/pkg/io"
+	"buildenv/pkg/fileio"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -31,7 +31,7 @@ func (p *Project) Init(ctx Context, projectName string) error {
 
 	// Check if project file exists.
 	projectPath := filepath.Join(Dirs.ProjectsDir, projectName+".json")
-	if !io.PathExists(projectPath) {
+	if !fileio.PathExists(projectPath) {
 		return fmt.Errorf("project %s does not exists", projectName)
 	}
 
@@ -60,7 +60,7 @@ func (p Project) Write(platformPath string) error {
 	}
 
 	// Check if conf/buildenv.json exists.
-	if io.PathExists(platformPath) {
+	if fileio.PathExists(platformPath) {
 		return fmt.Errorf("%s is already exists", platformPath)
 	}
 

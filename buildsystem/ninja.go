@@ -8,18 +8,14 @@ type ninja struct {
 	BuildConfig
 }
 
-func (n ninja) Configure(buildType string) (string, error) {
-	return "", nil
+func (n ninja) Configure(buildType string) error {
+	return nil
 }
 
-func (n ninja) Build() (string, error) {
-	return "", nil
+func (n ninja) Build() error {
+	return nil
 }
 
-func (n ninja) Install() (string, error) {
-	return "", nil
-}
-
-func (n ninja) InstalledFiles(installLogFile string) ([]string, error) {
-	return nil, nil
+func (n ninja) Install() error {
+	return nil
 }

@@ -1,11 +1,9 @@
 package buildsystem
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"slices"
 	"strings"
 )
@@ -18,30 +16,30 @@ type cmake struct {
 	BuildConfig
 }
 
-func (c cmake) Configure(buildType string) (string, error) {
+func (c cmake) Configure(buildType string) error {
 	// Remove build dir and create it for configure.
-	if err := os.RemoveAll(c.portConfig.BuildDir); err != nil {
-		return "", err
+	if err := os.RemoveAll(c.PortConfig.BuildDir); err != nil {
+		return err
 	}
-	if err := os.MkdirAll(c.portConfig.BuildDir, os.ModeDir|os.ModePerm); err != nil {
-		return "", err
+	if err := os.MkdirAll(c.PortConfig.BuildDir, os.ModeDir|os.ModePerm); err != nil {
+		return err
 	}
 
 	rootPaths := strings.Join(
-		[]string{c.portConfig.RootFS, c.portConfig.InstalledDir},
+		[]string{c.PortConfig.RootFS, c.PortConfig.InstalledDir},
 		string(os.PathListSeparator),
 	)
 
 	// Append extra global args.
-	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_PREFIX_PATH=%s", c.portConfig.InstalledDir))
-	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_INSTALL_PREFIX=%s", c.portConfig.InstalledDir))
+	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_PREFIX_PATH=%s", c.PortConfig.InstalledDir))
+	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_INSTALL_PREFIX=%s", c.PortConfig.PackageDir))
 	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_POSITION_INDEPENDENT_CODE=%s", "ON"))
 
-	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_SYSTEM_PROCESSOR=%s", c.portConfig.SystemProcessor))
-	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_SYSTEM_NAME=%s", c.portConfig.SystemName))
+	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_SYSTEM_PROCESSOR=%s", c.PortConfig.SystemProcessor))
+	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_SYSTEM_NAME=%s", c.PortConfig.SystemName))
 
-	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_C_FLAGS_INIT=--sysroot=%s", c.portConfig.RootFS))
-	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_CXX_FLAGS_INIT=--sysroot=%s", c.portConfig.RootFS))
+	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_C_FLAGS_INIT=--sysroot=%s", c.PortConfig.RootFS))
+	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_CXX_FLAGS_INIT=--sysroot=%s", c.PortConfig.RootFS))
 
 	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH=%s", rootPaths))
 	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=%s", "NEVER"))
@@ -60,77 +58,51 @@ func (c cmake) Configure(buildType string) (string, error) {
 
 	// Assemble args into a single command string.
 	joinedArgs := strings.Join(c.Arguments, " ")
-	sourceDir := filepath.Join(c.portConfig.SourceDir, c.portConfig.SourceFolder)
-	configure := fmt.Sprintf("cmake -S %s -B %s %s", sourceDir, c.portConfig.BuildDir, joinedArgs)
+	sourceDir := filepath.Join(c.PortConfig.SourceDir, c.PortConfig.SourceFolder)
+	configure := fmt.Sprintf("cmake -S %s -B %s %s", sourceDir, c.PortConfig.BuildDir, joinedArgs)
 
 	// Execute configure.
-	parentDir := filepath.Dir(c.portConfig.BuildDir)
-	fileName := filepath.Base(c.portConfig.BuildDir) + "-configure.log"
+	parentDir := filepath.Dir(c.PortConfig.BuildDir)
+	fileName := filepath.Base(c.PortConfig.BuildDir) + "-configure.log"
 	configureLogPath := filepath.Join(parentDir, fileName)
-	title := fmt.Sprintf("[configure %s]", c.portConfig.LibName)
+	title := fmt.Sprintf("[configure %s]", c.PortConfig.LibName)
 	if err := c.execute(title, configure, configureLogPath); err != nil {
-		return "", err
+		return err
 	}
 
-	return configureLogPath, nil
+	return nil
 }
 
-func (c cmake) Build() (string, error) {
+func (c cmake) Build() error {
 	// Assemble script.
-	command := fmt.Sprintf("cmake --build %s --parallel %d", c.portConfig.BuildDir, c.portConfig.JobNum)
+	command := fmt.Sprintf("cmake --build %s --parallel %d", c.PortConfig.BuildDir, c.PortConfig.JobNum)
 
 	// Execute build.
-	parentDir := filepath.Dir(c.portConfig.BuildDir)
-	fileName := filepath.Base(c.portConfig.BuildDir) + "-build.log"
+	parentDir := filepath.Dir(c.PortConfig.BuildDir)
+	fileName := filepath.Base(c.PortConfig.BuildDir) + "-build.log"
 	buildLogPath := filepath.Join(parentDir, fileName)
-	title := fmt.Sprintf("[build %s]", c.portConfig.LibName)
+	title := fmt.Sprintf("[build %s]", c.PortConfig.LibName)
 	if err := c.execute(title, command, buildLogPath); err != nil {
-		return "", err
+		return err
 	}
 
-	return buildLogPath, nil
+	return nil
 }
 
-func (c cmake) Install() (string, error) {
+func (c cmake) Install() error {
 	// Assemble script.
-	command := fmt.Sprintf("cmake --install %s", c.portConfig.BuildDir)
+	command := fmt.Sprintf("cmake --install %s", c.PortConfig.BuildDir)
 
 	// Execute install.
-	parentDir := filepath.Dir(c.portConfig.BuildDir)
-	fileName := filepath.Base(c.portConfig.BuildDir) + "-install.log"
+	parentDir := filepath.Dir(c.PortConfig.BuildDir)
+	fileName := filepath.Base(c.PortConfig.BuildDir) + "-install.log"
 	installLogPath := filepath.Join(parentDir, fileName)
-	title := fmt.Sprintf("[install %s]", c.portConfig.LibName)
+	title := fmt.Sprintf("[install %s]", c.PortConfig.LibName)
 	if err := c.execute(title, command, installLogPath); err != nil {
-		return "", err
+		return err
 	}
 
-	return installLogPath, nil
-}
-
-func (c cmake) InstalledFiles(installLogFile string) ([]string, error) {
-	file, err := os.OpenFile(installLogFile, os.O_RDONLY|os.O_CREATE, os.ModePerm)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	var files []string                                               // All installed files.
-	reg := regexp.MustCompile(`^-- (Installing:|Up-to-date:) (\S+)`) // Installed file regex.
-
-	// Read line by line to find installed files.
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		match := reg.FindStringSubmatch(line)
-
-		if len(match) > 2 {
-			installedFile := match[2]
-			installedFile = strings.TrimPrefix(installedFile, c.portConfig.InstalledRootDir+"/")
-			files = append(files, installedFile)
-		}
-	}
-
-	return files, nil
+	return nil
 }
 
 func (c cmake) formatBuildType(buildType string) string {

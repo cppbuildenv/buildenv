@@ -3,7 +3,7 @@ package config
 import (
 	"buildenv/pkg/color"
 	"buildenv/pkg/env"
-	"buildenv/pkg/io"
+	"buildenv/pkg/fileio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -40,7 +40,7 @@ func (t *Toolchain) Verify() error {
 	if t.Url == "" {
 		return fmt.Errorf("toolchain.url would be http url or local file url, but it's empty")
 	}
-	if err := io.CheckAvailable(t.Url); err != nil {
+	if err := fileio.CheckAvailable(t.Url); err != nil {
 		return fmt.Errorf("toolchain.url of %s is not accessible", t.Url)
 	}
 
@@ -73,7 +73,7 @@ func (t *Toolchain) Verify() error {
 			}
 
 			// Check if buildenv supported archive file.
-			if !io.IsSupportedArchive(localPath) {
+			if !fileio.IsSupportedArchive(localPath) {
 				return fmt.Errorf("toolchain.path of %s is not a archive file", t.Url)
 			}
 
@@ -155,14 +155,14 @@ func (t Toolchain) CheckAndRepair(request VerifyRequest) error {
 	// but it can be specified by archive name.
 	folderName := strings.Split(t.Path, string(filepath.Separator))[0]
 	if t.ArchiveName != "" {
-		folderName = io.FileBaseName(t.ArchiveName)
+		folderName = fileio.FileBaseName(t.ArchiveName)
 	}
 	location := filepath.Join(Dirs.ExtractedToolsDir, folderName)
 
 	// Check if tool exists.
-	if io.PathExists(t.fullpath) {
+	if fileio.PathExists(t.fullpath) {
 		if !request.Silent() {
-			title := color.Sprintf(color.Green, "\n[✔] ---- Toolchain: %s\n", io.FileBaseName(t.Url))
+			title := color.Sprintf(color.Green, "\n[✔] ---- Toolchain: %s\n", fileio.FileBaseName(t.Url))
 			fmt.Printf("%sLocation: %s\n", title, location)
 		}
 
@@ -176,14 +176,14 @@ func (t Toolchain) CheckAndRepair(request VerifyRequest) error {
 	}
 
 	// Check and repair resource.
-	repair := io.NewResourceRepair(t.Url, archiveName, folderName, Dirs.ExtractedToolsDir, Dirs.DownloadRootDir)
+	repair := fileio.NewResourceRepair(t.Url, archiveName, folderName, Dirs.ExtractedToolsDir, Dirs.DownloadRootDir)
 	if err := repair.CheckAndRepair(); err != nil {
 		return err
 	}
 
 	// Print download & extract info.
 	if !request.Silent() {
-		title := color.Sprintf(color.Green, "\n[✔] ---- Toolchain: %s\n", io.FileBaseName(t.Url))
+		title := color.Sprintf(color.Green, "\n[✔] ---- Toolchain: %s\n", fileio.FileBaseName(t.Url))
 		fmt.Printf("%sLocation: %s\n", title, location)
 	}
 	return nil

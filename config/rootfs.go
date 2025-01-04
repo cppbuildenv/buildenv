@@ -3,7 +3,7 @@ package config
 import (
 	"buildenv/pkg/color"
 	"buildenv/pkg/env"
-	"buildenv/pkg/io"
+	"buildenv/pkg/fileio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -26,7 +26,7 @@ func (r *RootFS) Verify() error {
 	if r.Url == "" {
 		return fmt.Errorf("rootfs.url is empty")
 	}
-	if err := io.CheckAvailable(r.Url); err != nil {
+	if err := fileio.CheckAvailable(r.Url); err != nil {
 		return fmt.Errorf("rootfs.url of %s is not accessible", r.Url)
 	}
 
@@ -44,7 +44,7 @@ func (r *RootFS) Verify() error {
 	var pkgConfigLibdirs []string
 	for _, libdir := range r.PkgConfigLibdir {
 		libDirFullPath := filepath.Join(r.fullpath, libdir)
-		if !io.PathExists(libDirFullPath) {
+		if !fileio.PathExists(libDirFullPath) {
 			continue
 		}
 
@@ -65,14 +65,14 @@ func (r RootFS) CheckAndRepair(request VerifyRequest) error {
 	// but it can be specified by archive name.
 	folderName := strings.Split(r.Path, string(filepath.Separator))[0]
 	if r.ArchiveName != "" {
-		folderName = io.FileBaseName(r.ArchiveName)
+		folderName = fileio.FileBaseName(r.ArchiveName)
 	}
 	location := filepath.Join(Dirs.ExtractedToolsDir, folderName)
 
 	// Check if tool exists.
-	if io.PathExists(r.fullpath) {
+	if fileio.PathExists(r.fullpath) {
 		if !request.Silent() {
-			title := color.Sprintf(color.Green, "\n[✔] ---- Rootfs: %s\n", io.FileBaseName(r.Url))
+			title := color.Sprintf(color.Green, "\n[✔] ---- Rootfs: %s\n", fileio.FileBaseName(r.Url))
 			fmt.Printf("%sLocation: %s\n", title, location)
 		}
 		return nil
@@ -85,14 +85,14 @@ func (r RootFS) CheckAndRepair(request VerifyRequest) error {
 	}
 
 	// Check and repair resource.
-	repair := io.NewResourceRepair(r.Url, archiveName, folderName, Dirs.ExtractedToolsDir, Dirs.DownloadRootDir)
+	repair := fileio.NewResourceRepair(r.Url, archiveName, folderName, Dirs.ExtractedToolsDir, Dirs.DownloadRootDir)
 	if err := repair.CheckAndRepair(); err != nil {
 		return err
 	}
 
 	// Print download & extract info.
 	if !request.Silent() {
-		title := color.Sprintf(color.Green, "\n[✔] ---- Rootfs: %s\n", io.FileBaseName(r.Url))
+		title := color.Sprintf(color.Green, "\n[✔] ---- Rootfs: %s\n", fileio.FileBaseName(r.Url))
 		fmt.Printf("%sLocation: %s\n", title, location)
 	}
 	return nil
@@ -119,7 +119,7 @@ func (r RootFS) generate(toolchain, environment *strings.Builder) error {
 	// Add pkg-config libdir in rootfs to environment.
 	var pkgConfigLibdirs []string
 	for _, libdir := range r.PkgConfigLibdir {
-		if io.PathExists(filepath.Join(r.fullpath, libdir)) {
+		if fileio.PathExists(filepath.Join(r.fullpath, libdir)) {
 			pkgConfigLibdirs = append(pkgConfigLibdirs, filepath.Join(r.cmakepath, libdir))
 		}
 	}

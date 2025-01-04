@@ -2,7 +2,7 @@ package config
 
 import (
 	"buildenv/pkg/color"
-	"buildenv/pkg/io"
+	"buildenv/pkg/fileio"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -20,7 +20,7 @@ func (c callbackImpl) OnInitBuildEnv(confRepoUrl, confRepoRef string) (string, e
 
 	// Create buildenv.json if not exist.
 	confPath := filepath.Join(Dirs.WorkspaceDir, "buildenv.json")
-	if !io.PathExists(confPath) {
+	if !fileio.PathExists(confPath) {
 		if err := os.MkdirAll(filepath.Dir(confPath), os.ModePerm); err != nil {
 			return "", err
 		}
@@ -81,7 +81,7 @@ func (c callbackImpl) OnSelectPlatform(platformName string) error {
 	buildenv := NewBuildEnv()
 	buildEnvPath := filepath.Join(Dirs.WorkspaceDir, "buildenv.json")
 
-	if !io.PathExists(buildEnvPath) { // Create buildenv.json if not exist.
+	if !fileio.PathExists(buildEnvPath) { // Create buildenv.json if not exist.
 		// Create conf directory.
 		if err := os.MkdirAll(filepath.Dir(buildEnvPath), os.ModeDir|os.ModePerm); err != nil {
 			return err
@@ -148,7 +148,7 @@ func (c callbackImpl) OnSelectProject(projectName string) error {
 	buildenv := NewBuildEnv()
 	buildEnvPath := filepath.Join(Dirs.WorkspaceDir, "buildenv.json")
 
-	if !io.PathExists(buildEnvPath) { // Create buildenv.json if not exist.
+	if !fileio.PathExists(buildEnvPath) { // Create buildenv.json if not exist.
 		// Create conf directory.
 		if err := os.MkdirAll(filepath.Dir(buildEnvPath), os.ModeDir|os.ModePerm); err != nil {
 			return err
