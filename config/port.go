@@ -169,10 +169,13 @@ func (p Port) Install(silentMode bool) error {
 		}
 	}
 
-	// Find matched config.
+	// Find matched config and init build system.
 	var matchedConfig *buildsystem.BuildConfig
 	for _, config := range p.BuildConfigs {
 		if p.MatchPattern(config.Pattern) {
+			if err := config.InitBuildSystem(); err != nil {
+				return err
+			}
 			matchedConfig = &config
 			break
 		}
@@ -181,39 +184,27 @@ func (p Port) Install(silentMode bool) error {
 		return fmt.Errorf("no matching build_config found to build")
 	}
 
-	// First, we must check and repair dependency ports.
-	for _, item := range matchedConfig.Depedencies {
-		if strings.HasPrefix(item, p.Name) {
-			return fmt.Errorf("port.dependencies contains circular dependency: %s", item)
-		}
-
-		// Check and repair dependency.
-		var port Port
-		port.isSubDep = true
-		portPath := filepath.Join(Dirs.PortsDir, item+".json")
-		if err := port.Init(p.ctx, portPath); err != nil {
+	// Check if package exists, if exists, install from package,
+	// otherwise, install from source.
+	if fileio.PathExists(matchedConfig.PortConfig.PackageDir) {
+		if err := p.installFromPackage(matchedConfig); err != nil {
 			return err
 		}
-		if err := port.Verify(); err != nil {
+	} else {
+		if err := p.installFromSource(silentMode, matchedConfig); err != nil {
 			return err
 		}
-		if err := port.Install(silentMode); err != nil {
+		// This will copy all install files into installedDir.
+		if err := p.installFromPackage(matchedConfig); err != nil {
 			return err
 		}
 	}
 
-	// Check and repair current port.
-	if err := matchedConfig.Install(p.Url, p.Version, p.ctx.BuildType()); err != nil {
-		return err
-	}
-
-	// Mkdir if not exists.
+	// Write installed file list info into its installation info list.
 	if err := os.MkdirAll(filepath.Dir(p.installInfoFile), os.ModePerm); err != nil {
 		return err
 	}
-
-	// Write installed file info list.
-	installedFiles, err := matchedConfig.BuildSystem().InstalledFiles(
+	packageFiles, err := matchedConfig.BuildSystem().PackageFiles(
 		matchedConfig.PortConfig.PackageDir,
 		p.ctx.Platform().Name,
 		p.ctx.BuildType(),
@@ -221,25 +212,11 @@ func (p Port) Install(silentMode bool) error {
 	if err != nil {
 		return err
 	}
-
-	platformBuildType := fmt.Sprintf("%s-%s", p.ctx.Platform().Name, p.ctx.BuildType())
-	for _, file := range installedFiles {
-		file = strings.TrimPrefix(file, platformBuildType+"/")
-		src := filepath.Join(matchedConfig.PortConfig.PackageDir, file)
-		dest := filepath.Join(matchedConfig.PortConfig.InstalledDir, file)
-
-		if err := os.MkdirAll(filepath.Dir(dest), os.ModePerm); err != nil {
-			return err
-		}
-		if err := p.copyFile(src, dest); err != nil {
-			return err
-		}
-	}
-
-	if err := os.WriteFile(p.installInfoFile, []byte(strings.Join(installedFiles, "\n")), os.ModePerm); err != nil {
+	if err := os.WriteFile(p.installInfoFile, []byte(strings.Join(packageFiles, "\n")), os.ModePerm); err != nil {
 		return err
 	}
 
+	// Print install info when not in silent mode.
 	if !silentMode {
 		title := color.Sprintf(color.Green, "\n[✔] ---- Port: %s\n", p.NameVersion())
 		fmt.Printf("%sLocation: %s\n", title, installedDir)
@@ -269,6 +246,101 @@ func (p Port) MatchPattern(pattern string) bool {
 	}
 
 	return platformName == pattern
+}
+
+func (p Port) installFromSource(silentMode bool, matchedConfig *buildsystem.BuildConfig) error {
+	// First, we must check and repair dependency ports.
+	for _, item := range matchedConfig.Depedencies {
+		if strings.HasPrefix(item, p.Name) {
+			return fmt.Errorf("port.dependencies contains circular dependency: %s", item)
+		}
+
+		// Check and repair dependency.
+		var port Port
+		port.isSubDep = true
+		portPath := filepath.Join(Dirs.PortsDir, item+".json")
+		if err := port.Init(p.ctx, portPath); err != nil {
+			return err
+		}
+		if err := port.Verify(); err != nil {
+			return err
+		}
+		if err := port.Install(silentMode); err != nil {
+			return err
+		}
+	}
+
+	// Check and repair current port.
+	if err := matchedConfig.Install(p.Url, p.Version, p.ctx.BuildType()); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p Port) installFromPackage(matchedConfig *buildsystem.BuildConfig) error {
+	platformBuildType := fmt.Sprintf("%s-%s", p.ctx.Platform().Name, p.ctx.BuildType())
+
+	// First, we must check and repair dependency ports.
+	for _, item := range matchedConfig.Depedencies {
+		if strings.HasPrefix(item, p.Name) {
+			return fmt.Errorf("port.dependencies contains circular dependency: %s", item)
+		}
+
+		packageDir := filepath.Join(Dirs.WorkspaceDir, "packages", item+"-"+platformBuildType)
+		packageFiles, err := matchedConfig.BuildSystem().PackageFiles(
+			packageDir,
+			p.ctx.Platform().Name,
+			p.ctx.BuildType(),
+		)
+		if err != nil {
+			return err
+		}
+
+		for _, file := range packageFiles {
+			file = strings.TrimPrefix(file, platformBuildType+"/")
+			src := filepath.Join(packageDir, file)
+			dest := filepath.Join(matchedConfig.PortConfig.InstalledDir, file)
+
+			if err := os.MkdirAll(filepath.Dir(dest), os.ModePerm); err != nil {
+				return err
+			}
+			if err := p.copyFile(src, dest); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Check and repair current port.
+	packageFiles, err := matchedConfig.BuildSystem().PackageFiles(
+		matchedConfig.PortConfig.PackageDir,
+		p.ctx.Platform().Name,
+		p.ctx.BuildType(),
+	)
+	if err != nil {
+		return err
+	}
+
+	// No files found, skip it, maybe need to install from source.
+	if len(packageFiles) == 0 {
+		return nil
+	}
+
+	// Copy files from package to installed dir.
+	for _, file := range packageFiles {
+		file = strings.TrimPrefix(file, platformBuildType+"/")
+		src := filepath.Join(matchedConfig.PortConfig.PackageDir, file)
+		dest := filepath.Join(matchedConfig.PortConfig.InstalledDir, file)
+
+		if err := os.MkdirAll(filepath.Dir(dest), os.ModePerm); err != nil {
+			return err
+		}
+		if err := p.copyFile(src, dest); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (p Port) downloadAndDeploy(url, installedDir, downloadedDir string) error {
@@ -302,6 +374,13 @@ func (p Port) copyFile(src, dest string) error {
 		target, err := os.Readlink(src)
 		if err != nil {
 			return err
+		}
+
+		// Remove dest if it exists before creating symlink.
+		if _, err := os.Lstat(dest); err == nil {
+			if removeErr := os.Remove(dest); removeErr != nil {
+				return removeErr
+			}
 		}
 
 		return os.Symlink(target, dest)

@@ -19,12 +19,15 @@ func newUninstallCmd() *uninstallCmd {
 
 type uninstallCmd struct {
 	uninstall string
+	recursive bool
+	purge     bool
 }
 
 func (u *uninstallCmd) register() {
 	flag.StringVar(&u.uninstall, "uninstall", "", "uninstall a 3rd party port.")
+	flag.BoolVar(&u.recursive, "recursive", false, "uninstall dependencies also, it works with -uninstall.")
+	flag.BoolVar(&u.purge, "purge", false, "remove installed files after uninstall, it works with -uninstall.")
 }
-
 func (u *uninstallCmd) listen() (handled bool) {
 	if strings.TrimSpace(u.uninstall) == "" {
 		return false
@@ -67,7 +70,7 @@ func (u *uninstallCmd) listen() (handled bool) {
 	}
 
 	// Uninstall port.
-	if err := u.uninstallPort(buildenv, portToUninstall, recursive.recursive); err != nil {
+	if err := u.uninstallPort(buildenv, portToUninstall); err != nil {
 		config.PrintError(err, "%s uninstall failed.", u.uninstall)
 		return true
 	}
@@ -77,7 +80,7 @@ func (u *uninstallCmd) listen() (handled bool) {
 	return true
 }
 
-func (u uninstallCmd) uninstallPort(ctx config.Context, portNameVersion string, recursively bool) error {
+func (u uninstallCmd) uninstallPort(ctx config.Context, portNameVersion string) error {
 	// Check port is configured ok.
 	var port config.Port
 	portPath := filepath.Join(config.Dirs.PortsDir, portNameVersion+".json")
@@ -106,7 +109,7 @@ func (u uninstallCmd) uninstallPort(ctx config.Context, portNameVersion string, 
 	}
 
 	// Try to uninstall dependencies firstly.
-	if recursively {
+	if u.recursive {
 		for _, item := range matchedConfig.Depedencies {
 			if strings.HasPrefix(item, port.Name) {
 				return fmt.Errorf("port.dependencies contains circular dependency: %s", item)
@@ -123,7 +126,7 @@ func (u uninstallCmd) uninstallPort(ctx config.Context, portNameVersion string, 
 			}
 
 			// Uninstall dependency.
-			if err := u.uninstallPort(ctx, item, recursively); err != nil {
+			if err := u.uninstallPort(ctx, item); err != nil {
 				return err
 			}
 		}
@@ -132,6 +135,21 @@ func (u uninstallCmd) uninstallPort(ctx config.Context, portNameVersion string, 
 	// Do uninstall port itself.
 	if err := u.doUninsallPort(ctx, port.NameVersion()); err != nil {
 		return err
+	}
+
+	// Remove package files if purge option is specified.
+	if u.purge {
+		// Remove port's package files.
+		platformBuildType := fmt.Sprintf("%s-%s", ctx.Platform().Name, ctx.BuildType())
+		packageDir := filepath.Join(config.Dirs.WorkspaceDir, "packages", port.NameVersion()+"-"+platformBuildType)
+		if err := os.RemoveAll(packageDir); err != nil {
+			return fmt.Errorf("cannot remove package files: %s", err)
+		}
+
+		// Try remove parent folder if it's empty.
+		if err := u.removeFolderRecursively(filepath.Dir(packageDir)); err != nil {
+			return fmt.Errorf("cannot remove parent folder: %s", err)
+		}
 	}
 
 	return nil
@@ -211,6 +229,10 @@ func (u uninstallCmd) removeFiles(path string) error {
 	}
 
 	index := strings.Index(path, ".so")
+	if index == -1 {
+		return os.Remove(path)
+	}
+
 	matches, err := filepath.Glob(path[:index] + ".so*")
 	if err != nil {
 		return err

@@ -27,7 +27,6 @@ var (
 	verify         = newVerifyCmd()
 	install        = newInstallCmd()
 	uninstall      = newUninstallCmd()
-	recursive      = newRecursiveCmd()
 	about          = newAboutCmd(config.Callbacks)
 )
 var commands = []reisterable{
@@ -42,7 +41,6 @@ var commands = []reisterable{
 	verify,
 	install,
 	uninstall,
-	recursive,
 	about,
 }
 

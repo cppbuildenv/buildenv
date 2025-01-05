@@ -40,7 +40,7 @@ type BuildSystem interface {
 	Configure(buildType string) error
 	Build() error
 	Install() error
-	InstalledFiles(packageDir, platformName, buildType string) ([]string, error)
+	PackageFiles(packageDir, platformName, buildType string) ([]string, error)
 }
 
 type patch struct {
@@ -159,21 +159,6 @@ func (b BuildConfig) SourceEnvs() error {
 }
 
 func (b *BuildConfig) Install(url, version, buildType string) error {
-	switch b.BuildTool {
-	case "cmake":
-		b.buildSystem = NewCMake(*b)
-	case "ninja":
-		b.buildSystem = NewNinja(*b)
-	case "make":
-		b.buildSystem = NewMake(*b)
-	case "autotools":
-		b.buildSystem = NewAutoTool(*b)
-	case "meson":
-		b.buildSystem = NewMeson(*b)
-	default:
-		return fmt.Errorf("unsupported build system: %s", b.BuildTool)
-	}
-
 	if err := b.buildSystem.Clone(url, version); err != nil {
 		return err
 	}
@@ -217,9 +202,31 @@ func (b *BuildConfig) Install(url, version, buildType string) error {
 	return nil
 }
 
-func (b BuildConfig) InstalledFiles(packageDir, platformName, buildType string) ([]string, error) {
-	var files []string
+func (b *BuildConfig) InitBuildSystem() error {
+	switch b.BuildTool {
+	case "cmake":
+		b.buildSystem = NewCMake(*b)
+	case "ninja":
+		b.buildSystem = NewNinja(*b)
+	case "make":
+		b.buildSystem = NewMake(*b)
+	case "autotools":
+		b.buildSystem = NewAutoTool(*b)
+	case "meson":
+		b.buildSystem = NewMeson(*b)
+	default:
+		return fmt.Errorf("unsupported build system: %s", b.BuildTool)
+	}
 
+	return nil
+}
+
+func (b BuildConfig) PackageFiles(packageDir, platformName, buildType string) ([]string, error) {
+	if !fileio.PathExists(packageDir) {
+		return nil, nil
+	}
+
+	var files []string
 	if err := filepath.WalkDir(packageDir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
