@@ -52,3 +52,4 @@ cmake_config的配置独立于version文件之外  | ✔
 支持在project里覆盖默认port的配置  | ✘
 通过一个中间临时目录来实现收集install的文件清单  | ✘
 有些pc文件产生做share目录，而不是lib目录，需要统一移动到lib目录（libz）  | ✘
+如果发现资源包size跟最新不匹配，即便已经解压了也要重新下载 | ✘

@@ -399,7 +399,7 @@ func (b buildenv) ToolchainPrefix() string {
 			return "x86_64-linux-gnu-"
 		}
 	}
-	return b.Toolchain().ToolchainPrefix
+	return filepath.Join(b.Toolchain().fullpath, b.Toolchain().ToolchainPrefix)
 }
 
 func (b buildenv) RootFSPath() string {

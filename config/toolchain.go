@@ -98,7 +98,7 @@ func (t *Toolchain) Verify() error {
 	if t.ToolchainPrefix == "" {
 		return fmt.Errorf("toolchain.toolchain_prefix should be like 'x86_64-linux-gnu-', but it's empty")
 	}
-	os.Setenv("TOOLCHAIN_PREFIX", t.ToolchainPrefix)
+	os.Setenv("TOOLCHAIN_PREFIX", filepath.Join(t.fullpath, t.ToolchainPrefix))
 
 	if t.Host == "" {
 		return fmt.Errorf("toolchain.host should be like 'x86_64-linux-gnu', but it's empty")
