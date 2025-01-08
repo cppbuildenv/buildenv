@@ -220,7 +220,7 @@ get_filename_component(BUILDENV_ROOT_DIR "${_CURRENT_DIR}" PATH)`))
 			environment.WriteString("\n# Define env vars for project.\n")
 		}
 		toolchain.WriteString(fmt.Sprintf("set (ENV{%s} \"%s\")\n", parts[0], parts[1]))
-		environment.WriteString(fmt.Sprintf("export %s=%s)\n", parts[0], parts[1]))
+		environment.WriteString(fmt.Sprintf("export %s=%s\n", parts[0], parts[1]))
 	}
 	for index, item := range b.project.MicroVars {
 		if index == 0 {
