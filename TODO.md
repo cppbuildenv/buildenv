@@ -36,12 +36,14 @@ makefile编译前不支持配置环境变量，例如：export CFLAGS="-mfpu=neo
 支持打patch  | ✔
 第一次使用交互需要优化  | ✔
 cmake_config的配置独立于version文件之外  | ✔
+有些pc文件产生做share目录，而不是lib目录，需要统一移动到lib目录（libz）  | ✔
+通过一个中间临时目录来实现收集install的文件清单  | ✔
+支持通过命令创建tool和port  | ✔
 运行tools需要将内部lib路径加入到LD_LIBRARY_PATH  | ✘
 支持 buildenv -upgrade 升级  | ✘
 动态生成的cmake config文件（windows还没测试）| ✘
 支持windows下工作  | ✘
 下载的库暂不支持生成cmake config文件  | ✘
-支持通过命令创建tool和port  | ✘
 在创建的新tool和port里添加注释  | ✘
 支持autotools  | ✘
 支持meson  | ✘
@@ -50,6 +52,4 @@ cmake_config的配置独立于version文件之外  | ✔
 支持编译缓存共享  | ✘
 支持fork到私有仓库  | ✘
 支持在project里覆盖默认port的配置  | ✘
-通过一个中间临时目录来实现收集install的文件清单  | ✘
-有些pc文件产生做share目录，而不是lib目录，需要统一移动到lib目录（libz）  | ✘
 如果发现资源包size跟最新不匹配，即便已经解压了也要重新下载 | ✘

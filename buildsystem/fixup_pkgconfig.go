@@ -10,20 +10,47 @@ import (
 )
 
 func fixupPkgConfig(packageDir string) error {
-	pkgConfigDir := filepath.Join(packageDir, "lib", "pkgconfig")
+	pkgConfigShareDir := filepath.Join(packageDir, "share", "pkgconfig")
+	pkgConfigLibDir := filepath.Join(packageDir, "lib", "pkgconfig")
 
-	if !fileio.PathExists(pkgConfigDir) {
-		return nil
+	// Move pkg-config files from shared dir to lib dir.
+	if fileio.PathExists(pkgConfigShareDir) {
+		matched, err := filepath.Glob(filepath.Join(pkgConfigShareDir, "*.pc"))
+		if err != nil {
+			return err
+		}
+
+		if len(matched) > 0 {
+			if err := os.MkdirAll(pkgConfigLibDir, os.ModeDir|os.ModePerm); err != nil {
+				return err
+			}
+		}
+
+		// Move pc files from share to lib.
+		for _, pkgPath := range matched {
+			fileName := filepath.Base(pkgPath)
+			if err := os.Rename(pkgPath, filepath.Join(pkgConfigLibDir, fileName)); err != nil {
+				return err
+			}
+		}
+
+		// Remove empty shared dir.
+		if err := os.RemoveAll(pkgConfigShareDir); err != nil {
+			return err
+		}
 	}
 
-	entities, err := os.ReadDir(pkgConfigDir)
+	// Fixup pkg-config files if exists.
+	if !fileio.PathExists(pkgConfigLibDir) {
+		return nil
+	}
+	entities, err := os.ReadDir(pkgConfigLibDir)
 	if err != nil {
 		return err
 	}
-
 	for _, entity := range entities {
 		if strings.HasSuffix(entity.Name(), ".pc") {
-			pkgPath := filepath.Join(pkgConfigDir, entity.Name())
+			pkgPath := filepath.Join(pkgConfigLibDir, entity.Name())
 			if err := doFixupPkgConfig(pkgPath); err != nil {
 				return err
 			}
@@ -62,6 +89,13 @@ func doFixupPkgConfig(pkgPath string) error {
 		case strings.HasPrefix(line, "libdir="):
 			if line != "libdir=${prefix}/lib" {
 				buffer.WriteString("libdir=${prefix}/lib" + "\n")
+			} else {
+				buffer.WriteString(line + "\n")
+			}
+
+		case strings.HasPrefix(line, "sharedlibdir="):
+			if line != "sharedlibdir=${prefix}/lib" {
+				buffer.WriteString("sharedlibdir=${prefix}/lib" + "\n")
 			} else {
 				buffer.WriteString(line + "\n")
 			}
