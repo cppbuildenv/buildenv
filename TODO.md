@@ -53,3 +53,4 @@ cmake_config的配置独立于version文件之外  | ✔
 支持fork到私有仓库  | ✘
 支持在project里覆盖默认port的配置  | ✘
 如果发现资源包size跟最新不匹配，即便已经解压了也要重新下载 | ✘
+支持export功能 | ✘
