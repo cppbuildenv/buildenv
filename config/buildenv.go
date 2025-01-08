@@ -395,11 +395,13 @@ func (b buildenv) ToolchainPrefix() string {
 			return "x86_64-w64-mingw32-"
 		} else if runtime.GOOS == "darwin" {
 			return "x86_64-apple-darwin-"
-		} else {
+		} else if runtime.GOOS == "linux" {
 			return "x86_64-linux-gnu-"
+		} else {
+			panic("unsupported platform: " + runtime.GOOS)
 		}
 	}
-	return filepath.Join(b.Toolchain().fullpath, b.Toolchain().ToolchainPrefix)
+	return b.Toolchain().ToolchainPrefix
 }
 
 func (b buildenv) RootFSPath() string {
