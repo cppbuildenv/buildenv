@@ -4,6 +4,7 @@ import (
 	"buildenv/generator"
 	"buildenv/pkg/color"
 	"buildenv/pkg/fileio"
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -265,6 +266,7 @@ func (b BuildConfig) execute(title, command, logPath string) error {
 	} else {
 		cmd = exec.Command("bash", "-c", command)
 	}
+	cmd.Env = os.Environ()
 
 	// Create log file if log path specified.
 	if logPath != "" {
@@ -277,6 +279,13 @@ func (b BuildConfig) execute(title, command, logPath string) error {
 		}
 		defer logFile.Close()
 
+		// Write env variables to log file.
+		var buffer bytes.Buffer
+		for _, envVar := range cmd.Env {
+			buffer.WriteString(envVar + "\n")
+		}
+		io.WriteString(logFile, fmt.Sprintf("Environment:\n%s\n", buffer.String()))
+
 		// Write command summary as header content of file.
 		io.WriteString(logFile, fmt.Sprintf("%s: %s\n\n", title, command))
 
@@ -287,7 +296,6 @@ func (b BuildConfig) execute(title, command, logPath string) error {
 		cmd.Stderr = os.Stdout
 	}
 
-	cmd.Env = os.Environ()
 	if err := cmd.Run(); err != nil {
 		return err
 	}

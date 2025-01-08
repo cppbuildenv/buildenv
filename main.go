@@ -10,6 +10,11 @@ import (
 )
 
 func main() {
+	// Clean environment variables.
+	os.Clearenv()
+	os.Setenv("PATH", "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin")
+
+	// Listen for cli request.
 	if handled := cli.Listen(); handled {
 		os.Exit(0)
 	}
