@@ -1,86 +1,86 @@
 # BuildEnv
 
-## 介绍
+## Introduction
 
-这是一个用 **Go语言** 实现的 **C/C++ 包管理器**，不需要掌握额外的脚本语言，只需了解 **JSON** 格式即可轻松管理包。该包管理器基于 **CMake**，作为 CMake 的补充，主要解决 **CMake 在多芯片平台交叉编译环境下的包管理和工具资源下载问题**。
+BuildEnv is a Go language-based C/C++ package manager that does not require mastering additional scripting languages. It is designed to simplify package management with JSON format. This package manager is built on CMake, complementing it by solving issues related to compilation, package management, and toolchain resource binding in cross-compilation environments across multiple architectures.
 
-## 背景问题
+## Background
 
-CMake长期以来仅提供了 `find_package` 功能，即包寻找能力，但缺乏对包的管理能力，特别是在以下几个方面：
+For a long time, CMake has only provided functions like find_package and find_program, but it lacks package management capabilities, especially in the following areas:
 
-1. **三方库编译后安装目录** 和 **依赖库寻找目录** 缺乏统一管理。
-2. 对于 **交叉编译环境**，CMake没有提供专门的资源管理支持。
+1. The acquisition and environment configuration of tools required for compilation, such as toolchains, rootfs, CMake, nasm, etc., all of which need to be manually installed and configured in environment variables.
+2. The installation directories of third-party libraries and dependency library search directories are not uniformly managed, requiring manual configuration.
+3. In terms of cross-compilation support, CMake allows configuration of the cross-compilation environment by specifying the CMAKE_TOOLCHAIN_FILE, but still requires manual configuration.
 
-## 为什么不使用现有的包管理工具？
 
-尽管 Conan和Vcpkg等第三方包管理工具在社区中已经得到了广泛使用，但它们并不能完全满足某些需求：
+## Why Not Use Existing Package Management Tools?
 
-- **Conan**：虽然功能强大，但依赖于额外的 **Python** 环境，且上手成本较高。因为 Conan 不仅支持 **CMake**，还支持 **Meson**、**Makefile**、**MSBuild**、**SScon**、**QMake**、**Bazaar** 等构建系统，这导致其 API 封装较深，需要更多时间学习和上手，对于本来**CMake**掌握就一般的同学无疑又增加了额外新的学习成本。
+While third-party package management tools like Conan and Vcpkg are widely used in the community, they do not fully meet certain needs:
+
+- Conan: Although powerful, Conan depends on the additional Python language, which increases the learning curve. Conan not only supports CMake but also other build systems like Meson, Makefile, MSBuild, SScon, QMake, Bazaar, etc. This makes its API more deeply abstracted, requiring more time to learn. For developers who already have limited familiarity with CMake, it adds further learning overhead.
   
-- **Vcpkg**：相对容易上手，但由于 **国内网络环境问题**使用体验较差，几乎无法正常使用，而且**Vcpkg**对于三方库的版本管理默认仅管理最新版本，这让项目里依赖三方库的特定老版本管理不是那么直接。
+- Vcpkg: Easier to use in comparison, but due to networking issues in China, the experience is poor, and it is almost impossible to use properly. Additionally, Vcpkg's default package management only tracks the latest versions of third-party libraries, which complicates managing specific versions of dependencies within projects.
 
-另外，**Conan** 和 **Vcpkg** 都未能有效管理 **交叉编译环境**，在多个平台的交叉编译时，开发者通常需要手动处理 toolchain 和 rootfs 的配置，这样不仅繁琐，而且容易出错。
+Furthermore, both Conan and Vcpkg do not effectively manage cross-compilation environments. During cross-compilation for multiple platforms, developers often have to manually configure the toolchain, rootfs, and various tools. This process is not only cumbersome but also error-prone.
 
-## 解决方案：
+## Solution：
 
-为了解决上述问题，**buildenv** 作为一个新的工具应运而生，主要解决以下两个核心问题：
+To address the above issues, buildenv emerges as a new tool that solves the following core problems:
 
-1. **管理三方库的安装目录**，并提供统一的 **依赖库寻找目录**，使得包管理更为直观。
-2. **自动下载编译工具**，包括 **toolchain**、**sysroot** 和 **CMake** 等，并生成当前编译环境的**toolchain_file.cmake**文件(即：**-DCMAKE_TOOLCHAIN_FILE**指向的文件)，极大简化了交叉编译的配置过程；
-3. **支持生成CMake配置文件**：对于非CMake作为构建工具的三方库，**buildenv** 可以自动生成对应的 **CMake** 配置文件，方便在 **CMake** 中使用。
+1. Management of third-party library installation directories and library search paths during compilation: Unifies the configuration of find_package paths.
+2. Automatic management of compilation tools: Automatically downloads tools like toolchain, sysroot, CMake, and others, and configures their environment variables.
+3. Generation of CMake configuration files: For third-party libraries that do not use CMake as a build system, buildenv can automatically generate the corresponding CMake config files, making it easy to integrate them into CMake-based projects.
+4. Support for specifying third-party library installation and uninstallation: Automatically compiles and installs dependencies, and supports uninstalling libraries along with their sub-dependencies.
+5. Support for shared build cache: Configurable shared directories within a local network for hosting and reading build caches.
 
-## 其他核心功能
+For more detailed information, please refer to the Docs.
 
-除了上述功能，**buildenv** 还提供了以下刚需功能：
+## Installation Guide
 
-- 自动生成 CMake 配置文件，支持交叉编译的 **toolchain** 文件。
-- 自动导出依赖库，方便管理和使用。
+1. Download the Go SDK.
+2. Run go build to compile the program successfully.
 
-有关更多详细信息，请参阅Wiki。
-
-## 安装教程
-
-下载`golang sdk`，然后直接`go build`，即可编译成功。
-
-## 使用说明
+## Usage Instructions
 
 ```
-$ ./buildenv -ui
+$ ./buildenv
 
- Welcome to buildenv!                                        
-    Please choose an option from the menu below...              
-                                                                
-  > 1. Init or sync buildenv's config repo.                     
-    2. Create a new platform.                                   
-    3. Select your current platform.                            
-    4. Create a new project.                                    
-    5. Select your current project.                             
-    6. Integrate buildenv, then you can run it everywhere.
-    7. About and usage.                                         
-                                                                
+   Welcome to buildenv!                                   
+   Please choose an option from the menu below...         
+                                                          
+  > 1. Init buildenv with conf repo.                      
+    2. Create a new platform.                             
+    3. Select your current platform.                      
+    4. Create a new project.                              
+    5. Select your current project.                       
+    6. Create a new tool.                                 
+    7. Create a new port.                                 
+    8. Integrate buildenv, then you can run it everywhere.
+    9. About and usage.                                   
+                                                          
     ↑/k up • ↓/j down • q quit • ? more 
 ```
 
-选择`5`并回车，即可进入使用说明：
+Select the 9 key and press Enter to enter the usage instructions:
 
 ```
-Welcome to buildenv.
------------------------------------
-This is a simple tool to manage your cross build environment.
+Welcome to buildenv ().
+---------------------------------------
+This is a simple pkg-manager for C/C++.
 
-1. How to use in cmake project: 
+1. How to use it to build cmake project: 
 option1: set(CMAKE_TOOLCHAIN_FILE "/mnt/data/work_phil/Golang/buildenv/script/toolchain_file.cmake")
-option2: cmake .. -DCMAKE_TOOLCHAIN_FILE=/home/phil/my_workspace/script/toolchain_file.cmake
+option2: cmake .. -DCMAKE_TOOLCHAIN_FILE=/mnt/data/work_phil/Golang/buildenv/script/toolchain_file.cmake
 
-2. How to use in makefile project: 
-source /home/phil/my_workspace/script/environment
+2. How to use it to build makefile project: 
+source /mnt/data/work_phil/Golang/buildenv/script/environment
+
+[ctrl+c/q -> quit]
 ```
 
-详细说明请看Wiki.
+## How to Contribute
 
-## 如何参与贡献
-
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
+1.  Fork this repository.
+2.  Create a new branch Feat_xxx.
+3.  Submit your code changes.
+4.  Create a Pull Request.
