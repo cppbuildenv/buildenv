@@ -200,16 +200,9 @@ func (p Port) Install(silentMode bool) error {
 
 		if installed {
 			installedFrom = fmt.Sprintf("cache [%s]", fromDir)
-		}
-
-		if !installed {
+		} else {
 			// Install from source when cache not found.
 			if err := p.installFromSource(silentMode, matchedConfig); err != nil {
-				return err
-			}
-
-			// This will copy all install files into installedDir.
-			if err := p.installFromPackage(matchedConfig); err != nil {
 				return err
 			}
 
@@ -221,6 +214,11 @@ func (p Port) Install(silentMode bool) error {
 			}
 
 			installedFrom = "source"
+		}
+
+		// This will copy all install files into installedDir.
+		if err := p.installFromPackage(matchedConfig); err != nil {
+			return err
 		}
 	}
 
