@@ -91,6 +91,5 @@ func Targz(archivePath, srcDir string, includeFolder bool) error {
 		return fmt.Errorf("failed to create tarball: %w", err)
 	}
 
-	fmt.Println()
 	return nil
 }
