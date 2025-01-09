@@ -1,4 +1,4 @@
-# BuildEnv
+# BuildEnv - [跳转中文](./README.zh.md)
 
 ## Introduction
 
