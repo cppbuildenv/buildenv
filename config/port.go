@@ -183,40 +183,44 @@ func (p Port) Install(silentMode bool) error {
 		return fmt.Errorf("no matching build_config found to build")
 	}
 
-	// Check if can read from cache dirs.
-	platformBuildType := fmt.Sprintf("%s-%s", p.ctx.Platform().Name, p.ctx.BuildType())
-	archiveName := p.NameVersion() + "-" + platformBuildType + ".tar.gz"
-	for _, cacheDir := range p.ctx.CacheDirs() {
-		ok, err := cacheDir.Read(archiveName, matchedConfig.PortConfig.PackageDir)
-		if err != nil {
-			return err
-		}
-		if ok {
-			break
-		}
-	}
+	var installedFrom string
 
-	// Check if package exists, if exists, install from package,
-	// otherwise, install from source.
+	// Install from package dir.
 	if fileio.PathExists(matchedConfig.PortConfig.PackageDir) {
 		if err := p.installFromPackage(matchedConfig); err != nil {
 			return err
 		}
+		installedFrom = "package"
 	} else {
-		if err := p.installFromSource(silentMode, matchedConfig); err != nil {
+		// Try to install from cache.
+		installed, fromDir, err := p.installFromCache(matchedConfig)
+		if err != nil {
 			return err
 		}
 
-		// This will copy all install files into installedDir.
-		if err := p.installFromPackage(matchedConfig); err != nil {
-			return err
+		if installed {
+			installedFrom = fmt.Sprintf("cache [%s]", fromDir)
 		}
 
-		// Write package to cache dirs for future share.
-		for _, cacheDir := range p.ctx.CacheDirs() {
-			if err := cacheDir.Write(matchedConfig.PortConfig.PackageDir); err != nil {
+		if !installed {
+			// Install from source when cache not found.
+			if err := p.installFromSource(silentMode, matchedConfig); err != nil {
 				return err
 			}
+
+			// This will copy all install files into installedDir.
+			if err := p.installFromPackage(matchedConfig); err != nil {
+				return err
+			}
+
+			// Write package to cache dirs for global share.
+			for _, cacheDir := range p.ctx.CacheDirs() {
+				if err := cacheDir.Write(matchedConfig.PortConfig.PackageDir); err != nil {
+					return err
+				}
+			}
+
+			installedFrom = "source"
 		}
 	}
 
@@ -238,7 +242,8 @@ func (p Port) Install(silentMode bool) error {
 
 	// Print install info when not in silent mode.
 	if !silentMode {
-		title := color.Sprintf(color.Green, "\n[✔] ---- Port: %s\n", p.NameVersion())
+		title := color.Sprintf(color.Green, "\n[✔] ---- Port: %s, installed from %s\n",
+			p.NameVersion(), installedFrom)
 		fmt.Printf("%sLocation: %s\n", title, installedDir)
 	}
 
@@ -266,6 +271,22 @@ func (p Port) MatchPattern(pattern string) bool {
 	}
 
 	return platformName == pattern
+}
+
+func (p Port) installFromCache(matchedConfig *buildsystem.BuildConfig) (installed bool, cacheDir string, err error) {
+	platformBuildType := fmt.Sprintf("%s-%s", p.ctx.Platform().Name, p.ctx.BuildType())
+	archiveName := p.NameVersion() + "-" + platformBuildType + ".tar.gz"
+	for _, cacheDir := range p.ctx.CacheDirs() {
+		ok, err := cacheDir.Read(archiveName, matchedConfig.PortConfig.PackageDir)
+		if err != nil {
+			return false, "", err
+		}
+		if ok {
+			return true, cacheDir.Dir, nil
+		}
+	}
+
+	return false, "", nil
 }
 
 func (p Port) installFromSource(silentMode bool, matchedConfig *buildsystem.BuildConfig) error {

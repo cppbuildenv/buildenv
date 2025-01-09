@@ -13,21 +13,33 @@ type CacheDir struct {
 	Writable bool   `json:"writable"`
 }
 
-func (c CacheDir) Read(archiveName, destDir string) (bool, error) {
-	binaryPath := filepath.Join(c.Dir, archiveName)
-	if !fileio.PathExists(binaryPath) {
-		return false, nil // not an error even not exist.
+func (c CacheDir) Verify() error {
+	if c.Dir == "" {
+		return fmt.Errorf("cache dir is empty")
 	}
+	if !fileio.PathExists(c.Dir) {
+		return fmt.Errorf("cache dir %s does not exist", c.Dir)
+	}
+	if c.Readable && !fileio.IsReadable(c.Dir) {
+		return fmt.Errorf("cache dir %s is not readable", c.Dir)
+	}
+	if c.Writable && !fileio.IsWritable(c.Dir) {
+		return fmt.Errorf("cache dir %s is not writable", c.Dir)
+	}
+	return nil
+}
 
-	if !fileio.IsReadable(binaryPath) {
-		return false, fmt.Errorf("binary %s is not readable", binaryPath)
+func (c CacheDir) Read(archiveName, destDir string) (bool, error) {
+	archivePath := filepath.Join(c.Dir, archiveName)
+	if !fileio.PathExists(archivePath) {
+		return false, nil // not an error even not exist.
 	}
 
 	if err := os.MkdirAll(destDir, os.ModeDir|os.ModePerm); err != nil {
 		return false, err
 	}
 
-	if err := fileio.Extract(binaryPath, destDir); err != nil {
+	if err := fileio.Extract(archivePath, destDir); err != nil {
 		return false, err
 	}
 
@@ -39,12 +51,6 @@ func (c CacheDir) Write(packageDir string) error {
 		return nil
 	}
 
-	if !fileio.PathExists(c.Dir) {
-		return fmt.Errorf("cache dir %s does not exist", c.Dir)
-	}
-	if !fileio.IsWritable(c.Dir) {
-		return fmt.Errorf("cache dir %s is not writable", c.Dir)
-	}
 	if !fileio.PathExists(packageDir) {
 		return fmt.Errorf("package dir %s does not exist", packageDir)
 	}

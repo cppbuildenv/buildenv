@@ -19,7 +19,7 @@ func IsSupportedArchive(filePath string) bool {
 
 func Extract(archiveFile, destDir string) error {
 	fileName := filepath.Base(archiveFile)
-	PrintInline(fmt.Sprintf("\rExtracting:  %s...", fileName))
+	PrintInline(fmt.Sprintf("\rExtracting: %s...", fileName))
 
 	var command string
 
@@ -63,7 +63,6 @@ func Extract(archiveFile, destDir string) error {
 		return fmt.Errorf("failed to extract: %w", err)
 	}
 
-	fmt.Println()
 	return nil
 }
 

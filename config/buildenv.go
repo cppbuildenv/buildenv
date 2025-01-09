@@ -286,6 +286,13 @@ func (b *buildenv) Init(buildEnvPath string) error {
 		return err
 	}
 
+	// Verify cache dirs.
+	for index, item := range b.configData.CacheDirs {
+		if err := item.Verify(); err != nil {
+			return fmt.Errorf("cache dir %d: %w", index, err)
+		}
+	}
+
 	// Init platform with platform name.
 	if err := b.platform.Init(b, b.configData.PlatformName); err != nil {
 		return err
