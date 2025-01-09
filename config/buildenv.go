@@ -22,7 +22,7 @@ type Context interface {
 	RootFS() *RootFS
 	BuildType() string
 	JobNum() int
-
+	CacheDirs() []CacheDir
 	SystemName() string
 	SystemProcessor() string
 	Host() string
@@ -33,7 +33,8 @@ type Context interface {
 func NewBuildEnv() *buildenv {
 	return &buildenv{
 		configData: configData{
-			JobNum: runtime.NumCPU(),
+			JobNum:    runtime.NumCPU(),
+			CacheDirs: []CacheDir{},
 		},
 		buildType: "Release",
 	}
@@ -49,11 +50,12 @@ type buildenv struct {
 }
 
 type configData struct {
-	ConfRepoUrl  string `json:"conf_repo_url"`
-	ConfRepoRef  string `json:"conf_repo_ref"`
-	PlatformName string `json:"platform_name"`
-	ProjectName  string `json:"project_name"`
-	JobNum       int    `json:"job_num"`
+	ConfRepoUrl  string     `json:"conf_repo_url"`
+	ConfRepoRef  string     `json:"conf_repo_ref"`
+	PlatformName string     `json:"platform_name"`
+	ProjectName  string     `json:"project_name"`
+	JobNum       int        `json:"job_num"`
+	CacheDirs    []CacheDir `json:"cache_dirs"`
 }
 
 func (b *buildenv) SetBuildType(buildType string) *buildenv {
@@ -417,4 +419,8 @@ func (b buildenv) BuildType() string {
 
 func (b buildenv) JobNum() int {
 	return b.configData.JobNum
+}
+
+func (b buildenv) CacheDirs() []CacheDir {
+	return b.configData.CacheDirs
 }

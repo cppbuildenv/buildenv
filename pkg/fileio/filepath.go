@@ -2,10 +2,44 @@ package fileio
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 )
+
+// IsExecutable check if file was executable
+func IsExecutable(filepath string) bool {
+	info, err := os.Stat(filepath)
+	if err != nil {
+		panic("file not found for " + filepath)
+	}
+
+	// 73: 000 001 001 001
+	perm := info.Mode().Perm()
+	flag := perm & os.FileMode(73)
+	return uint32(flag) == uint32(73)
+}
+
+// IsReadable check if file or dir readable
+func IsReadable(filepath string) bool {
+	info, err := os.Stat(filepath)
+	if err != nil {
+		return false
+	}
+
+	return info.Mode().Perm()&(1<<(uint(8))) != 0
+}
+
+// IsWritable check if file or dir writable
+func IsWritable(filepath string) bool {
+	info, err := os.Stat(filepath)
+	if err != nil {
+		return false
+	}
+
+	return info.Mode().Perm()&(1<<(uint(7))) != 0
+}
 
 // PathExists checks if the path exists.
 func PathExists(path string) bool {
@@ -27,6 +61,51 @@ func FileBaseName(fileName string) string {
 
 	ext := filepath.Ext(fileName)
 	return strings.TrimSuffix(fileName, ext)
+}
+
+// CopyFile copy file from src to dest.
+func CopyFile(src, dest string) error {
+	// Read file info.
+	info, err := os.Lstat(src)
+	if err != nil {
+		return err
+	}
+
+	// Create symlink if it's a symlink.
+	if info.Mode()&os.ModeSymlink != 0 {
+		target, err := os.Readlink(src)
+		if err != nil {
+			return err
+		}
+
+		// Remove dest if it exists before creating symlink.
+		if _, err := os.Lstat(dest); err == nil {
+			if err := os.Remove(dest); err != nil {
+				return err
+			}
+		}
+
+		return os.Symlink(target, dest)
+	}
+
+	// Copy normal file.
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	destFile, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+
+	if _, err := io.Copy(destFile, srcFile); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func MoveNestedFolderIfExist(filePath string) error {

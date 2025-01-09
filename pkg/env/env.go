@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-const envTitle = "# buildenv (added by install)"
+const envTitle = "# buildenv runtime path (added by buildenv)"
 
 func UpdateRunPath(runPath string) error {
 	var homeDir = homeDir()

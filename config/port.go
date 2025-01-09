@@ -6,7 +6,6 @@ import (
 	"buildenv/pkg/fileio"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -184,6 +183,19 @@ func (p Port) Install(silentMode bool) error {
 		return fmt.Errorf("no matching build_config found to build")
 	}
 
+	// Check if can read from cache dirs.
+	platformBuildType := fmt.Sprintf("%s-%s", p.ctx.Platform().Name, p.ctx.BuildType())
+	archiveName := p.NameVersion() + "-" + platformBuildType + ".tar.gz"
+	for _, cacheDir := range p.ctx.CacheDirs() {
+		ok, err := cacheDir.Read(archiveName, matchedConfig.PortConfig.PackageDir)
+		if err != nil {
+			return err
+		}
+		if ok {
+			break
+		}
+	}
+
 	// Check if package exists, if exists, install from package,
 	// otherwise, install from source.
 	if fileio.PathExists(matchedConfig.PortConfig.PackageDir) {
@@ -194,9 +206,17 @@ func (p Port) Install(silentMode bool) error {
 		if err := p.installFromSource(silentMode, matchedConfig); err != nil {
 			return err
 		}
+
 		// This will copy all install files into installedDir.
 		if err := p.installFromPackage(matchedConfig); err != nil {
 			return err
+		}
+
+		// Write package to cache dirs for future share.
+		for _, cacheDir := range p.ctx.CacheDirs() {
+			if err := cacheDir.Write(matchedConfig.PortConfig.PackageDir); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -282,12 +302,12 @@ func (p Port) installFromPackage(matchedConfig *buildsystem.BuildConfig) error {
 	platformBuildType := fmt.Sprintf("%s-%s", p.ctx.Platform().Name, p.ctx.BuildType())
 
 	// First, we must check and repair dependency ports.
-	for _, item := range matchedConfig.Depedencies {
-		if strings.HasPrefix(item, p.Name) {
-			return fmt.Errorf("port.dependencies contains circular dependency: %s", item)
+	for _, nameVersion := range matchedConfig.Depedencies {
+		if strings.HasPrefix(nameVersion, p.Name) {
+			return fmt.Errorf("port.dependencies contains circular dependency: %s", nameVersion)
 		}
 
-		packageDir := filepath.Join(Dirs.WorkspaceDir, "packages", item+"-"+platformBuildType)
+		packageDir := filepath.Join(Dirs.WorkspaceDir, "packages", nameVersion+"-"+platformBuildType)
 		packageFiles, err := matchedConfig.BuildSystem().PackageFiles(
 			packageDir,
 			p.ctx.Platform().Name,
@@ -305,7 +325,7 @@ func (p Port) installFromPackage(matchedConfig *buildsystem.BuildConfig) error {
 			if err := os.MkdirAll(filepath.Dir(dest), os.ModePerm); err != nil {
 				return err
 			}
-			if err := p.copyFile(src, dest); err != nil {
+			if err := fileio.CopyFile(src, dest); err != nil {
 				return err
 			}
 		}
@@ -335,7 +355,7 @@ func (p Port) installFromPackage(matchedConfig *buildsystem.BuildConfig) error {
 		if err := os.MkdirAll(filepath.Dir(dest), os.ModePerm); err != nil {
 			return err
 		}
-		if err := p.copyFile(src, dest); err != nil {
+		if err := fileio.CopyFile(src, dest); err != nil {
 			return err
 		}
 	}
@@ -357,50 +377,6 @@ func (p Port) downloadAndDeploy(url, installedDir, downloadedDir string) error {
 	extractPath := filepath.Join(installedDir, folderName)
 	if err := fileio.Extract(downloaded, extractPath); err != nil {
 		return fmt.Errorf("%s: extract %s failed: %w", archiveName, downloaded, err)
-	}
-
-	return nil
-}
-
-func (p Port) copyFile(src, dest string) error {
-	// Read file info.
-	info, err := os.Lstat(src)
-	if err != nil {
-		return err
-	}
-
-	// Create symlink if it's a symlink.
-	if info.Mode()&os.ModeSymlink != 0 {
-		target, err := os.Readlink(src)
-		if err != nil {
-			return err
-		}
-
-		// Remove dest if it exists before creating symlink.
-		if _, err := os.Lstat(dest); err == nil {
-			if removeErr := os.Remove(dest); removeErr != nil {
-				return removeErr
-			}
-		}
-
-		return os.Symlink(target, dest)
-	}
-
-	// Copy normal file.
-	srcFile, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer srcFile.Close()
-
-	destFile, err := os.Create(dest)
-	if err != nil {
-		return err
-	}
-	defer destFile.Close()
-
-	if _, err := io.Copy(destFile, srcFile); err != nil {
-		return err
 	}
 
 	return nil

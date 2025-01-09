@@ -55,9 +55,41 @@ func Extract(archiveFile, destDir string) error {
 		cmd = exec.Command("bash", "-c", command)
 	}
 
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stdout
 	cmd.Env = os.Environ()
+
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to extract: %w", err)
+	}
+
+	fmt.Println()
+	return nil
+}
+
+// Targz creates a tarball from srcDir and saves it to archivePath.
+func Targz(archivePath, srcDir string, includeFolder bool) error {
+	var cmd *exec.Cmd
+	var command string
+
+	if includeFolder {
+		command = fmt.Sprintf("tar -cvzf %s %s", archivePath, srcDir)
+	} else {
+		command = fmt.Sprintf("tar -cvzf %s -C %s .", archivePath, srcDir)
+	}
+
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd", "/c", command)
+	} else {
+		cmd = exec.Command("bash", "-c", command)
+	}
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stdout
+	cmd.Env = os.Environ()
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to create tarball: %w", err)
 	}
 
 	fmt.Println()
