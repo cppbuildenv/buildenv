@@ -28,11 +28,22 @@ CMake长期以来仅提供了 `find_package`和`find_program` 等功能，但缺
 
 为了解决上述问题，**buildenv** 作为一个新的工具应运而生，主要解决以下几个核心问题：
 
-1. **支持管理三方库的安装目录以及编译期间依赖库的寻找目录**：使得find_package指定路径统一；
-2. **支持自动管理编译工具**：通过配置实现自动下载 **toolchain**、**sysroot** 和 **CMake** 等以及配置其环境变量；
-3. **支持生成CMake配置文件**：对于非CMake作为构建工具的三方库，**buildenv** 可以自动生成对应的cmake config文件，方便在CMake项目中使用；
-4. **支持指定三方库的install和uninstall**：自动编译和安装子依赖，支持卸载库同时卸载子依赖；
-5. **支持编译缓存共享**：通过配置可写的局域网内的共享目录实现编译缓存托管和读取；
+1. **支持管理三方库的安装目录以及编译期间依赖库的寻找目录**：
+    - 给CMake项目全局设置 CMAKE_PREFIX_PATH, CMAKE_INSTALL_PREFIX；
+    - 给Unix Makefiles项目全局设置 --prefix；
+    - 让Unix Makefiles项目在编译期间能通过pc文件找到子依赖，即便当前workspace目录迁移了；
+
+2. **支持自动管理编译工具**：  
+通过配置实现自动下载 `toolchain`、`sysroot` 和 `CMake` 等以及配置其环境变量；
+
+3. **支持生成CMake配置文件**：  
+对于非CMake作为构建工具的三方库，可以自动生成对应的cmake config文件，方便在CMake项目中使用；
+
+4. **支持指定三方库的install和uninstall**:  
+自动编译和安装子依赖，支持卸载库同时卸载子依赖；
+
+5. **支持编译缓存共享**:  
+通过配置`cache_dirs`，可进行局域网内网盘来托管和读取`install文件缓存`；
 
 有关更多详细信息，请参阅Docs。
 
@@ -69,8 +80,8 @@ Welcome to buildenv ().
 This is a simple pkg-manager for C/C++.
 
 1. How to use it to build cmake project: 
-option1: set(CMAKE_TOOLCHAIN_FILE "/mnt/data/work_phil/Golang/buildenv/script/toolchain_file.cmake")
-option2: cmake .. -DCMAKE_TOOLCHAIN_FILE=/mnt/data/work_phil/Golang/buildenv/script/toolchain_file.cmake
+option1: set(CMAKE_TOOLCHAIN_FILE "/mnt/data/work_phil/Golang/buildenv/scripts/toolchain_file.cmake")
+option2: cmake .. -DCMAKE_TOOLCHAIN_FILE=/mnt/data/work_phil/Golang/buildenvs/script/toolchain_file.cmake
 
 2. How to use it to build makefile project: 
 source /mnt/data/work_phil/Golang/buildenv/script/environment

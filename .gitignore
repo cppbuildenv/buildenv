@@ -7,7 +7,7 @@ temp
 /buildtrees
 /downloads
 /installed
-/script
+/scripts
 *.exe
 **/testdata/buildtrees/
 **/testdata/installed/

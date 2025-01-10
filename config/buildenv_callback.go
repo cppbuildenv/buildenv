@@ -208,7 +208,7 @@ func (c callbackImpl) OnSelectProject(projectName string) error {
 	}
 
 	// Generate toolchain file.
-	scriptDir := filepath.Join(Dirs.WorkspaceDir, "script")
+	scriptDir := filepath.Join(Dirs.WorkspaceDir, "scripts")
 	if _, err := buildenv.GenerateToolchainFile(scriptDir); err != nil {
 		return err
 	}
@@ -248,8 +248,8 @@ func (c callbackImpl) OnCreatePort(portNameVersion string) error {
 }
 
 func (c callbackImpl) About(version string) string {
-	toolchainPath, _ := filepath.Abs("script/toolchain_file.cmake")
-	environmentPath, _ := filepath.Abs("script/environment")
+	toolchainPath, _ := filepath.Abs("scripts/toolchain_file.cmake")
+	environmentPath, _ := filepath.Abs("scripts/environment")
 	environmentPath = color.Sprintf(color.Magenta, "%s", environmentPath)
 	toolchainPath = color.Sprintf(color.Magenta, "%s", toolchainPath)
 

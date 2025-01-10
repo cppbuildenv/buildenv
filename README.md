@@ -4,11 +4,11 @@ For the Chinese version of this README, see [README.zh.md](./README.zh.md).
 
 ## Introduction
 
-BuildEnv is a Go language-based C/C++ package manager that does not require mastering additional scripting languages. It is designed to simplify package management with JSON format. This package manager is built on CMake, complementing it by solving issues related to compilation, package management, and toolchain resource binding in cross-compilation environments across multiple architectures.
+**BuildEnv** is a Go language-based C/C++ package manager that does not require mastering additional program languages. It is designed to simplify package management with JSON only. This package manager works with CMake, with this you can download and setup toolchain, rootfs and tools automacally, then cross-compilation third-party projects in multiple architectures.
 
 ## Background
 
-For a long time, CMake has only provided functions like find_package and find_program, but it lacks package management capabilities, especially in the following areas:
+For a long time, CMake has only provided functions like `find_package` and `find_program`, but it lacks package management capabilities, especially in the following areas:
 
 1. The acquisition and environment configuration of tools required for compilation, such as toolchains, rootfs, CMake, nasm, etc., all of which need to be manually installed and configured in environment variables.
 2. The installation directories of third-party libraries and dependency library search directories are not uniformly managed, requiring manual configuration.
@@ -17,23 +17,34 @@ For a long time, CMake has only provided functions like find_package and find_pr
 
 ## Why Not Use Existing Package Management Tools?
 
-While third-party package management tools like Conan and Vcpkg are widely used in the community, they do not fully meet certain needs:
+While third-party package management tools like `Conan` and `Vcpkg` are widely used in the community, they do not fully meet certain needs:
 
-- Conan: Although powerful, Conan depends on the additional Python language, which increases the learning curve. Conan not only supports CMake but also other build systems like Meson, Makefile, MSBuild, SScon, QMake, Bazaar, etc. This makes its API more deeply abstracted, requiring more time to learn. For developers who already have limited familiarity with CMake, it adds further learning overhead.
+- **Conan**: Although powerful, Conan depends on the additional Python language, which increases the learning curve. Conan not only supports CMake but also other build systems like `Meson`, `Makefile`, `MSBuild`, `SScon`, `QMake`, `Bazaar`, etc. This makes its API more deeply abstracted, requiring more time to learn new things. As we all known, many c++ developers are still not very familiar with CMake script, this would increase their learning burden.
   
-- Vcpkg: Easier to use in comparison, but due to networking issues in China, the experience is poor, and it is almost impossible to use properly. Additionally, Vcpkg's default package management only tracks the latest versions of third-party libraries, which complicates managing specific versions of dependencies within projects.
+- **Vcpkg**: Easier to use in comparison, but due to networking issues in China, the experience is poor, and it is almost impossible to use properly. Additionally, Vcpkg's default package management only tracks the latest versions of third-party libraries, which complicates managing specific versions of dependencies within projects.
 
 Furthermore, both Conan and Vcpkg do not effectively manage cross-compilation environments. During cross-compilation for multiple platforms, developers often have to manually configure the toolchain, rootfs, and various tools. This process is not only cumbersome but also error-prone.
 
 ## Solution：
 
-To address the above issues, buildenv emerges as a new tool that solves the following core problems:
+To solve the above issues, buildenv emerges as a new tool that solves the following core problems:
 
-1. Management of third-party library installation directories and library search paths during compilation: Unifies the configuration of find_package paths.
-2. Automatic management of compilation tools: Automatically downloads tools like toolchain, sysroot, CMake, and others, and configures their environment variables.
-3. Generation of CMake configuration files: For third-party libraries that do not use CMake as a build system, buildenv can automatically generate the corresponding CMake config files, making it easy to integrate them into CMake-based projects.
-4. Support for specifying third-party library installation and uninstallation: Automatically compiles and installs dependencies, and supports uninstalling libraries along with their sub-dependencies.
-5. Support for shared build cache: Configurable shared directories within a local network for hosting and reading build caches.
+1. **Management of third-party library installation dir and library search dir during compilation**:  
+    - Set CMAKE_PREFIX_PATH, CMAKE_INSTALL_PREFIX globally for cmake projects.
+    - Set --prefix globally for Unix Makefiles.
+    - Make the pkg-config files work even if current workspace is moved to another folder.
+
+2. **Automatic management of compilation tools**:   
+Toolchain, sysroot, CMake, and other tools can be configured in a platform JSON file. You can let them download or specify an absolute path for them.
+
+3. **Generation of CMake config files**:   
+For third-party libraries that do not use CMake as a build system, like sqlite3-config.cmake, buildenv can generate them, which making it easy to integrate them into CMake-based projects.
+
+4. **Support specifying third-party library installation and uninstallation**:  
+Supports installing and uninstalling libraries along with their sub-dependencies.
+
+5. **Support sharing build cache**:  
+Installed files of third-party can be shared with others by configure `cache_dirs` in buildenv's configure file.
 
 For more detailed information, please refer to the Docs.
 
@@ -71,8 +82,8 @@ Welcome to buildenv ().
 This is a simple pkg-manager for C/C++.
 
 1. How to use it to build cmake project: 
-option1: set(CMAKE_TOOLCHAIN_FILE "/mnt/data/work_phil/Golang/buildenv/script/toolchain_file.cmake")
-option2: cmake .. -DCMAKE_TOOLCHAIN_FILE=/mnt/data/work_phil/Golang/buildenv/script/toolchain_file.cmake
+option1: set(CMAKE_TOOLCHAIN_FILE "/mnt/data/work_phil/Golang/buildenv/scripts/toolchain_file.cmake")
+option2: cmake .. -DCMAKE_TOOLCHAIN_FILE=/mnt/data/work_phil/Golang/buildenv/scripts/toolchain_file.cmake
 
 2. How to use it to build makefile project: 
 source /mnt/data/work_phil/Golang/buildenv/script/environment

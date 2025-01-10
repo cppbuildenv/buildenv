@@ -136,7 +136,7 @@ func (b buildenv) Synchronize(repo, ref string) (string, error) {
 	return output, nil
 }
 
-func (b buildenv) GenerateToolchainFile(scriptDir string) (string, error) {
+func (b buildenv) GenerateToolchainFile(scriptsDir string) (string, error) {
 	var toolchain, environment strings.Builder
 
 	// Verify buildenv during configuration.
@@ -232,18 +232,18 @@ get_filename_component(BUILDENV_ROOT_DIR "${_CURRENT_DIR}" PATH)`))
 	}
 
 	// Create the output directory if it doesn't exist.
-	if err := os.MkdirAll(scriptDir, os.ModeDir|os.ModePerm); err != nil {
+	if err := os.MkdirAll(scriptsDir, os.ModeDir|os.ModePerm); err != nil {
 		return "", err
 	}
 
 	// Write toolchain file.
-	toolchainPath := filepath.Join(scriptDir, "toolchain_file.cmake")
+	toolchainPath := filepath.Join(scriptsDir, "toolchain_file.cmake")
 	if err := os.WriteFile(toolchainPath, []byte(toolchain.String()), os.ModePerm); err != nil {
 		return "", err
 	}
 
 	// Write environment file.
-	environmentPath := filepath.Join(scriptDir, "environment")
+	environmentPath := filepath.Join(scriptsDir, "environment")
 	if err := os.WriteFile(environmentPath, []byte(environment.String()), os.ModePerm); err != nil {
 		return "", err
 	}
