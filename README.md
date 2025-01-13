@@ -2,11 +2,11 @@
 
 For the Chinese version of this README, see [README.zh.md](./README.zh.md).
 
-## Introduction
+## Introduction.
 
 **BuildEnv** is a Go language-based C/C++ package manager that does not require mastering additional program languages. It is designed to simplify package management with JSON only. This package manager works with CMake, with this you can download and setup toolchain, rootfs and tools automacally, then cross-compilation third-party libraries in multiple architectures.
 
-## Background
+## Background.
 
 For a long time, CMake has only provided functions like `find_package` and `find_program`, but it lacks package management capabilities, especially in the following areas:
 
@@ -30,8 +30,8 @@ Furthermore, both Conan and Vcpkg do not effectively manage cross-compilation en
 To solve the above issues, buildenv emerges as a new tool that solves the following core problems:
 
 1. **Management of third-party library installation dir and library search dir during compilation**:  
-    - Set CMAKE_PREFIX_PATH, CMAKE_INSTALL_PREFIX globally for cmake projects.
-    - Set --prefix globally for Unix Makefiles.
+    - Set `CMAKE_PREFIX_PATH`, `CMAKE_INSTALL_PREFIX` globally for cmake projects.
+    - Set `--prefix` globally for Unix Makefiles.
     - Make the pkg-config files work even if current workspace is moved to another folder.
 
 2. **Automatic management of compilation tools**:   
@@ -46,12 +46,12 @@ Supports installing and uninstalling libraries along with their sub-dependencies
 5. **Support sharing build cache**:  
 Installed files of third-party can be shared with others by configure `cache_dirs` in buildenv's configure file.
 
-## Installation Guide
+## Installation Guide.
 
 1. Download the Go SDK.
 2. Run go build to compile the program successfully.
 
-## Usage Instructions
+## Usage Instructions.
 
 **For more detailed information, please refer to the [Docs](./docs/01_how_it_works.md).**
 
@@ -91,9 +91,9 @@ source /mnt/data/work_phil/Golang/buildenv/script/environment
 [ctrl+c/q -> quit]
 ```
 
-## How to Contribute
+## How to Contribute.
 
 1.  Fork this repository.
-2.  Create a new branch Feat_xxx.
+2.  Create a new branch feature_xxx.
 3.  Submit your code changes.
 4.  Create a Pull Request.

@@ -1,6 +1,6 @@
-# How to init buildenv.
+# How to init BuildEnv.
 
-Buildenv depends on a set of configurations, which describe the toolchain, rootfs, cmake, tools used, and the third-party libraries it depends on. Then, buildenv will download resources, pull code, compile and build tools, and install them to the specified directory based on the configuration. This file is called buildenv.json.  
+Buildenv depends on a set of configurations, which describe the toolchain, rootfs, cmake, tools used, and the third-party libraries it depends on. Then, BuildEnv will download resources, pull code, compile and build tools, and install them to the specified directory based on the configuration. This file is called BuildEnv.json.  
 
 ## 1. What does buildens.json look like.
 
@@ -35,20 +35,20 @@ Already up to date.
 ```
 $ ./buildenv
 
-   Welcome to buildenv!                                   
-   Please choose an option from the menu below...         
-                                                          
-  > 1. Init buildenv with conf repo.                      
-    2. Create a new platform.                             
-    3. Select your current platform.                      
-    4. Create a new project.                              
-    5. Select your current project.                       
-    6. Create a new tool.                                 
-    7. Create a new port.                                 
-    8. Integrate buildenv, then you can run it everywhere.
-    9. About and usage.                                   
-                                                          
-    ↑/k up • ↓/j down • q quit • ? more   
+Welcome to buildenv!                                   
+Please choose an option from the menu below...         
+                                                        
+> 1. Init buildenv with conf repo.                      
+2. Create a new platform.                             
+3. Select your current platform.                      
+4. Create a new project.                              
+5. Select your current project.                       
+6. Create a new tool.                                 
+7. Create a new port.                                 
+8. Integrate buildenv, then you can run it everywhere.
+9. About and usage.                                   
+                                                        
+↑/k up • ↓/j down • q quit • ? more   
 ```
 
 Then select the first menu and press enter key:

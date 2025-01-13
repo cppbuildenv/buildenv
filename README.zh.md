@@ -29,8 +29,8 @@ CMake长期以来仅提供了 `find_package`和`find_program` 等功能，但缺
 为了解决上述问题，**buildenv** 作为一个新的工具应运而生，主要解决以下几个核心问题：
 
 1. **支持管理三方库的安装目录以及编译期间依赖库的寻找目录**：
-    - 给CMake项目全局设置 CMAKE_PREFIX_PATH, CMAKE_INSTALL_PREFIX；
-    - 给Unix Makefiles项目全局设置 --prefix；
+    - 给CMake项目全局设置 `CMAKE_PREFIX_PATH`, `CMAKE_INSTALL_PREFIX`；
+    - 给Unix Makefiles项目全局设置 `--prefix`；
     - 让Unix Makefiles项目在编译期间能通过pc文件找到子依赖，即便当前workspace目录迁移了；
 
 2. **支持自动管理编译工具**：  
@@ -56,20 +56,20 @@ CMake长期以来仅提供了 `find_package`和`find_program` 等功能，但缺
 ```
 $ ./buildenv
 
-   Welcome to buildenv!                                   
-   Please choose an option from the menu below...         
-                                                          
-  > 1. Init buildenv with conf repo.                      
-    2. Create a new platform.                             
-    3. Select your current platform.                      
-    4. Create a new project.                              
-    5. Select your current project.                       
-    6. Create a new tool.                                 
-    7. Create a new port.                                 
-    8. Integrate buildenv, then you can run it everywhere.
-    9. About and usage.                                   
-                                                          
-    ↑/k up • ↓/j down • q quit • ? more 
+Welcome to buildenv!                                   
+Please choose an option from the menu below...         
+                                                        
+> 1. Init buildenv with conf repo.                      
+2. Create a new platform.                             
+3. Select your current platform.                      
+4. Create a new project.                              
+5. Select your current project.                       
+6. Create a new tool.                                 
+7. Create a new port.                                 
+8. Integrate buildenv, then you can run it everywhere.
+9. About and usage.                                   
+                                                        
+↑/k up • ↓/j down • q quit • ? more 
 ```
 
 选择键盘方向键选择'9'并回车，即可进入使用说明：
@@ -92,6 +92,6 @@ source /mnt/data/work_phil/Golang/buildenv/script/environment
 ## 如何参与贡献
 
 1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
+2.  新建 feature_xxx 分支
 3.  提交代码
 4.  新建 Pull Request
