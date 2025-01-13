@@ -46,14 +46,14 @@ Supports installing and uninstalling libraries along with their sub-dependencies
 5. **Support sharing build cache**:  
 Installed files of third-party can be shared with others by configure `cache_dirs` in buildenv's configure file.
 
-For more detailed information, please refer to the [Docs](./docs/01_how_it_works.md).
-
 ## Installation Guide
 
 1. Download the Go SDK.
 2. Run go build to compile the program successfully.
 
 ## Usage Instructions
+
+**For more detailed information, please refer to the [Docs](./docs/01_how_it_works.md).**
 
 ```
 $ ./buildenv

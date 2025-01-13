@@ -45,13 +45,13 @@ CMake长期以来仅提供了 `find_package`和`find_program` 等功能，但缺
 5. **支持编译缓存共享**:  
 通过配置`cache_dirs`，可进行局域网内网盘来托管和读取`install文件缓存`；
 
-有关更多详细信息，请参阅[Docs](./docs/01_how_it_works.md).：。
-
 ## 安装教程
 
 下载`golang sdk`，然后直接`go build`，即可编译成功。
 
 ## 使用说明
+
+**有关更多详细信息，请参阅[Docs](./docs/01_how_it_works.md)。**
 
 ```
 $ ./buildenv
