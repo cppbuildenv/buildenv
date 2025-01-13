@@ -45,7 +45,7 @@ CMake长期以来仅提供了 `find_package`和`find_program` 等功能，但缺
 5. **支持编译缓存共享**:  
 通过配置`cache_dirs`，可进行局域网内网盘来托管和读取`install文件缓存`；
 
-有关更多详细信息，请参阅Docs。
+有关更多详细信息，请参阅[Docs](./docs/01_how_it_works.md).：。
 
 ## 安装教程
 
@@ -72,7 +72,7 @@ $ ./buildenv
     ↑/k up • ↓/j down • q quit • ? more 
 ```
 
-选择键盘方向键选择'9'并回车，即可进入[使用说明](./docs/01_how_it_works.md).：
+选择键盘方向键选择'9'并回车，即可进入使用说明：
 
 ```
 Welcome to buildenv ().
