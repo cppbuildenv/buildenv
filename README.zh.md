@@ -72,7 +72,7 @@ $ ./buildenv
     ↑/k up • ↓/j down • q quit • ? more 
 ```
 
-选择键盘方向键选择'9'并回车，即可进入使用说明：
+选择键盘方向键选择'9'并回车，即可进入[使用说明](./docs/01_how_it_works.md).：
 
 ```
 Welcome to buildenv ().

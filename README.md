@@ -4,7 +4,7 @@ For the Chinese version of this README, see [README.zh.md](./README.zh.md).
 
 ## Introduction
 
-**BuildEnv** is a Go language-based C/C++ package manager that does not require mastering additional program languages. It is designed to simplify package management with JSON only. This package manager works with CMake, with this you can download and setup toolchain, rootfs and tools automacally, then cross-compilation third-party projects in multiple architectures.
+**BuildEnv** is a Go language-based C/C++ package manager that does not require mastering additional program languages. It is designed to simplify package management with JSON only. This package manager works with CMake, with this you can download and setup toolchain, rootfs and tools automacally, then cross-compilation third-party libraries in multiple architectures.
 
 ## Background
 
@@ -46,7 +46,7 @@ Supports installing and uninstalling libraries along with their sub-dependencies
 5. **Support sharing build cache**:  
 Installed files of third-party can be shared with others by configure `cache_dirs` in buildenv's configure file.
 
-For more detailed information, please refer to the Docs.
+For more detailed information, please refer to the [Docs](./docs/01_how_it_works.md).
 
 ## Installation Guide
 
