@@ -40,6 +40,7 @@ cmake_config的配置独立于version文件之外  | ✔
 通过一个中间临时目录来实现收集install的文件清单  | ✔
 支持通过命令创建tool和port  | ✔
 支持编译缓存共享  | ✔
+内部出现同一个库的不同版本依赖情况给与报错提示 | ✔
 运行tools需要将内部lib路径加入到LD_LIBRARY_PATH  | ✘
 支持 buildenv -upgrade 升级  | ✘
 动态生成的cmake config文件（windows还没测试）| ✘
@@ -54,3 +55,4 @@ cmake_config的配置独立于version文件之外  | ✔
 支持在project里覆盖默认port的配置  | ✘
 如果发现资源包size跟最新不匹配，即便已经解压了也要重新下载 | ✘
 支持export功能 | ✘
+支持在project里定义CMAKE_CXX_FLAGS和CMAKE_C_FLAGS，以及LDFLAGS | ✘

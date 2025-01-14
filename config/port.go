@@ -208,6 +208,10 @@ func (p Port) Install(silentMode bool) error {
 
 			// Write package to cache dirs for global share.
 			for _, cacheDir := range p.ctx.CacheDirs() {
+				if !cacheDir.Writable {
+					continue
+				}
+
 				if err := cacheDir.Write(matchedConfig.PortConfig.PackageDir); err != nil {
 					return err
 				}
@@ -275,6 +279,10 @@ func (p Port) installFromCache(matchedConfig *buildsystem.BuildConfig) (installe
 	platformBuildType := fmt.Sprintf("%s-%s", p.ctx.Platform().Name, p.ctx.BuildType())
 	archiveName := p.NameVersion() + "-" + platformBuildType + ".tar.gz"
 	for _, cacheDir := range p.ctx.CacheDirs() {
+		if !cacheDir.Readable {
+			continue
+		}
+
 		ok, err := cacheDir.Read(archiveName, matchedConfig.PortConfig.PackageDir)
 		if err != nil {
 			return false, "", err

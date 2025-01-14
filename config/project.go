@@ -1,11 +1,13 @@
 package config
 
 import (
+	"buildenv/buildsystem"
 	"buildenv/pkg/fileio"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -16,8 +18,14 @@ type Project struct {
 	MicroVars []string `json:"micro_vars"`
 
 	// Internal fields.
-	Name string  `json:"-"`
-	ctx  Context `json:"-"`
+	Name          string                    `json:"-"`
+	ctx           Context                   `json:"-"`
+	trackingPorts map[string][]trackingInfo `json:"-"`
+}
+
+type trackingInfo struct {
+	version string
+	parent  string
 }
 
 func (p *Project) Init(ctx Context, projectName string) error {
@@ -69,10 +77,17 @@ func (p Project) Write(platformPath string) error {
 	if err := os.MkdirAll(parentDir, 0755); err != nil {
 		return err
 	}
+
 	return os.WriteFile(platformPath, bytes, os.ModePerm)
 }
 
 func (p Project) Verify(request VerifyRequest) error {
+	// Check if ports version conflicts in the project.
+	if err := p.checkPortsConflicts(); err != nil {
+		return err
+	}
+
+	// Verify dependencies.
 	verifyPort := func(portNameVersion string) error {
 		portPath := filepath.Join(Dirs.PortsDir, portNameVersion+".json")
 		var port Port
@@ -93,10 +108,93 @@ func (p Project) Verify(request VerifyRequest) error {
 		return nil
 	}
 
-	// Verify dependencies.
 	for _, item := range p.Ports {
 		if err := verifyPort(item); err != nil {
 			return err
+		}
+	}
+
+	return nil
+}
+
+func (p *Project) checkPortsConflicts() error {
+	p.trackingPorts = make(map[string][]trackingInfo)
+
+	for _, portDesc := range p.Ports {
+		var port Port
+		if err := port.Init(p.ctx, filepath.Join(Dirs.PortsDir, portDesc+".json")); err != nil {
+			return err
+		}
+
+		p.trackingPorts[port.Name] = []trackingInfo{
+			{
+				version: port.Version,
+				parent:  p.Name,
+			},
+		}
+
+		if err := p.trackingPortDepedencies(port); err != nil {
+			return err
+		}
+	}
+
+	// Check if there are any conflicts.
+	var summaries []string
+	for portName, trackingInfos := range p.trackingPorts {
+		if len(trackingInfos) > 1 {
+			var conflicts []string
+			for _, trackingInfo := range trackingInfos {
+				conflicts = append(conflicts, fmt.Sprintf("%s@%s is defined in %s", portName, trackingInfo.version, trackingInfo.parent))
+			}
+
+			summaries = append(summaries, fmt.Sprintf("    - %s", strings.Join(conflicts, ", ")))
+		}
+	}
+	if len(summaries) > 0 {
+		return fmt.Errorf("detected conflicting versions of ports:\n%s", strings.Join(summaries, "\n"))
+	}
+
+	return nil
+}
+
+func (p *Project) trackingPortDepedencies(port Port) error {
+	// Find matched config and init build system.
+	var matchedConfig *buildsystem.BuildConfig
+	for _, config := range port.BuildConfigs {
+		if port.MatchPattern(config.Pattern) {
+			if err := config.InitBuildSystem(); err != nil {
+				return err
+			}
+			matchedConfig = &config
+			break
+		}
+	}
+	if matchedConfig == nil {
+		return fmt.Errorf("no matching build_config found to build")
+	}
+
+	// Tracking port depedencies infos.
+	for _, depedency := range matchedConfig.Depedencies {
+		var subPort Port
+		if err := subPort.Init(p.ctx, filepath.Join(Dirs.PortsDir, depedency+".json")); err != nil {
+			return err
+		}
+
+		if infos, ok := p.trackingPorts[subPort.Name]; ok {
+			contains := slices.ContainsFunc(infos, func(info trackingInfo) bool {
+				return info.version == subPort.Version
+			})
+			if !contains {
+				p.trackingPorts[subPort.Name] = append(p.trackingPorts[subPort.Name], trackingInfo{
+					version: subPort.Version,
+					parent:  port.Name,
+				})
+			}
+		} else {
+			p.trackingPorts[subPort.Name] = append(p.trackingPorts[subPort.Name], trackingInfo{
+				version: subPort.Version,
+				parent:  port.Name,
+			})
 		}
 	}
 

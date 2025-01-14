@@ -10,7 +10,7 @@ func SprintSuccess(format string, args ...interface{}) string {
 }
 
 func SprintError(err error, format string, args ...interface{}) string {
-	return color.Sprintf(color.Red, "\n[✘] %s\n[☛] %s.\n\n", err, fmt.Sprintf(format, args...))
+	return color.Sprintf(color.Red, "\n[✘] %s\n[☛] %s.\n\n", fmt.Sprintf(format, args...), err)
 }
 
 func PrintSuccess(format string, args ...interface{}) {
