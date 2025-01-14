@@ -56,3 +56,4 @@ cmake_config的配置独立于version文件之外  | ✔
 如果发现资源包size跟最新不匹配，即便已经解压了也要重新下载 | ✘
 支持export功能 | ✘
 支持在project里定义CMAKE_CXX_FLAGS和CMAKE_C_FLAGS，以及LDFLAGS | ✘
+检测代码如果跟目标不匹配什么都不做， 同时提供sync命令用于强行同步代码 | ✘
