@@ -187,7 +187,7 @@ func (b *BuildConfig) Install(url, version, buildType string) error {
 
 	// Generate cmake config.
 	portDir := filepath.Join(b.PortConfig.PortsDir, b.PortConfig.LibName)
-	cmakeConfig, err := generator.FindMatchedConfig(portDir, b.CMakeConfig)
+	cmakeConfig, err := generator.FindMatchedConfig(portDir, b.PortConfig.LibVersion, b.CMakeConfig)
 	if err != nil {
 		return err
 	}
@@ -209,8 +209,8 @@ func (b *BuildConfig) InitBuildSystem() error {
 		b.buildSystem = NewCMake(*b)
 	case "ninja":
 		b.buildSystem = NewNinja(*b)
-	case "make":
-		b.buildSystem = NewMake(*b)
+	case "makefiles":
+		b.buildSystem = NewMakefiles(*b)
 	case "autotools":
 		b.buildSystem = NewAutoTool(*b)
 	case "meson":

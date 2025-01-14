@@ -7,15 +7,15 @@ import (
 	"strings"
 )
 
-func NewMake(config BuildConfig) *make {
-	return &make{BuildConfig: config}
+func NewMakefiles(config BuildConfig) *makefiles {
+	return &makefiles{BuildConfig: config}
 }
 
-type make struct {
+type makefiles struct {
 	BuildConfig
 }
 
-func (m make) Configure(buildType string) error {
+func (m makefiles) Configure(buildType string) error {
 	// Remove build dir and create it for configure.
 	if err := os.RemoveAll(m.PortConfig.BuildDir); err != nil {
 		return err
@@ -70,7 +70,7 @@ func (m make) Configure(buildType string) error {
 	return nil
 }
 
-func (m make) Build() error {
+func (m makefiles) Build() error {
 	// Assemble script.
 	command := fmt.Sprintf("make -j %d", m.PortConfig.JobNum)
 
@@ -86,7 +86,7 @@ func (m make) Build() error {
 	return nil
 }
 
-func (m make) Install() error {
+func (m makefiles) Install() error {
 	// Assemble script.
 	command := "make install"
 

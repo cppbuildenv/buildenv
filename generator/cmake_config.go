@@ -22,8 +22,8 @@ type CMakeConfigs struct {
 	WindowsShared CMakeConfig `json:"windows_shared"`
 }
 
-func FindMatchedConfig(portDir, configRefer string) (*CMakeConfig, error) {
-	configPath := filepath.Join(portDir, "cmake_config.json")
+func FindMatchedConfig(portDir, portVersion, configRefer string) (*CMakeConfig, error) {
+	configPath := filepath.Join(portDir, portVersion+"@cmake_config.json")
 	if !fileio.PathExists(configPath) {
 		return nil, nil
 	}
