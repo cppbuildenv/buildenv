@@ -74,15 +74,22 @@ func (b *buildenv) Verify(request VerifyRequest) error {
 	}
 
 	// init and verify platform.
-	if err := b.platform.Init(b, b.configData.PlatformName); err != nil {
+	if err := b.platform.Init(b, b.PlatformName); err != nil {
 		return err
 	}
 	if err := b.platform.Verify(request); err != nil {
 		return err
 	}
 
+	// Append $PKG_CONFIG_PATH with pkgconfig path that in installed dir.
+	platformProject := fmt.Sprintf("%s@%s@%s", b.PlatformName, b.ProjectName, request.BuildType())
+	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", platformProject)
+	os.Setenv("PKG_CONFIG_PATH", installedDir+"/lib/pkgconfig"+string(os.PathListSeparator)+os.Getenv("PKG_CONFIG_PATH"))
+	// We assume that pkg-config's sysroot is installedDir and change all pc file's prefix as "/".
+	os.Setenv("PKG_CONFIG_SYSROOT_DIR", installedDir)
+
 	// init and verify project.
-	if err := b.project.Init(b, b.configData.ProjectName); err != nil {
+	if err := b.project.Init(b, b.ProjectName); err != nil {
 		return err
 	}
 	if err := b.project.Verify(request); err != nil {

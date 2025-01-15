@@ -37,7 +37,7 @@ type BuildSystem interface {
 	Configure(buildType string) error
 	Build() error
 	Install() error
-	PackageFiles(packageDir, platformName, buildType string) ([]string, error)
+	PackageFiles(packageDir, platformName, projectName, buildType string) ([]string, error)
 }
 
 type patch struct {
@@ -199,7 +199,7 @@ func (b *BuildConfig) InitBuildSystem() error {
 	return nil
 }
 
-func (b BuildConfig) PackageFiles(packageDir, platformName, buildType string) ([]string, error) {
+func (b BuildConfig) PackageFiles(packageDir, platformName, projectName, buildType string) ([]string, error) {
 	if !fileio.PathExists(packageDir) {
 		return nil, nil
 	}
@@ -219,8 +219,8 @@ func (b BuildConfig) PackageFiles(packageDir, platformName, buildType string) ([
 			return err
 		}
 
-		platformBuildType := fmt.Sprintf("%s-%s", platformName, buildType)
-		files = append(files, platformBuildType+"/"+relativePath)
+		platformProject := fmt.Sprintf("%s@%s@%s", platformName, projectName, buildType)
+		files = append(files, platformProject+"/"+relativePath)
 		return nil
 	}); err != nil {
 		return nil, err

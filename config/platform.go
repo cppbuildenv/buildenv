@@ -135,12 +135,5 @@ func (p Platform) Verify(request VerifyRequest) error {
 		os.Setenv("PATH", absToolPath+string(os.PathListSeparator)+os.Getenv("PATH"))
 	}
 
-	// Append $PKG_CONFIG_PATH with pkgconfig path that in installed dir.
-	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.Name+"-"+request.BuildType())
-	os.Setenv("PKG_CONFIG_PATH", installedDir+"/lib/pkgconfig"+string(os.PathListSeparator)+os.Getenv("PKG_CONFIG_PATH"))
-
-	// We assume that pkg-config's sysroot is installedDir and change all pc file's prefix as "/".
-	os.Setenv("PKG_CONFIG_SYSROOT_DIR", installedDir)
-
 	return nil
 }

@@ -140,8 +140,13 @@ func (u uninstallCmd) uninstallPort(ctx config.Context, portNameVersion string) 
 	// Remove package files if purge option is specified.
 	if u.purge {
 		// Remove port's package files.
-		platformBuildType := fmt.Sprintf("%s-%s", ctx.Platform().Name, ctx.BuildType())
-		packageDir := filepath.Join(config.Dirs.WorkspaceDir, "packages", port.NameVersion()+"-"+platformBuildType)
+		folderName := fmt.Sprintf("%s@%s@%s@%s",
+			port.NameVersion(),
+			ctx.Platform().Name,
+			ctx.Project().Name,
+			ctx.BuildType())
+
+		packageDir := filepath.Join(config.Dirs.WorkspaceDir, "packages", folderName)
 		if err := os.RemoveAll(packageDir); err != nil {
 			return fmt.Errorf("cannot remove package files: %s", err)
 		}
@@ -152,7 +157,9 @@ func (u uninstallCmd) uninstallPort(ctx config.Context, portNameVersion string) 
 		}
 
 		// Remove build cache from buildtrees.
-		if err := u.removeBuildCache(portNameVersion, platformBuildType); err != nil {
+		platformProject := fmt.Sprintf("%s@%s@%s", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
+		logPathPrefix := filepath.Join(port.NameVersion(), platformProject)
+		if err := u.removeBuildCache(logPathPrefix); err != nil {
 			return fmt.Errorf("cannot remove build cache: %s", err)
 		}
 	}
@@ -162,18 +169,14 @@ func (u uninstallCmd) uninstallPort(ctx config.Context, portNameVersion string) 
 
 func (u uninstallCmd) doUninsallPort(ctx config.Context, portNameVersion string) error {
 	// Check if port is installed.
-	platformBuildType := fmt.Sprintf("%s-%s", ctx.Platform().Name, ctx.BuildType())
-	installInfoFile := filepath.Join(config.Dirs.WorkspaceDir,
-		"installed",
-		"buildenv",
-		"info",
-		portNameVersion+"-"+platformBuildType+".list")
-	if !fileio.PathExists(installInfoFile) {
+	infoName := fmt.Sprintf("%s@%s@%s@%s.list", portNameVersion, ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
+	infoPath := filepath.Join(config.Dirs.WorkspaceDir, "installed", "buildenv", "info", infoName)
+	if !fileio.PathExists(infoPath) {
 		return fmt.Errorf("%s is not installed", portNameVersion)
 	}
 
 	// Open install info file.
-	file, err := os.OpenFile(installInfoFile, os.O_RDONLY, os.ModePerm)
+	file, err := os.OpenFile(infoPath, os.O_RDONLY, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("cannot open install info file: %s", err)
 	}
@@ -205,8 +208,8 @@ func (u uninstallCmd) doUninsallPort(ctx config.Context, portNameVersion string)
 
 	// Remove generated cmake config if exist.
 	portName := strings.Split(portNameVersion, "@")[0]
-	cmakeConfigDir := filepath.Join(config.Dirs.InstalledDir,
-		platformBuildType, "lib", "cmake", portName)
+	platformProject := fmt.Sprintf("%s@%s@%s", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
+	cmakeConfigDir := filepath.Join(config.Dirs.InstalledDir, platformProject, "lib", "cmake", portName)
 	if err := os.RemoveAll(cmakeConfigDir); err != nil {
 		return fmt.Errorf("cannot remove cmake config folder: %s", err)
 	}
@@ -215,12 +218,12 @@ func (u uninstallCmd) doUninsallPort(ctx config.Context, portNameVersion string)
 	}
 
 	// Remove install info file.
-	if err := os.Remove(installInfoFile); err != nil {
+	if err := os.Remove(infoPath); err != nil {
 		return fmt.Errorf("cannot remove install info file: %s", err)
 	}
 
 	// Try to clean installed dir.
-	if err := u.removeFolderRecursively(filepath.Dir(installInfoFile)); err != nil {
+	if err := u.removeFolderRecursively(filepath.Dir(infoPath)); err != nil {
 		return fmt.Errorf("cannot remove parent folder: %s", err)
 	}
 
@@ -280,12 +283,12 @@ func (u uninstallCmd) removeFolderRecursively(path string) error {
 	return nil
 }
 
-func (u uninstallCmd) removeBuildCache(portNameVersion, platformBuildType string) error {
-	buildTree := filepath.Join(config.Dirs.WorkspaceDir, "buildtrees", portNameVersion)
-	buildCacheDir := filepath.Join(buildTree, platformBuildType)
-	configureLogPath := filepath.Join(buildTree, platformBuildType+"-configure.log")
-	buildLogPath := filepath.Join(buildTree, platformBuildType+"-build.log")
-	installLogPath := filepath.Join(buildTree, platformBuildType+"-install.log")
+func (u uninstallCmd) removeBuildCache(logNamePrefix string) error {
+	buildTrees := filepath.Join(config.Dirs.WorkspaceDir, "buildtrees")
+	buildCacheDir := filepath.Join(buildTrees, logNamePrefix)
+	configureLogPath := filepath.Join(buildTrees, logNamePrefix+"-configure.log")
+	buildLogPath := filepath.Join(buildTrees, logNamePrefix+"-build.log")
+	installLogPath := filepath.Join(buildTrees, logNamePrefix+"-install.log")
 
 	if err := os.RemoveAll(buildCacheDir); err != nil {
 		return fmt.Errorf("cannot remove build cache: %s", err)
