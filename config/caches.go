@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type CacheDir struct {
@@ -29,8 +30,8 @@ func (c CacheDir) Verify() error {
 	return nil
 }
 
-func (c CacheDir) Read(archiveName, destDir string) (bool, error) {
-	archivePath := filepath.Join(c.Dir, archiveName)
+func (c CacheDir) Read(platformName, projectName, buildType, archiveName, destDir string) (bool, error) {
+	archivePath := filepath.Join(c.Dir, platformName, projectName, buildType, archiveName)
 	if !fileio.PathExists(archivePath) {
 		return false, nil // not an error even not exist.
 	}
@@ -56,19 +57,40 @@ func (c CacheDir) Write(packageDir string) error {
 	}
 
 	// Create a tarball from package dir.
-	archiveName := filepath.Base(packageDir) + ".tar.gz"
+	parts := strings.Split(filepath.Base(packageDir), "@")
+	if len(parts) != 5 {
+		return fmt.Errorf("invalid package dir: %s", packageDir)
+	}
+
+	var (
+		libName      = parts[0]
+		libVersion   = parts[1]
+		platformName = parts[2]
+		projectName  = parts[3]
+		buildType    = parts[4]
+	)
+
+	archiveName := fmt.Sprintf("%s@%s.tar.gz", libName, libVersion)
 	destPath := filepath.Join(os.TempDir(), archiveName)
 	if err := fileio.Targz(destPath, packageDir, false); err != nil {
 		return err
 	}
+	defer os.Remove(destPath)
+
+	destDir := filepath.Join(c.Dir, platformName, projectName, buildType)
 
 	// Remove the old tarball.
-	if err := os.RemoveAll(filepath.Join(c.Dir, archiveName)); err != nil {
+	if err := os.RemoveAll(filepath.Join(destDir, archiveName)); err != nil {
+		return err
+	}
+
+	// Create the dir if not exist.
+	if err := os.MkdirAll(destDir, os.ModeDir|os.ModePerm); err != nil {
 		return err
 	}
 
 	// Move the tarball to cache dir.
-	if err := fileio.CopyFile(destPath, filepath.Join(c.Dir, archiveName)); err != nil {
+	if err := fileio.CopyFile(destPath, filepath.Join(destDir, archiveName)); err != nil {
 		return err
 	}
 

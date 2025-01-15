@@ -206,7 +206,7 @@ func (p Port) Install(silentMode bool) error {
 				return err
 			}
 
-			// Write package to cache dirs for global share.
+			// Write package to cache dirs so that others can share installed libraries.
 			for _, cacheDir := range p.ctx.CacheDirs() {
 				if !cacheDir.Writable {
 					continue
@@ -277,18 +277,18 @@ func (p Port) MatchPattern(pattern string) bool {
 }
 
 func (p Port) installFromCache(matchedConfig *buildsystem.BuildConfig) (installed bool, cacheDir string, err error) {
-	archiveName := fmt.Sprintf("%s@%s@%s@%s.tar.gz",
-		p.NameVersion(),
-		p.ctx.Platform().Name,
-		p.ctx.Project().Name,
-		p.ctx.BuildType())
-
 	for _, cacheDir := range p.ctx.CacheDirs() {
 		if !cacheDir.Readable {
 			continue
 		}
 
-		ok, err := cacheDir.Read(archiveName, matchedConfig.PortConfig.PackageDir)
+		ok, err := cacheDir.Read(
+			p.ctx.Platform().Name,
+			p.ctx.Project().Name,
+			p.ctx.BuildType(),
+			p.NameVersion()+".tar.gz",
+			matchedConfig.PortConfig.PackageDir,
+		)
 		if err != nil {
 			return false, "", err
 		}
