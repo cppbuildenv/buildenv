@@ -66,7 +66,7 @@ func (c cmake) Configure(buildType string) error {
 	fileName := filepath.Base(c.PortConfig.BuildDir) + "-configure.log"
 	configureLogPath := filepath.Join(parentDir, fileName)
 	title := fmt.Sprintf("[configure %s]", c.PortConfig.LibName)
-	if err := c.execute(title, configure, configureLogPath); err != nil {
+	if err := execute(title, configure, configureLogPath); err != nil {
 		return err
 	}
 
@@ -82,7 +82,7 @@ func (c cmake) Build() error {
 	fileName := filepath.Base(c.PortConfig.BuildDir) + "-build.log"
 	buildLogPath := filepath.Join(parentDir, fileName)
 	title := fmt.Sprintf("[build %s]", c.PortConfig.LibName)
-	if err := c.execute(title, command, buildLogPath); err != nil {
+	if err := execute(title, command, buildLogPath); err != nil {
 		return err
 	}
 
@@ -98,7 +98,7 @@ func (c cmake) Install() error {
 	fileName := filepath.Base(c.PortConfig.BuildDir) + "-install.log"
 	installLogPath := filepath.Join(parentDir, fileName)
 	title := fmt.Sprintf("[install %s]", c.PortConfig.LibName)
-	if err := c.execute(title, command, installLogPath); err != nil {
+	if err := execute(title, command, installLogPath); err != nil {
 		return err
 	}
 

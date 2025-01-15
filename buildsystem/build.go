@@ -2,15 +2,11 @@ package buildsystem
 
 import (
 	"buildenv/generator"
-	"buildenv/pkg/color"
 	"buildenv/pkg/fileio"
-	"bytes"
 	"fmt"
-	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"runtime"
+	"slices"
 	"strings"
 	"unicode"
 )
@@ -45,15 +41,15 @@ type BuildSystem interface {
 }
 
 type patch struct {
-	Mode string `json:"mode"`
-	Ref  string `json:"ref"`
+	Mode   string   `json:"mode"`
+	Refers []string `json:"refers"`
 }
 
 type BuildConfig struct {
 	Pattern     string   `json:"pattern"`
 	BuildTool   string   `json:"build_tool"`
 	EnvVars     []string `json:"env_vars"`
-	Patches     []patch  `json:"patches"`
+	Patches     patch    `json:"patches"`
 	Arguments   []string `json:"arguments"`
 	Depedencies []string `json:"dependencies"`
 	CMakeConfig string   `json:"cmake_config"`
@@ -65,73 +61,54 @@ type BuildConfig struct {
 
 func (b BuildConfig) Verify() error {
 	if b.BuildTool == "" {
-		return fmt.Errorf("build_tool is empty")
+		return fmt.Errorf("build_tool is empty, it should be one of cmake, ninja, makefiles, autotools, meson")
+	}
+
+	if !slices.Contains([]string{"cmake", "ninja", "makefiles", "autotools", "meson"}, b.BuildTool) {
+		return fmt.Errorf("unsupported build tool: %s, it should be one of cmake, ninja, makefiles, autotools, meson",
+			b.BuildTool)
 	}
 
 	return nil
 }
 
 func (b BuildConfig) Clone(repoUrl, repoRef string) error {
-	var commands []string
+	// Clone repo only when source dir not exists.
+	if !fileio.PathExists(b.PortConfig.SourceDir) {
+		var commands []string
+		commands = append(commands, fmt.Sprintf("git clone --branch %s %s %s", repoRef, repoUrl, b.PortConfig.SourceDir))
 
-	// Clone repo or sync repo.
-	if fileio.PathExists(b.PortConfig.SourceDir) {
-		// Change to source dir to execute git command.
-		if err := os.Chdir(b.PortConfig.SourceDir); err != nil {
+		// Execute clone command.
+		commandLine := strings.Join(commands, " && ")
+		title := fmt.Sprintf("[clone %s]", b.PortConfig.LibName)
+		if err := execute(title, commandLine, ""); err != nil {
 			return err
 		}
-
-		commands = append(commands, "git reset --hard && git clean -xfd")
-		commands = append(commands, fmt.Sprintf("git -C %s fetch origin", b.PortConfig.SourceDir))
-		commands = append(commands, fmt.Sprintf("git -C %s checkout %s", b.PortConfig.SourceDir, repoRef))
-		commands = append(commands, fmt.Sprintf("git -C %s pull origin %s", b.PortConfig.SourceDir, repoRef))
-	} else {
-		commands = append(commands, fmt.Sprintf("git clone --branch %s %s %s", repoRef, repoUrl, b.PortConfig.SourceDir))
-	}
-
-	// Execute clone command.
-	commandLine := strings.Join(commands, " && ")
-	title := fmt.Sprintf("[clone %s]", b.PortConfig.LibName)
-	if err := b.execute(title, commandLine, ""); err != nil {
-		return err
 	}
 
 	return nil
 }
 
 func (b BuildConfig) Patch(repoRef string) error {
-	if len(b.Patches) == 0 {
+	if len(b.Patches.Refers) == 0 {
 		return nil
 	}
 
-	// Change to source dir to execute git command.
-	if err := os.Chdir(b.PortConfig.SourceDir); err != nil {
-		return err
-	}
-
-	// Execute patch command.
-	var commands []string
-	commands = append(commands, "git reset --hard && git clean -xfd")
-	commands = append(commands, fmt.Sprintf("git -C %s fetch origin", b.PortConfig.SourceDir))
-
-	for _, patch := range b.Patches {
-		switch patch.Mode {
-		case "cherry-pick":
-			commands = append(commands, fmt.Sprintf("git cherry-pick %s", patch.Ref))
-
-		case "rebase":
-			commands = append(commands, fmt.Sprintf("git checkout %s", patch.Ref))
-			commands = append(commands, fmt.Sprintf("git rebase %s", repoRef))
-
-		default:
-			return fmt.Errorf("unsupported patch mode: %s", patch.Mode)
+	switch b.Patches.Mode {
+	case "cherry-pick":
+		title := fmt.Sprintf("[patch %s]", b.PortConfig.LibName)
+		if err := cherryPick(title, b.PortConfig.SourceDir, b.Patches.Refers); err != nil {
+			return err
 		}
-	}
 
-	commandLine := strings.Join(commands, " && ")
-	title := fmt.Sprintf("[patch %s]", b.PortConfig.LibName)
-	if err := b.execute(title, commandLine, ""); err != nil {
-		return err
+	case "rebase":
+		title := fmt.Sprintf("[patch %s]", b.PortConfig.LibName)
+		if err := rebase(title, b.PortConfig.SourceDir, repoRef, b.Patches.Refers); err != nil {
+			return err
+		}
+
+	default:
+		return fmt.Errorf("unsupported patch mode: %s", b.Patches.Mode)
 	}
 
 	return nil
@@ -254,53 +231,6 @@ func (b BuildConfig) PackageFiles(packageDir, platformName, buildType string) ([
 
 func (b BuildConfig) BuildSystem() BuildSystem {
 	return b.buildSystem
-}
-
-func (b BuildConfig) execute(title, command, logPath string) error {
-	fmt.Print(color.Sprintf(color.Blue, "\n%s: %s\n\n", title, command))
-
-	// Create command for windows and linux.
-	var cmd *exec.Cmd
-	if runtime.GOOS == "windows" {
-		cmd = exec.Command("cmd", "/c", command)
-	} else {
-		cmd = exec.Command("bash", "-c", command)
-	}
-	cmd.Env = os.Environ()
-
-	// Create log file if log path specified.
-	if logPath != "" {
-		if err := os.MkdirAll(filepath.Dir(logPath), os.ModeDir|os.ModePerm); err != nil {
-			return err
-		}
-		logFile, err := os.Create(logPath)
-		if err != nil {
-			return err
-		}
-		defer logFile.Close()
-
-		// Write env variables to log file.
-		var buffer bytes.Buffer
-		for _, envVar := range cmd.Env {
-			buffer.WriteString(envVar + "\n")
-		}
-		io.WriteString(logFile, fmt.Sprintf("Environment:\n%s\n", buffer.String()))
-
-		// Write command summary as header content of file.
-		io.WriteString(logFile, fmt.Sprintf("%s: %s\n\n", title, command))
-
-		cmd.Stdout = io.MultiWriter(os.Stdout, logFile)
-		cmd.Stderr = io.MultiWriter(os.Stderr, logFile)
-	} else {
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stdout
-	}
-
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (b BuildConfig) validateEnv(envVar string) error {

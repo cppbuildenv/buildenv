@@ -63,7 +63,7 @@ func (m makefiles) Configure(buildType string) error {
 	fileName := filepath.Base(m.PortConfig.BuildDir) + "-configure.log"
 	configureLogPath := filepath.Join(parentDir, fileName)
 	title := fmt.Sprintf("[configure %s]", m.PortConfig.LibName)
-	if err := m.execute(title, configure, configureLogPath); err != nil {
+	if err := execute(title, configure, configureLogPath); err != nil {
 		return err
 	}
 
@@ -79,7 +79,7 @@ func (m makefiles) Build() error {
 	fileName := filepath.Base(m.PortConfig.BuildDir) + "-build.log"
 	buildLogPath := filepath.Join(parentDir, fileName)
 	title := fmt.Sprintf("[build %s]", m.PortConfig.LibName)
-	if err := m.execute(title, command, buildLogPath); err != nil {
+	if err := execute(title, command, buildLogPath); err != nil {
 		return err
 	}
 
@@ -95,7 +95,7 @@ func (m makefiles) Install() error {
 	fileName := filepath.Base(m.PortConfig.BuildDir) + "-install.log"
 	installLogPath := filepath.Join(parentDir, fileName)
 	title := fmt.Sprintf("[install %s]", m.PortConfig.LibName)
-	if err := m.execute(title, command, installLogPath); err != nil {
+	if err := execute(title, command, installLogPath); err != nil {
 		return err
 	}
 
