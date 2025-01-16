@@ -61,11 +61,11 @@ type BuildConfig struct {
 
 func (b BuildConfig) Verify() error {
 	if b.BuildTool == "" {
-		return fmt.Errorf("build_tool is empty, it should be one of cmake, ninja, makefiles, autotools, meson")
+		return fmt.Errorf("build_tool is empty, it should be one of cmake, ninja, makefiles, autotools, meson, b2")
 	}
 
-	if !slices.Contains([]string{"cmake", "ninja", "makefiles", "autotools", "meson"}, b.BuildTool) {
-		return fmt.Errorf("unsupported build tool: %s, it should be one of cmake, ninja, makefiles, autotools, meson",
+	if !slices.Contains([]string{"cmake", "ninja", "makefiles", "autotools", "meson", "b2"}, b.BuildTool) {
+		return fmt.Errorf("unsupported build tool: %s, it should be one of cmake, ninja, makefiles, autotools, meson, b2",
 			b.BuildTool)
 	}
 
@@ -192,6 +192,8 @@ func (b *BuildConfig) InitBuildSystem() error {
 		b.buildSystem = NewAutoTool(*b)
 	case "meson":
 		b.buildSystem = NewMeson(*b)
+	case "b2":
+		b.buildSystem = NewB2(*b)
 	default:
 		return fmt.Errorf("unsupported build system: %s", b.BuildTool)
 	}

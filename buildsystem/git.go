@@ -80,8 +80,21 @@ func rebase(title, sourceDir, repoRef string, rebaseRefs []string) error {
 	return nil
 }
 
-func IsRepoModified(repoPath string) (bool, error) {
-	cmd := exec.Command("git", "-C", repoPath, "status", "--porcelain")
+func cleanRepo(repoDir string) error {
+	if err := os.Chdir(repoDir); err != nil {
+		return err
+	}
+
+	title := fmt.Sprintf("[clean %s]", filepath.Base(repoDir))
+	if err := execute(title, "git reset --hard && git clean -xfd", ""); err != nil {
+		return fmt.Errorf("failed to clean source: %v", err)
+	}
+
+	return nil
+}
+
+func IsRepoModified(repoDir string) (bool, error) {
+	cmd := exec.Command("git", "-C", repoDir, "status", "--porcelain")
 
 	var out bytes.Buffer
 	cmd.Stdout = &out
