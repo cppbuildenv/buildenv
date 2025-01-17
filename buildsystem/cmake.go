@@ -25,11 +25,6 @@ func (c cmake) Configure(buildType string) error {
 		return err
 	}
 
-	rootPaths := strings.Join(
-		[]string{c.PortConfig.RootFS, c.PortConfig.InstalledDir},
-		string(os.PathListSeparator),
-	)
-
 	// Append extra global args.
 	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_PREFIX_PATH=%s", c.PortConfig.InstalledDir))
 	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_INSTALL_PREFIX=%s", c.PortConfig.PackageDir))
@@ -41,19 +36,37 @@ func (c cmake) Configure(buildType string) error {
 	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_C_FLAGS_INIT=--sysroot=%s", c.PortConfig.RootFS))
 	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_CXX_FLAGS_INIT=--sysroot=%s", c.PortConfig.RootFS))
 
-	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH=%s", rootPaths))
+	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH=%s",
+		strings.Join([]string{c.PortConfig.RootFS, c.PortConfig.InstalledDir}, string(os.PathListSeparator))))
 	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=%s", "NEVER"))
 	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=%s", "ONLY"))
 	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=%s", "ONLY"))
 	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=%s", "ONLY"))
 
 	// Append 'CMAKE_BUILD_TYPE' if not contains it.
-	containBuildType := slices.ContainsFunc(c.Arguments, func(arg string) bool {
+	if !slices.ContainsFunc(c.Arguments, func(arg string) bool {
 		return strings.Contains(arg, "CMAKE_BUILD_TYPE")
-	})
-	if !containBuildType {
+	}) {
 		buildType = c.formatBuildType(buildType)
 		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_BUILD_TYPE=%s", buildType))
+	}
+
+	// Override library type if specified.
+	if c.BuildConfig.LibraryType != "" {
+		c.Arguments = slices.DeleteFunc(c.Arguments, func(element string) bool {
+			return strings.Contains(element, "BUILD_SHARED_LIBS") ||
+				strings.Contains(element, "BUILD_STATIC_LIBS")
+		})
+
+		switch c.BuildConfig.LibraryType {
+		case "static":
+			c.Arguments = append(c.Arguments, "-DBUILD_STATIC_LIBS=ON")
+			c.Arguments = append(c.Arguments, "-DBUILD_SHARED_LIBS=OFF")
+
+		case "shared":
+			c.Arguments = append(c.Arguments, "-DBUILD_SHARED_LIBS=ON")
+			c.Arguments = append(c.Arguments, "-DBUILD_STATIC_LIBS=OFF")
+		}
 	}
 
 	// Assemble args into a single command string.

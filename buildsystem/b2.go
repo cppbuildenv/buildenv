@@ -80,10 +80,8 @@ func (b b2) Build() error {
 	b.Arguments = append(b.Arguments, "toolset=gcc")
 	b.Arguments = append(b.Arguments, "cxxflags=--sysroot=%s", b.PortConfig.RootFS)
 	b.Arguments = append(b.Arguments, "linkflags=--sysroot=%s", b.PortConfig.RootFS)
-	b.Arguments = slices.DeleteFunc(b.Arguments, func(element string) bool {
-		return strings.HasPrefix(element, "--with-libraries") ||
-			strings.HasPrefix(element, "--without-libraries")
-	})
+
+	b.adjustForBuildInstall()
 
 	// Assemble script.
 	joinedArgs := strings.Join(b.Arguments, " ")
@@ -102,11 +100,7 @@ func (b b2) Build() error {
 }
 
 func (b b2) Install() error {
-	// Assemble script.
-	b.Arguments = slices.DeleteFunc(b.Arguments, func(element string) bool {
-		return strings.HasPrefix(element, "--with-libraries") ||
-			strings.HasPrefix(element, "--without-libraries")
-	})
+	b.adjustForBuildInstall()
 
 	// Assemble script.
 	joinedArgs := strings.Join(b.Arguments, " ")
@@ -122,4 +116,30 @@ func (b b2) Install() error {
 	}
 
 	return nil
+}
+
+func (b b2) adjustForBuildInstall() {
+	// During build and install, we don't need "--with-libraries" and "--without-libraries".
+	b.Arguments = slices.DeleteFunc(b.Arguments, func(element string) bool {
+		return strings.HasPrefix(element, "--with-libraries") ||
+			strings.HasPrefix(element, "--without-libraries")
+	})
+
+	// Override library type if specified.
+	if b.BuildConfig.LibraryType != "" {
+		b.Arguments = slices.DeleteFunc(b.Arguments, func(element string) bool {
+			return strings.HasPrefix(element, "link=") ||
+				strings.HasPrefix(element, "runtime-link=")
+		})
+
+		switch b.BuildConfig.LibraryType {
+		case "static":
+			b.Arguments = append(b.Arguments, "link=static")
+			b.Arguments = append(b.Arguments, "runtime-link=static")
+
+		case "shared":
+			b.Arguments = append(b.Arguments, "link=shared")
+			b.Arguments = append(b.Arguments, "runtime-link=shared")
+		}
+	}
 }

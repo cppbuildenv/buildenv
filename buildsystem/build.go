@@ -48,6 +48,7 @@ type patch struct {
 type BuildConfig struct {
 	Pattern     string   `json:"pattern"`
 	BuildTool   string   `json:"build_tool"`
+	LibraryType string   `json:"library_type"`
 	EnvVars     []string `json:"env_vars"`
 	Patches     patch    `json:"patches"`
 	Arguments   []string `json:"arguments"`

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -30,6 +31,26 @@ func (m makefiles) Configure(buildType string) error {
 
 	// Append common variables for cross compiling.
 	m.Arguments = append(m.Arguments, fmt.Sprintf("--prefix=%s", m.PortConfig.PackageDir))
+
+	// Override library type if specified.
+	if m.BuildConfig.LibraryType != "" {
+		m.Arguments = slices.DeleteFunc(m.Arguments, func(element string) bool {
+			return strings.Contains(element, "--enable-shared") ||
+				strings.Contains(element, "--disable-shared") ||
+				strings.Contains(element, "--enable-static") ||
+				strings.Contains(element, "--disable-static")
+		})
+
+		switch m.BuildConfig.LibraryType {
+		case "static":
+			m.Arguments = append(m.Arguments, "--enable-static")
+			m.Arguments = append(m.Arguments, "--disable-shared")
+
+		case "shared":
+			m.Arguments = append(m.Arguments, "--enable-shared")
+			m.Arguments = append(m.Arguments, "--disable-static")
+		}
+	}
 
 	// Replace placeholders with real paths.
 	for index, argument := range m.Arguments {
