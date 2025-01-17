@@ -12,10 +12,11 @@ import (
 )
 
 type Project struct {
-	Ports     []string `json:"ports"`
-	CMakeVars []string `json:"cmake_vars"`
-	EnvVars   []string `json:"env_vars"`
-	MicroVars []string `json:"micro_vars"`
+	Ports         []string                           `json:"ports"`
+	OverridePorts map[string]buildsystem.BuildConfig `json:"override_ports"`
+	CMakeVars     []string                           `json:"cmake_vars"`
+	EnvVars       []string                           `json:"env_vars"`
+	MicroVars     []string                           `json:"micro_vars"`
 
 	// Internal fields.
 	Name          string                    `json:"-"`

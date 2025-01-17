@@ -82,6 +82,9 @@ func (p *Port) Init(ctx Context, portPath string) error {
 	if len(p.BuildConfigs) > 0 {
 		for index := range p.BuildConfigs {
 			p.BuildConfigs[index].PortConfig = portConfig
+
+			// Merge project override ports.
+			p.mergeBuildConfig(&p.BuildConfigs[index], ctx.Project().OverridePorts)
 		}
 	}
 
@@ -259,6 +262,24 @@ func (p Port) Install(silentMode bool) error {
 	}
 
 	return nil
+}
+
+func (p *Port) mergeBuildConfig(portBuildConfig *buildsystem.BuildConfig, overrides map[string]buildsystem.BuildConfig) {
+	if config, ok := overrides[p.NameVersion()]; ok {
+		if config.LibraryType != "" {
+			portBuildConfig.LibraryType = config.LibraryType
+		}
+		if len(config.EnvVars) > 0 {
+			portBuildConfig.EnvVars = config.EnvVars
+		}
+		if config.Patches != nil {
+			portBuildConfig.Patches = config.Patches
+		}
+		if len(config.Arguments) > 0 {
+			portBuildConfig.Arguments = config.Arguments
+		}
+		portBuildConfig.Depedencies = config.Depedencies
+	}
 }
 
 func (p Port) MatchPattern(pattern string) bool {

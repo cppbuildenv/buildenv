@@ -50,7 +50,7 @@ type BuildConfig struct {
 	BuildTool   string   `json:"build_tool"`
 	LibraryType string   `json:"library_type"`
 	EnvVars     []string `json:"env_vars"`
-	Patches     patch    `json:"patches"`
+	Patches     *patch   `json:"patches"`
 	Arguments   []string `json:"arguments"`
 	Depedencies []string `json:"dependencies"`
 	CMakeConfig string   `json:"cmake_config"`
@@ -91,7 +91,7 @@ func (b BuildConfig) Clone(repoUrl, repoRef string) error {
 }
 
 func (b BuildConfig) Patch(repoRef string) error {
-	if len(b.Patches.Refers) == 0 {
+	if b.Patches == nil || len(b.Patches.Refers) == 0 {
 		return nil
 	}
 
