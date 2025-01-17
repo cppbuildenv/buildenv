@@ -58,7 +58,10 @@ func (p *Port) Init(ctx Context, portPath string) error {
 	p.installInfoFile = filepath.Join(Dirs.InstalledDir, "buildenv", "info", nameVersion+"@"+platformProject)
 
 	// Init build config with rootfs, toolchain info.
-	packageFolder := fmt.Sprintf("%s@%s@%s", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
+	buildFolder := filepath.Join(p.NameVersion(), ctx.Platform().Name+"@"+ctx.Project().Name+"@"+ctx.BuildType())
+	packageFolder := fmt.Sprintf("%s@%s@%s@%s", p.NameVersion(), ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
+	installedFolder := fmt.Sprintf("%s@%s@%s", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
+
 	portConfig := buildsystem.PortConfig{
 		SystemName:      ctx.SystemName(),
 		SystemProcessor: ctx.SystemProcessor(),
@@ -71,9 +74,9 @@ func (p *Port) Init(ctx Context, portPath string) error {
 		SourceFolder:    p.SourceFolder,
 		PortsDir:        Dirs.PortsDir,
 		SourceDir:       filepath.Join(Dirs.WorkspaceDir, "buildtrees", p.NameVersion(), "src"),
-		BuildDir:        filepath.Join(Dirs.WorkspaceDir, "buildtrees", p.NameVersion(), packageFolder),
-		PackageDir:      filepath.Join(Dirs.WorkspaceDir, "packages", p.NameVersion()+"@"+packageFolder),
-		InstalledDir:    filepath.Join(Dirs.InstalledDir, packageFolder),
+		BuildDir:        filepath.Join(Dirs.WorkspaceDir, "buildtrees", buildFolder),
+		PackageDir:      filepath.Join(Dirs.WorkspaceDir, "packages", packageFolder),
+		InstalledDir:    filepath.Join(Dirs.InstalledDir, installedFolder),
 	}
 
 	if len(p.BuildConfigs) > 0 {
