@@ -155,13 +155,6 @@ func (u uninstallCmd) uninstallPort(ctx config.Context, portNameVersion string) 
 		if err := u.removeFolderRecursively(filepath.Dir(packageDir)); err != nil {
 			return fmt.Errorf("cannot remove parent folder: %s", err)
 		}
-
-		// Remove build cache from buildtrees.
-		platformProject := fmt.Sprintf("%s@%s@%s", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
-		logPathPrefix := filepath.Join(port.NameVersion(), platformProject)
-		if err := u.removeBuildCache(logPathPrefix); err != nil {
-			return fmt.Errorf("cannot remove build cache: %s", err)
-		}
 	}
 
 	return nil
@@ -278,29 +271,6 @@ func (u uninstallCmd) removeFolderRecursively(path string) error {
 		}
 
 		return nil
-	}
-
-	return nil
-}
-
-func (u uninstallCmd) removeBuildCache(logNamePrefix string) error {
-	buildTrees := filepath.Join(config.Dirs.WorkspaceDir, "buildtrees")
-	buildCacheDir := filepath.Join(buildTrees, logNamePrefix)
-	configureLogPath := filepath.Join(buildTrees, logNamePrefix+"-configure.log")
-	buildLogPath := filepath.Join(buildTrees, logNamePrefix+"-build.log")
-	installLogPath := filepath.Join(buildTrees, logNamePrefix+"-install.log")
-
-	if err := os.RemoveAll(buildCacheDir); err != nil {
-		return fmt.Errorf("cannot remove build cache: %s", err)
-	}
-	if err := os.Remove(configureLogPath); err != nil {
-		return fmt.Errorf("cannot remove configure log: %s", err)
-	}
-	if err := os.Remove(buildLogPath); err != nil {
-		return fmt.Errorf("cannot remove build log: %s", err)
-	}
-	if err := os.Remove(installLogPath); err != nil {
-		return fmt.Errorf("cannot remove install log: %s", err)
 	}
 
 	return nil

@@ -201,6 +201,11 @@ func (p Port) Install(silentMode bool) error {
 		if installed {
 			installedFrom = fmt.Sprintf("cache [%s]", fromDir)
 		} else {
+			// Remove build cache from buildtrees.
+			platformProject := fmt.Sprintf("%s@%s@%s", p.ctx.Platform().Name, p.ctx.Project().Name, p.ctx.BuildType())
+			logPathPrefix := filepath.Join(p.NameVersion(), platformProject)
+			p.tryRemoveBuildCache(logPathPrefix)
+
 			// Install from source when cache not found.
 			if err := p.installFromSource(silentMode, matchedConfig); err != nil {
 				return err
@@ -414,4 +419,17 @@ func (p Port) downloadAndDeploy(url, installedDir, downloadedDir string) error {
 	}
 
 	return nil
+}
+
+func (p Port) tryRemoveBuildCache(logNamePrefix string) {
+	buildTrees := filepath.Join(Dirs.WorkspaceDir, "buildtrees")
+	buildCacheDir := filepath.Join(buildTrees, logNamePrefix)
+	configureLogPath := filepath.Join(buildTrees, logNamePrefix+"-configure.log")
+	buildLogPath := filepath.Join(buildTrees, logNamePrefix+"-build.log")
+	installLogPath := filepath.Join(buildTrees, logNamePrefix+"-install.log")
+
+	os.RemoveAll(buildCacheDir)
+	os.Remove(configureLogPath)
+	os.Remove(buildLogPath)
+	os.Remove(installLogPath)
 }
