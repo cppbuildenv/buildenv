@@ -85,7 +85,7 @@ func (r RootFS) CheckAndRepair(request VerifyRequest) error {
 	}
 
 	// Check and repair resource.
-	repair := fileio.NewResourceRepair(r.Url, archiveName, folderName, Dirs.ExtractedToolsDir, Dirs.DownloadRootDir)
+	repair := fileio.NewDownloadRepair(r.Url, archiveName, folderName, Dirs.ExtractedToolsDir, Dirs.DownloadedDir)
 	if err := repair.CheckAndRepair(); err != nil {
 		return err
 	}

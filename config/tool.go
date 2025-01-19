@@ -94,7 +94,7 @@ func (t Tool) CheckAndRepair(request VerifyRequest) error {
 	}
 
 	// Check and repair resource.
-	repair := fileio.NewResourceRepair(t.Url, archiveName, folderName, Dirs.ExtractedToolsDir, Dirs.DownloadRootDir)
+	repair := fileio.NewDownloadRepair(t.Url, archiveName, folderName, Dirs.ExtractedToolsDir, Dirs.DownloadedDir)
 	if err := repair.CheckAndRepair(); err != nil {
 		return err
 	}

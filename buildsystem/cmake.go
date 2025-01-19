@@ -25,6 +25,25 @@ func (c cmake) Configure(buildType string) error {
 		return err
 	}
 
+	// Some third-party's configure scripts is not exist in the source folder root.
+	c.PortConfig.SourceDir = filepath.Join(c.PortConfig.SourceDir, c.PortConfig.SourceFolder)
+
+	// Remove arguments that we want to override.
+	c.Arguments = slices.DeleteFunc(c.Arguments, func(element string) bool {
+		return strings.Contains(element, "-DCMAKE_PREFIX_PATH=") ||
+			strings.Contains(element, "-DCMAKE_INSTALL_PREFIX=") ||
+			strings.Contains(element, "-DCMAKE_POSITION_INDEPENDENT_CODE=") ||
+			strings.Contains(element, "-DCMAKE_SYSTEM_PROCESSOR=") ||
+			strings.Contains(element, "-DCMAKE_SYSTEM_NAME=") ||
+			strings.Contains(element, "-DCMAKE_C_FLAGS_INIT=") ||
+			strings.Contains(element, "-DCMAKE_CXX_FLAGS_INIT=") ||
+			strings.Contains(element, "-DCMAKE_FIND_ROOT_PATH=") ||
+			strings.Contains(element, "-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=") ||
+			strings.Contains(element, "-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=") ||
+			strings.Contains(element, "-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=") ||
+			strings.Contains(element, "-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=")
+	})
+
 	// Append extra global args.
 	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_PREFIX_PATH=%s", c.PortConfig.InstalledDir))
 	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_INSTALL_PREFIX=%s", c.PortConfig.PackageDir))
@@ -47,7 +66,7 @@ func (c cmake) Configure(buildType string) error {
 	if !slices.ContainsFunc(c.Arguments, func(arg string) bool {
 		return strings.Contains(arg, "CMAKE_BUILD_TYPE")
 	}) {
-		buildType = c.formatBuildType(buildType)
+		buildType = c.FormatBuildType(buildType)
 		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_BUILD_TYPE=%s", buildType))
 	}
 
@@ -71,8 +90,7 @@ func (c cmake) Configure(buildType string) error {
 
 	// Assemble args into a single command string.
 	joinedArgs := strings.Join(c.Arguments, " ")
-	sourceDir := filepath.Join(c.PortConfig.SourceDir, c.PortConfig.SourceFolder)
-	configure := fmt.Sprintf("cmake -S %s -B %s %s", sourceDir, c.PortConfig.BuildDir, joinedArgs)
+	configure := fmt.Sprintf("cmake -S %s -B %s %s", c.PortConfig.SourceDir, c.PortConfig.BuildDir, joinedArgs)
 
 	// Execute configure.
 	parentDir := filepath.Dir(c.PortConfig.BuildDir)
@@ -118,7 +136,7 @@ func (c cmake) Install() error {
 	return nil
 }
 
-func (c cmake) formatBuildType(buildType string) string {
+func (c cmake) FormatBuildType(buildType string) string {
 	switch strings.ToLower(buildType) {
 	case "release":
 		return "Release"

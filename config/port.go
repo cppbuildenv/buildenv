@@ -16,7 +16,7 @@ type BuildTool int
 type Port struct {
 	Url          string                    `json:"url"`
 	Name         string                    `json:"name"`
-	Version      string                    `json:"version"`
+	Revision     string                    `json:"revision"`
 	SourceFolder string                    `json:"source_folder,omitempty"`
 	BuildConfigs []buildsystem.BuildConfig `json:"build_configs"`
 
@@ -27,7 +27,7 @@ type Port struct {
 }
 
 func (p Port) NameVersion() string {
-	return p.Name + "@" + p.Version
+	return p.Name + "@" + p.Revision
 }
 
 func (p *Port) Init(ctx Context, portPath string) error {
@@ -70,9 +70,10 @@ func (p *Port) Init(ctx Context, portPath string) error {
 		ToolchainPrefix: ctx.ToolchainPrefix(),
 		JobNum:          ctx.JobNum(),
 		LibName:         p.Name,
-		LibVersion:      p.Version,
+		LibVersion:      p.Revision,
 		SourceFolder:    p.SourceFolder,
 		PortsDir:        Dirs.PortsDir,
+		DownloadedDir:   Dirs.DownloadedDir,
 		SourceDir:       filepath.Join(Dirs.WorkspaceDir, "buildtrees", p.NameVersion(), "src"),
 		BuildDir:        filepath.Join(Dirs.WorkspaceDir, "buildtrees", buildFolder),
 		PackageDir:      filepath.Join(Dirs.WorkspaceDir, "packages", packageFolder),
@@ -100,7 +101,7 @@ func (p *Port) Verify() error {
 		return fmt.Errorf("port.name is empty")
 	}
 
-	if p.Version == "" {
+	if p.Revision == "" {
 		return fmt.Errorf("port.version is empty")
 	}
 
@@ -352,7 +353,7 @@ func (p Port) installFromSource(silentMode bool, matchedConfig *buildsystem.Buil
 	}
 
 	// Check and repair current port.
-	if err := matchedConfig.Install(p.Url, p.Version, p.ctx.BuildType()); err != nil {
+	if err := matchedConfig.Install(p.Url, p.Revision, p.ctx.BuildType()); err != nil {
 		return err
 	}
 

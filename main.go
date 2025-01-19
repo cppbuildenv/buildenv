@@ -5,14 +5,26 @@ import (
 	"buildenv/cmd/menu"
 	"log"
 	"os"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 func main() {
-	// Clean environment variables.
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatalf("get home directory: %s", err)
+	}
+
+	// Clean environment.
 	os.Clearenv()
-	os.Setenv("PATH", "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin")
+
+	var paths []string
+	paths = append(paths, "/usr/local/bin")
+	paths = append(paths, "/usr/bin")
+	paths = append(paths, "/usr/sbin")
+	paths = append(paths, homeDir+"/.local/bin")
+	os.Setenv("PATH", strings.Join(paths, string(os.PathListSeparator)))
 
 	// Listen for cli request.
 	if handled := cli.Listen(); handled {

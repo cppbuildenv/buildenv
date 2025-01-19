@@ -12,6 +12,7 @@ import (
 func fixupPkgConfig(packageDir string) error {
 	pkgConfigShareDir := filepath.Join(packageDir, "share", "pkgconfig")
 	pkgConfigLibDir := filepath.Join(packageDir, "lib", "pkgconfig")
+	pkgConfigLib64Dir := filepath.Join(packageDir, "lib64", "pkgconfig")
 
 	// Move pkg-config files from shared dir to lib dir.
 	if fileio.PathExists(pkgConfigShareDir) {
@@ -40,19 +41,34 @@ func fixupPkgConfig(packageDir string) error {
 		}
 	}
 
-	// Fixup pkg-config files if exists.
-	if !fileio.PathExists(pkgConfigLibDir) {
-		return nil
+	// Fixup pkg-config files in `lib` if exists.
+	if fileio.PathExists(pkgConfigLibDir) {
+		entities, err := os.ReadDir(pkgConfigLibDir)
+		if err != nil {
+			return err
+		}
+		for _, entity := range entities {
+			if strings.HasSuffix(entity.Name(), ".pc") {
+				pkgPath := filepath.Join(pkgConfigLibDir, entity.Name())
+				if err := doFixupPkgConfig(pkgPath); err != nil {
+					return err
+				}
+			}
+		}
 	}
-	entities, err := os.ReadDir(pkgConfigLibDir)
-	if err != nil {
-		return err
-	}
-	for _, entity := range entities {
-		if strings.HasSuffix(entity.Name(), ".pc") {
-			pkgPath := filepath.Join(pkgConfigLibDir, entity.Name())
-			if err := doFixupPkgConfig(pkgPath); err != nil {
-				return err
+
+	// Fixup pkg-config files in `lib64` if exists.
+	if fileio.PathExists(pkgConfigLib64Dir) {
+		entities, err := os.ReadDir(pkgConfigLib64Dir)
+		if err != nil {
+			return err
+		}
+		for _, entity := range entities {
+			if strings.HasSuffix(entity.Name(), ".pc") {
+				pkgPath := filepath.Join(pkgConfigLib64Dir, entity.Name())
+				if err := doFixupPkgConfig(pkgPath); err != nil {
+					return err
+				}
 			}
 		}
 	}

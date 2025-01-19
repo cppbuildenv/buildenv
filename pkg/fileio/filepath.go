@@ -108,7 +108,42 @@ func CopyFile(src, dest string) error {
 	return nil
 }
 
-func MoveNestedFolderIfExist(filePath string) error {
+func RenameFile(src, dst string) error {
+	info, err := os.Lstat(src)
+	if err != nil {
+		return fmt.Errorf("failed to stat source: %v", err)
+	}
+
+	if info.Mode()&os.ModeSymlink != 0 {
+		target, err := os.Readlink(src)
+		if err != nil {
+			return fmt.Errorf("failed to read symlink: %v", err)
+		}
+
+		if err := os.MkdirAll(filepath.Dir(dst), os.ModeDir|os.ModePerm); err != nil {
+			return fmt.Errorf("failed to create directory for renaming symlink: %v", err)
+		}
+
+		if err := os.Symlink(target, dst); err != nil {
+			return fmt.Errorf("failed to create symlink: %v", err)
+		}
+	} else {
+		if err := os.MkdirAll(filepath.Dir(dst), os.ModeDir|os.ModePerm); err != nil {
+			return fmt.Errorf("failed to create directory for renaming file: %v", err)
+		}
+		if err := os.Rename(src, dst); err != nil {
+			return fmt.Errorf("failed to move file: %v", err)
+		}
+	}
+
+	if err := os.Remove(src); err != nil {
+		return fmt.Errorf("failed to remove source: %v", err)
+	}
+
+	return nil
+}
+
+func moveNestedFolderIfExist(filePath string) error {
 	// We assume the archive contains a single root folder, check if it has nested folder.
 	if nestedFolder := findNestedFolder(filePath); nestedFolder != "" {
 		// Move the entire nested folder to the parent directory

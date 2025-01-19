@@ -21,13 +21,14 @@ type PortConfig struct {
 	LibVersion      string // like: `4.4`
 
 	// Internal fields
-	PortsDir     string // ${buildenv}/ports
-	SourceDir    string // for example: ${buildenv}/buildtrees/ffmpeg/src
-	SourceFolder string // Some thirdpartys' source code is not in the root folder, so we need to specify it.
-	BuildDir     string // for example: ${buildenv}/buildtrees/ffmpeg/x86_64-linux-20.04-Release
-	PackageDir   string // ${buildenv}/packages/ffmpeg@n3.4.13-x86_64-linux-20.04-Release
-	InstalledDir string // for example: ${buildenv}/installed/x86_64-linux-20.04-Release
-	JobNum       int    // number of jobs to run in parallel
+	PortsDir      string // ${buildenv}/ports
+	DownloadedDir string // ${buildenv}/downloads
+	SourceDir     string // for example: ${buildenv}/buildtrees/ffmpeg/src
+	SourceFolder  string // Some thirdpartys' source code is not in the root folder, so we need to specify it.
+	BuildDir      string // for example: ${buildenv}/buildtrees/ffmpeg/x86_64-linux-20.04-Release
+	PackageDir    string // ${buildenv}/packages/ffmpeg@n3.4.13-x86_64-linux-20.04-Release
+	InstalledDir  string // for example: ${buildenv}/installed/x86_64-linux-20.04-Release
+	JobNum        int    // number of jobs to run in parallel
 }
 
 type BuildSystem interface {
@@ -46,14 +47,15 @@ type patch struct {
 }
 
 type BuildConfig struct {
-	Pattern     string   `json:"pattern"`
-	BuildTool   string   `json:"build_tool"`
-	LibraryType string   `json:"library_type"`
-	EnvVars     []string `json:"env_vars"`
-	Patches     *patch   `json:"patches"`
-	Arguments   []string `json:"arguments"`
-	Depedencies []string `json:"dependencies"`
-	CMakeConfig string   `json:"cmake_config"`
+	Pattern          string   `json:"pattern"`
+	BuildTool        string   `json:"build_tool"`
+	AutogenConfigure bool     `json:"autogen_configure"`
+	LibraryType      string   `json:"library_type"`
+	EnvVars          []string `json:"env_vars"`
+	Patches          *patch   `json:"patches"`
+	Arguments        []string `json:"arguments"`
+	Depedencies      []string `json:"dependencies"`
+	CMakeConfig      string   `json:"cmake_config"`
 
 	// Internal fields
 	buildSystem BuildSystem
@@ -73,18 +75,27 @@ func (b BuildConfig) Verify() error {
 	return nil
 }
 
-func (b BuildConfig) Clone(repoUrl, repoRef string) error {
+func (b BuildConfig) Clone(url, revision string) error {
 	// Clone repo only when source dir not exists.
 	if !fileio.PathExists(b.PortConfig.SourceDir) {
-		var commands []string
-		commands = append(commands, fmt.Sprintf("git clone --branch %s %s %s", repoRef, repoUrl, b.PortConfig.SourceDir))
+		switch {
+		case strings.HasSuffix(url, ".git"):
+			// Clone repo.
+			command := fmt.Sprintf("git clone --branch %s %s %s", revision, url, b.PortConfig.SourceDir)
+			title := fmt.Sprintf("[clone %s]", b.PortConfig.LibName)
+			if err := execute(title, command, ""); err != nil {
+				return err
+			}
 
-		// Execute clone command.
-		commandLine := strings.Join(commands, " && ")
-		title := fmt.Sprintf("[clone %s]", b.PortConfig.LibName)
-		if err := execute(title, commandLine, ""); err != nil {
-			return err
+		default:
+			// Check and repair resource.
+			archiveName := filepath.Base(url)
+			repair := fileio.NewDownloadRepair(url, archiveName, ".", b.PortConfig.SourceDir, b.PortConfig.DownloadedDir)
+			if err := repair.CheckAndRepair(); err != nil {
+				return err
+			}
 		}
+
 	}
 
 	return nil

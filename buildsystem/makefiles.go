@@ -29,6 +29,9 @@ func (m makefiles) Configure(buildType string) error {
 		return err
 	}
 
+	// Some third-party's configure scripts is not exist in the source folder root.
+	m.PortConfig.SourceDir = filepath.Join(m.PortConfig.SourceDir, m.PortConfig.SourceFolder)
+
 	// Append common variables for cross compiling.
 	m.Arguments = append(m.Arguments, fmt.Sprintf("--prefix=%s", m.PortConfig.PackageDir))
 
@@ -75,9 +78,30 @@ func (m makefiles) Configure(buildType string) error {
 		}
 	}
 
+	// Execute autogen.
+	if m.BuildConfig.AutogenConfigure {
+		autogen := fmt.Sprintf("%s/autogen.sh", m.PortConfig.SourceDir)
+		parentDir := filepath.Dir(m.PortConfig.BuildDir)
+		fileName := filepath.Base(m.PortConfig.BuildDir) + "-autogen.log"
+		configureLogPath := filepath.Join(parentDir, fileName)
+		title := fmt.Sprintf("[configure %s]", m.PortConfig.LibName)
+		if err := execute(title, autogen, configureLogPath); err != nil {
+			return err
+		}
+	}
+
+	// Find `configure` or `Configure`.
+	var configureFile string
+	if _, err := os.Stat(m.PortConfig.SourceDir + "/configure"); err == nil {
+		configureFile = "configure"
+	}
+	if _, err := os.Stat(m.PortConfig.SourceDir + "/Configure"); err == nil {
+		configureFile = "Configure"
+	}
+
 	// Join args into a string.
 	joinedArgs := strings.Join(m.Arguments, " ")
-	configure := fmt.Sprintf("%s/configure %s", m.PortConfig.SourceDir, joinedArgs)
+	configure := fmt.Sprintf("%s/%s %s", m.PortConfig.SourceDir, configureFile, joinedArgs)
 
 	// Execute configure.
 	parentDir := filepath.Dir(m.PortConfig.BuildDir)

@@ -45,7 +45,7 @@ func (t *Toolchain) Verify() error {
 	}
 
 	switch {
-	// Web resource file would be extracted to specified path, so path cannot be empty.
+	// Web resource file would be extracted to specified path, so path can not be empty.
 	case strings.HasPrefix(t.Url, "http"), strings.HasPrefix(t.Url, "ftp"):
 		if t.Path == "" {
 			return fmt.Errorf("toolchain.path is empty")
@@ -176,7 +176,7 @@ func (t Toolchain) CheckAndRepair(request VerifyRequest) error {
 	}
 
 	// Check and repair resource.
-	repair := fileio.NewResourceRepair(t.Url, archiveName, folderName, Dirs.ExtractedToolsDir, Dirs.DownloadRootDir)
+	repair := fileio.NewDownloadRepair(t.Url, archiveName, folderName, Dirs.ExtractedToolsDir, Dirs.DownloadedDir)
 	if err := repair.CheckAndRepair(); err != nil {
 		return err
 	}
