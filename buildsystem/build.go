@@ -47,15 +47,14 @@ type patch struct {
 }
 
 type BuildConfig struct {
-	Pattern          string   `json:"pattern"`
-	BuildTool        string   `json:"build_tool"`
-	AutogenConfigure bool     `json:"autogen_configure"`
-	LibraryType      string   `json:"library_type"`
-	EnvVars          []string `json:"env_vars"`
-	Patches          *patch   `json:"patches"`
-	Arguments        []string `json:"arguments"`
-	Depedencies      []string `json:"dependencies"`
-	CMakeConfig      string   `json:"cmake_config"`
+	Pattern     string   `json:"pattern"`
+	BuildTool   string   `json:"build_tool"`
+	LibraryType string   `json:"library_type"`
+	EnvVars     []string `json:"env_vars"`
+	Patches     *patch   `json:"patches"`
+	Arguments   []string `json:"arguments"`
+	Depedencies []string `json:"dependencies"`
+	CMakeConfig string   `json:"cmake_config"`
 
 	// Internal fields
 	buildSystem BuildSystem

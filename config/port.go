@@ -94,15 +94,15 @@ func (p *Port) Init(ctx Context, portPath string) error {
 
 func (p *Port) Verify() error {
 	if p.Url == "" {
-		return fmt.Errorf("port.url is empty")
+		return fmt.Errorf("url of %s is empty", p.Name)
 	}
 
 	if p.Name == "" {
-		return fmt.Errorf("port.name is empty")
+		return fmt.Errorf("name of %s is empty", p.Name)
 	}
 
 	if p.Revision == "" {
-		return fmt.Errorf("port.version is empty")
+		return fmt.Errorf("revision of %s is empty", p.Name)
 	}
 
 	for _, config := range p.BuildConfigs {

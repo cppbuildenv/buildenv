@@ -25,10 +25,6 @@ func (m makefiles) Configure(buildType string) error {
 		return err
 	}
 
-	if err := os.Chdir(m.PortConfig.BuildDir); err != nil {
-		return err
-	}
-
 	// Some third-party's configure scripts is not exist in the source folder root.
 	m.PortConfig.SourceDir = filepath.Join(m.PortConfig.SourceDir, m.PortConfig.SourceFolder)
 
@@ -79,15 +75,23 @@ func (m makefiles) Configure(buildType string) error {
 	}
 
 	// Execute autogen.
-	if m.BuildConfig.AutogenConfigure {
-		autogen := fmt.Sprintf("%s/autogen.sh", m.PortConfig.SourceDir)
+	if _, err := os.Stat(m.PortConfig.SourceDir + "/autogen.sh"); err == nil {
+		if err := os.Chdir(m.PortConfig.SourceDir); err != nil {
+			return err
+		}
+
 		parentDir := filepath.Dir(m.PortConfig.BuildDir)
 		fileName := filepath.Base(m.PortConfig.BuildDir) + "-autogen.log"
 		configureLogPath := filepath.Join(parentDir, fileName)
-		title := fmt.Sprintf("[configure %s]", m.PortConfig.LibName)
-		if err := execute(title, autogen, configureLogPath); err != nil {
+		title := fmt.Sprintf("[autogen %s]", m.PortConfig.LibName)
+		if err := execute(title, "./autogen.sh", configureLogPath); err != nil {
 			return err
 		}
+	}
+
+	// Make sure create build cache in build dir.
+	if err := os.Chdir(m.PortConfig.BuildDir); err != nil {
+		return err
 	}
 
 	// Find `configure` or `Configure`.
