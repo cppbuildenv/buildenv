@@ -30,7 +30,7 @@ func (d DownloadRepair) CheckAndRepair() error {
 	case strings.HasPrefix(d.url, "http"), strings.HasPrefix(d.url, "ftp"):
 		downloaded, err := d.download(d.url, d.archiveName)
 		if err != nil {
-			return nil
+			return err
 		}
 
 		// Extract archive file.
