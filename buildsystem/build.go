@@ -32,6 +32,7 @@ type PortConfig struct {
 }
 
 type BuildSystem interface {
+	GetLogPath(suffix string) string
 	Clone(repoUrl, repoRef string) error
 	SourceEnvs() error
 	Patch(repoRef string) error
@@ -74,6 +75,12 @@ func (b BuildConfig) Verify() error {
 	return nil
 }
 
+func (b BuildConfig) GetLogPath(suffix string) string {
+	parentDir := filepath.Dir(b.PortConfig.BuildDir)
+	fileName := filepath.Base(b.PortConfig.BuildDir) + fmt.Sprintf("-%s.log", suffix)
+	return filepath.Join(parentDir, fileName)
+}
+
 func (b BuildConfig) Clone(url, version string) error {
 	// Clone repo only when source dir not exists.
 	if !fileio.PathExists(b.PortConfig.SourceDir) {
@@ -82,7 +89,7 @@ func (b BuildConfig) Clone(url, version string) error {
 			// Clone repo.
 			command := fmt.Sprintf("git clone --branch %s %s %s", version, url, b.PortConfig.SourceDir)
 			title := fmt.Sprintf("[clone %s]", b.PortConfig.LibName)
-			if err := execute(title, command, ""); err != nil {
+			if err := NewExecutor(title, command).Execute(); err != nil {
 				return err
 			}
 

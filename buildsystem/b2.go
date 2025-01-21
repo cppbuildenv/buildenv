@@ -38,11 +38,9 @@ func (b *b2) Configure(buildType string) error {
 	configure := fmt.Sprintf("./bootstrap.sh %s", joinedArgs)
 
 	// Execute configure.
-	parentDir := filepath.Dir(b.PortConfig.BuildDir)
-	fileName := filepath.Base(b.PortConfig.BuildDir) + "-configure.log"
-	configureLogPath := filepath.Join(parentDir, fileName)
+	logPath := b.GetLogPath("configure")
 	title := fmt.Sprintf("[configure %s]", b.PortConfig.LibName)
-	if err := execute(title, configure, configureLogPath); err != nil {
+	if err := NewExecutor(title, configure).WithLogPath(logPath).Execute(); err != nil {
 		return err
 	}
 
@@ -90,11 +88,9 @@ func (b b2) Build() error {
 	command := fmt.Sprintf("./b2 %s -j %d", joinedArgs, b.PortConfig.JobNum)
 
 	// Execute build.
-	parentDir := filepath.Dir(b.PortConfig.BuildDir)
-	fileName := filepath.Base(b.PortConfig.BuildDir) + "-build.log"
-	buildLogPath := filepath.Join(parentDir, fileName)
+	logPath := b.GetLogPath("build")
 	title := fmt.Sprintf("[build %s]", b.PortConfig.LibName)
-	if err := execute(title, command, buildLogPath); err != nil {
+	if err := NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
 		return err
 	}
 
@@ -109,11 +105,9 @@ func (b b2) Install() error {
 	command := fmt.Sprintf("./b2 install %s", joinedArgs)
 
 	// Execute install.
-	parentDir := filepath.Dir(b.PortConfig.BuildDir)
-	fileName := filepath.Base(b.PortConfig.BuildDir) + "-install.log"
-	installLogPath := filepath.Join(parentDir, fileName)
+	logPath := b.GetLogPath("install")
 	title := fmt.Sprintf("[install %s]", b.PortConfig.LibName)
-	if err := execute(title, command, installLogPath); err != nil {
+	if err := NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
 		return err
 	}
 

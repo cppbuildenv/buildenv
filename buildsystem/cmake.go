@@ -66,7 +66,7 @@ func (c cmake) Configure(buildType string) error {
 	if !slices.ContainsFunc(c.Arguments, func(arg string) bool {
 		return strings.Contains(arg, "CMAKE_BUILD_TYPE")
 	}) {
-		buildType = c.FormatBuildType(buildType)
+		buildType = c.formatBuildType(buildType)
 		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_BUILD_TYPE=%s", buildType))
 	}
 
@@ -93,11 +93,9 @@ func (c cmake) Configure(buildType string) error {
 	configure := fmt.Sprintf("cmake -S %s -B %s %s", c.PortConfig.SourceDir, c.PortConfig.BuildDir, joinedArgs)
 
 	// Execute configure.
-	parentDir := filepath.Dir(c.PortConfig.BuildDir)
-	fileName := filepath.Base(c.PortConfig.BuildDir) + "-configure.log"
-	configureLogPath := filepath.Join(parentDir, fileName)
+	logPath := c.GetLogPath("configure")
 	title := fmt.Sprintf("[configure %s]", c.PortConfig.LibName)
-	if err := execute(title, configure, configureLogPath); err != nil {
+	if err := NewExecutor(title, configure).WithLogPath(logPath).Execute(); err != nil {
 		return err
 	}
 
@@ -109,11 +107,9 @@ func (c cmake) Build() error {
 	command := fmt.Sprintf("cmake --build %s --parallel %d", c.PortConfig.BuildDir, c.PortConfig.JobNum)
 
 	// Execute build.
-	parentDir := filepath.Dir(c.PortConfig.BuildDir)
-	fileName := filepath.Base(c.PortConfig.BuildDir) + "-build.log"
-	buildLogPath := filepath.Join(parentDir, fileName)
+	logPath := c.GetLogPath("build")
 	title := fmt.Sprintf("[build %s]", c.PortConfig.LibName)
-	if err := execute(title, command, buildLogPath); err != nil {
+	if err := NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
 		return err
 	}
 
@@ -125,18 +121,16 @@ func (c cmake) Install() error {
 	command := fmt.Sprintf("cmake --install %s", c.PortConfig.BuildDir)
 
 	// Execute install.
-	parentDir := filepath.Dir(c.PortConfig.BuildDir)
-	fileName := filepath.Base(c.PortConfig.BuildDir) + "-install.log"
-	installLogPath := filepath.Join(parentDir, fileName)
+	logPath := c.GetLogPath("install")
 	title := fmt.Sprintf("[install %s]", c.PortConfig.LibName)
-	if err := execute(title, command, installLogPath); err != nil {
+	if err := NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (c cmake) FormatBuildType(buildType string) string {
+func (c cmake) formatBuildType(buildType string) string {
 	switch strings.ToLower(buildType) {
 	case "release":
 		return "Release"

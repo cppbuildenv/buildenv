@@ -90,9 +90,9 @@ func (m makefiles) Configure(buildType string) error {
 
 		parentDir := filepath.Dir(m.PortConfig.BuildDir)
 		fileName := filepath.Base(m.PortConfig.BuildDir) + "-autogen.log"
-		configureLogPath := filepath.Join(parentDir, fileName)
+		logPath := filepath.Join(parentDir, fileName)
 		title := fmt.Sprintf("[autogen %s]", m.PortConfig.LibName)
-		if err := execute(title, "./autogen.sh", configureLogPath); err != nil {
+		if err := NewExecutor(title, "./autogen.sh").WithLogPath(logPath).Execute(); err != nil {
 			return err
 		}
 	}
@@ -116,11 +116,9 @@ func (m makefiles) Configure(buildType string) error {
 	configure := fmt.Sprintf("%s/%s %s", m.PortConfig.SourceDir, configureFile, joinedArgs)
 
 	// Execute configure.
-	parentDir := filepath.Dir(m.PortConfig.BuildDir)
-	fileName := filepath.Base(m.PortConfig.BuildDir) + "-configure.log"
-	configureLogPath := filepath.Join(parentDir, fileName)
+	logPath := m.GetLogPath("configure")
 	title := fmt.Sprintf("[configure %s]", m.PortConfig.LibName)
-	if err := execute(title, configure, configureLogPath); err != nil {
+	if err := NewExecutor(title, configure).WithLogPath(logPath).Execute(); err != nil {
 		return err
 	}
 
@@ -132,11 +130,9 @@ func (m makefiles) Build() error {
 	command := fmt.Sprintf("make -j %d", m.PortConfig.JobNum)
 
 	// Execute build.
-	parentDir := filepath.Dir(m.PortConfig.BuildDir)
-	fileName := filepath.Base(m.PortConfig.BuildDir) + "-build.log"
-	buildLogPath := filepath.Join(parentDir, fileName)
+	logPath := m.GetLogPath("build")
 	title := fmt.Sprintf("[build %s]", m.PortConfig.LibName)
-	if err := execute(title, command, buildLogPath); err != nil {
+	if err := NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
 		return err
 	}
 
@@ -148,11 +144,9 @@ func (m makefiles) Install() error {
 	command := "make install"
 
 	// Execute install.
-	parentDir := filepath.Dir(m.PortConfig.BuildDir)
-	fileName := filepath.Base(m.PortConfig.BuildDir) + "-install.log"
-	installLogPath := filepath.Join(parentDir, fileName)
+	logPath := m.GetLogPath("install")
 	title := fmt.Sprintf("[install %s]", m.PortConfig.LibName)
-	if err := execute(title, command, installLogPath); err != nil {
+	if err := NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
 		return err
 	}
 

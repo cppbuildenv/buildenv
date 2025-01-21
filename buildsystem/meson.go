@@ -66,11 +66,9 @@ func (m meson) Configure(buildType string) error {
 	configure := fmt.Sprintf("meson setup %s %s", m.PortConfig.BuildDir, joinedArgs)
 
 	// Execute configure.
-	parentDir := filepath.Dir(m.PortConfig.BuildDir)
-	fileName := filepath.Base(m.PortConfig.BuildDir) + "-configure.log"
-	configureLogPath := filepath.Join(parentDir, fileName)
+	logPath := m.GetLogPath("configure")
 	title := fmt.Sprintf("[configure %s]", m.PortConfig.LibName)
-	if err := execute(title, configure, configureLogPath); err != nil {
+	if err := NewExecutor(title, configure).WithLogPath(logPath).Execute(); err != nil {
 		return err
 	}
 
@@ -82,11 +80,9 @@ func (m meson) Build() error {
 	command := fmt.Sprintf("ninja -C %s -j %d", m.PortConfig.BuildDir, m.PortConfig.JobNum)
 
 	// Execute build.
-	parentDir := filepath.Dir(m.PortConfig.BuildDir)
-	fileName := filepath.Base(m.PortConfig.BuildDir) + "-build.log"
-	buildLogPath := filepath.Join(parentDir, fileName)
+	logPath := m.GetLogPath("build")
 	title := fmt.Sprintf("[build %s]", m.PortConfig.LibName)
-	if err := execute(title, command, buildLogPath); err != nil {
+	if err := NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
 		return err
 	}
 
@@ -98,11 +94,9 @@ func (m meson) Install() error {
 	command := fmt.Sprintf("ninja -C %s install", m.PortConfig.BuildDir)
 
 	// Execute install.
-	parentDir := filepath.Dir(m.PortConfig.BuildDir)
-	fileName := filepath.Base(m.PortConfig.BuildDir) + "-install.log"
-	installLogPath := filepath.Join(parentDir, fileName)
+	logPath := m.GetLogPath("install")
 	title := fmt.Sprintf("[install %s]", m.PortConfig.LibName)
-	if err := execute(title, command, installLogPath); err != nil {
+	if err := NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
 		return err
 	}
 

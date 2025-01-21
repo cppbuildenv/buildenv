@@ -1,14 +1,11 @@
 package buildsystem
 
 import (
-	"buildenv/pkg/color"
 	"bytes"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 )
 
@@ -27,7 +24,7 @@ func SyncRepo(sourceDir, repoRef, libName string) error {
 	// Execute clone command.
 	commandLine := strings.Join(commands, " && ")
 	title := fmt.Sprintf("[clone %s]", libName)
-	if err := execute(title, commandLine, ""); err != nil {
+	if err := NewExecutor(title, commandLine).Execute(); err != nil {
 		return err
 	}
 
@@ -50,7 +47,7 @@ func cherryPick(title, sourceDir string, patches []string) error {
 	}
 
 	commandLine := strings.Join(commands, " && ")
-	if err := execute(title, commandLine, ""); err != nil {
+	if err := NewExecutor(title, commandLine).Execute(); err != nil {
 		return err
 	}
 
@@ -73,7 +70,7 @@ func rebase(title, sourceDir, repoRef string, rebaseRefs []string) error {
 	}
 
 	commandLine := strings.Join(commands, " && ")
-	if err := execute(title, commandLine, ""); err != nil {
+	if err := NewExecutor(title, commandLine).Execute(); err != nil {
 		return err
 	}
 
@@ -86,7 +83,8 @@ func cleanRepo(repoDir string) error {
 	}
 
 	title := fmt.Sprintf("[clean %s]", filepath.Base(repoDir))
-	if err := execute(title, "git reset --hard && git clean -xfd", ""); err != nil {
+	commandLine := "git reset --hard && git clean -xfd"
+	if err := NewExecutor(title, commandLine).Execute(); err != nil {
 		return fmt.Errorf("failed to clean source: %v", err)
 	}
 
@@ -106,51 +104,4 @@ func IsRepoModified(repoDir string) (bool, error) {
 
 	status := strings.TrimSpace(out.String())
 	return status != "", nil
-}
-
-func execute(title, command, logPath string) error {
-	fmt.Print(color.Sprintf(color.Blue, "\n%s: %s\n\n", title, command))
-
-	// Create command for windows and linux.
-	var cmd *exec.Cmd
-	if runtime.GOOS == "windows" {
-		cmd = exec.Command("cmd", "/c", command)
-	} else {
-		cmd = exec.Command("bash", "-c", command)
-	}
-	cmd.Env = os.Environ()
-
-	// Create log file if log path specified.
-	if logPath != "" {
-		if err := os.MkdirAll(filepath.Dir(logPath), os.ModeDir|os.ModePerm); err != nil {
-			return err
-		}
-		logFile, err := os.Create(logPath)
-		if err != nil {
-			return err
-		}
-		defer logFile.Close()
-
-		// Write env variables to log file.
-		var buffer bytes.Buffer
-		for _, envVar := range cmd.Env {
-			buffer.WriteString(envVar + "\n")
-		}
-		io.WriteString(logFile, fmt.Sprintf("Environment:\n%s\n", buffer.String()))
-
-		// Write command summary as header content of file.
-		io.WriteString(logFile, fmt.Sprintf("%s: %s\n\n", title, command))
-
-		cmd.Stdout = io.MultiWriter(os.Stdout, logFile)
-		cmd.Stderr = io.MultiWriter(os.Stderr, logFile)
-	} else {
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stdout
-	}
-
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
 }
