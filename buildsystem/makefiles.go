@@ -72,6 +72,14 @@ func (m makefiles) Configure(buildType string) error {
 		if strings.Contains(argument, "${CROSS_PREFIX}") {
 			m.Arguments[index] = strings.ReplaceAll(argument, "${CROSS_PREFIX}", m.PortConfig.ToolchainPrefix)
 		}
+
+		if strings.Contains(argument, "${INSTALLED_DIR}") {
+			m.Arguments[index] = strings.ReplaceAll(argument, "${INSTALLED_DIR}", m.PortConfig.InstalledDir)
+		}
+	}
+
+	if err := os.Chdir(m.PortConfig.BuildDir); err != nil {
+		return err
 	}
 
 	// Execute autogen.

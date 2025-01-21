@@ -74,13 +74,13 @@ func (b BuildConfig) Verify() error {
 	return nil
 }
 
-func (b BuildConfig) Clone(url, revision string) error {
+func (b BuildConfig) Clone(url, version string) error {
 	// Clone repo only when source dir not exists.
 	if !fileio.PathExists(b.PortConfig.SourceDir) {
 		switch {
 		case strings.HasSuffix(url, ".git"):
 			// Clone repo.
-			command := fmt.Sprintf("git clone --branch %s %s %s", revision, url, b.PortConfig.SourceDir)
+			command := fmt.Sprintf("git clone --branch %s %s %s", version, url, b.PortConfig.SourceDir)
 			title := fmt.Sprintf("[clone %s]", b.PortConfig.LibName)
 			if err := execute(title, command, ""); err != nil {
 				return err
@@ -94,7 +94,6 @@ func (b BuildConfig) Clone(url, revision string) error {
 				return err
 			}
 		}
-
 	}
 
 	return nil
@@ -136,6 +135,8 @@ func (b BuildConfig) SourceEnvs() error {
 
 		key := strings.TrimSpace(item[:index])
 		value := strings.TrimSpace(item[index+1:])
+		value = strings.ReplaceAll(value, "${INSTALLED_DIR}", b.PortConfig.InstalledDir)
+		value = strings.ReplaceAll(value, "${SYSROOT}", b.PortConfig.RootFS)
 
 		if err := b.validateEnv(key); err != nil {
 			return err
