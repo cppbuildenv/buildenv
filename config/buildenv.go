@@ -88,6 +88,7 @@ func (b *buildenv) Verify(request VerifyRequest) error {
 	os.Setenv("CXXFLAGS", fmt.Sprintf("-I%s/include", installedDir)+" "+os.Getenv("CXXFLAGS"))
 	os.Setenv("LDFLAGS", fmt.Sprintf("-L%s/lib", installedDir)+" "+os.Getenv("LDFLAGS"))
 	os.Setenv("PKG_CONFIG_PATH", installedDir+"/lib/pkgconfig"+string(os.PathListSeparator)+os.Getenv("PKG_CONFIG_PATH"))
+
 	// We assume that pkg-config's sysroot is installedDir and change all pc file's prefix as "/".
 	os.Setenv("PKG_CONFIG_SYSROOT_DIR", installedDir)
 

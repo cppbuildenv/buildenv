@@ -147,6 +147,10 @@ func (b BuildConfig) SourceEnvs() error {
 		value = strings.ReplaceAll(value, "${CFLAGS}", os.Getenv("CFLAGS"))
 		value = strings.ReplaceAll(value, "${CXXFLAGS}", os.Getenv("CXXFLAGS"))
 
+		if key == "PKG_CONFIG_PATH" {
+			value = fmt.Sprintf("%s%s%s", value, string(os.PathListSeparator), os.Getenv("PKG_CONFIG_PATH"))
+		}
+
 		if err := b.validateEnv(key); err != nil {
 			return err
 		}
