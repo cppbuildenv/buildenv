@@ -17,6 +17,9 @@ type makefiles struct {
 }
 
 func (m makefiles) Configure(buildType string) error {
+	// Replace placeholders with real paths and values.
+	m.replaceHolders()
+
 	// Remove build dir and create it for configure.
 	if err := os.RemoveAll(m.PortConfig.BuildDir); err != nil {
 		return err
@@ -48,33 +51,6 @@ func (m makefiles) Configure(buildType string) error {
 		case "shared":
 			m.Arguments = append(m.Arguments, "--enable-shared")
 			m.Arguments = append(m.Arguments, "--disable-static")
-		}
-	}
-
-	// Replace placeholders with real paths.
-	for index, argument := range m.Arguments {
-		if strings.Contains(argument, "${HOST}") {
-			m.Arguments[index] = strings.ReplaceAll(argument, "${HOST}", m.PortConfig.Host)
-		}
-
-		if strings.Contains(argument, "${SYSTEM_NAME}") {
-			m.Arguments[index] = strings.ReplaceAll(argument, "${SYSTEM_NAME}", strings.ToLower(m.PortConfig.SystemName))
-		}
-
-		if strings.Contains(argument, "${SYSTEM_PROCESSOR}") {
-			m.Arguments[index] = strings.ReplaceAll(argument, "${SYSTEM_PROCESSOR}", m.PortConfig.SystemProcessor)
-		}
-
-		if strings.Contains(argument, "${SYSROOT}") {
-			m.Arguments[index] = strings.ReplaceAll(argument, "${SYSROOT}", m.PortConfig.RootFS)
-		}
-
-		if strings.Contains(argument, "${CROSS_PREFIX}") {
-			m.Arguments[index] = strings.ReplaceAll(argument, "${CROSS_PREFIX}", m.PortConfig.ToolchainPrefix)
-		}
-
-		if strings.Contains(argument, "${INSTALLED_DIR}") {
-			m.Arguments[index] = strings.ReplaceAll(argument, "${INSTALLED_DIR}", m.PortConfig.InstalledDir)
 		}
 	}
 

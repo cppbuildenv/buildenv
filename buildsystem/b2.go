@@ -19,6 +19,9 @@ type b2 struct {
 }
 
 func (b *b2) Configure(buildType string) error {
+	// Replace placeholders with real paths and values.
+	b.replaceHolders()
+
 	// Clean repo source before configuration.
 	if err := cleanRepo(b.PortConfig.SourceDir); err != nil {
 		return err

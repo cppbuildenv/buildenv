@@ -17,6 +17,9 @@ type cmake struct {
 }
 
 func (c cmake) Configure(buildType string) error {
+	// Replace placeholders with real paths and values.
+	c.replaceHolders()
+
 	// Remove build dir and create it for configure.
 	if err := os.RemoveAll(c.PortConfig.BuildDir); err != nil {
 		return err

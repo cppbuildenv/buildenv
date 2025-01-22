@@ -144,6 +144,8 @@ func (b BuildConfig) SourceEnvs() error {
 		value := strings.TrimSpace(item[index+1:])
 		value = strings.ReplaceAll(value, "${INSTALLED_DIR}", b.PortConfig.InstalledDir)
 		value = strings.ReplaceAll(value, "${SYSROOT}", b.PortConfig.RootFS)
+		value = strings.ReplaceAll(value, "${CFLAGS}", os.Getenv("CFLAGS"))
+		value = strings.ReplaceAll(value, "${CXXFLAGS}", os.Getenv("CXXFLAGS"))
 
 		if err := b.validateEnv(key); err != nil {
 			return err
@@ -153,6 +155,35 @@ func (b BuildConfig) SourceEnvs() error {
 	}
 
 	return nil
+}
+
+// ReplaceHolders Replace placeholders with real paths and values.
+func (b *BuildConfig) replaceHolders() {
+	for index, argument := range b.Arguments {
+		if strings.Contains(argument, "${HOST}") {
+			b.Arguments[index] = strings.ReplaceAll(argument, "${HOST}", b.PortConfig.Host)
+		}
+
+		if strings.Contains(argument, "${SYSTEM_NAME}") {
+			b.Arguments[index] = strings.ReplaceAll(argument, "${SYSTEM_NAME}", strings.ToLower(b.PortConfig.SystemName))
+		}
+
+		if strings.Contains(argument, "${SYSTEM_PROCESSOR}") {
+			b.Arguments[index] = strings.ReplaceAll(argument, "${SYSTEM_PROCESSOR}", b.PortConfig.SystemProcessor)
+		}
+
+		if strings.Contains(argument, "${SYSROOT}") {
+			b.Arguments[index] = strings.ReplaceAll(argument, "${SYSROOT}", b.PortConfig.RootFS)
+		}
+
+		if strings.Contains(argument, "${CROSS_PREFIX}") {
+			b.Arguments[index] = strings.ReplaceAll(argument, "${CROSS_PREFIX}", b.PortConfig.ToolchainPrefix)
+		}
+
+		if strings.Contains(argument, "${INSTALLED_DIR}") {
+			b.Arguments[index] = strings.ReplaceAll(argument, "${INSTALLED_DIR}", b.PortConfig.InstalledDir)
+		}
+	}
 }
 
 func (b *BuildConfig) Install(url, version, buildType string) error {

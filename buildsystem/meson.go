@@ -17,6 +17,9 @@ type meson struct {
 }
 
 func (m meson) Configure(buildType string) error {
+	// Replace placeholders with real paths and values.
+	m.replaceHolders()
+
 	// Remove build dir and create it for configure.
 	if err := os.RemoveAll(m.PortConfig.BuildDir); err != nil {
 		return err
