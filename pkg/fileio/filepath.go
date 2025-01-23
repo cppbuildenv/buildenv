@@ -63,6 +63,57 @@ func FileBaseName(fileName string) string {
 	return strings.TrimSuffix(fileName, ext)
 }
 
+// CopyDir copy files in src to dest.
+func CopyDir(srcDir, dstDir string) error {
+	return filepath.Walk(srcDir, func(srcPath string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		relPath, err := filepath.Rel(srcDir, srcPath)
+		if err != nil {
+			return err
+		}
+		dstPath := filepath.Join(dstDir, relPath)
+
+		if info.IsDir() {
+			return os.MkdirAll(dstPath, info.Mode())
+		}
+
+		return CopyFile(srcPath, dstPath)
+	})
+}
+
+// RenameDir rename files in src to dest.
+func RenameDir(srcDir, dstDir string) error {
+	return filepath.Walk(srcDir, func(srcPath string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		relPath, err := filepath.Rel(srcDir, srcPath)
+		if err != nil {
+			return err
+		}
+		dstPath := filepath.Join(dstDir, relPath)
+
+		if info.IsDir() {
+			return os.MkdirAll(dstPath, info.Mode())
+		}
+
+		if err := RenameFile(srcPath, dstPath); err != nil {
+			return err
+		}
+
+		// Try remove parent folder if it's empty.
+		if err := RemoveFolderRecursively(filepath.Dir(srcPath)); err != nil {
+			return fmt.Errorf("cannot remove parent folder: %s", err)
+		}
+
+		return nil
+	})
+}
+
 // CopyFile copy file from src to dest.
 func CopyFile(src, dest string) error {
 	// Read file info.
@@ -136,10 +187,6 @@ func RenameFile(src, dst string) error {
 		}
 	}
 
-	if err := os.Remove(src); err != nil {
-		return fmt.Errorf("failed to remove source: %v", err)
-	}
-
 	return nil
 }
 
@@ -194,6 +241,34 @@ func moveDirectoryToParent(nestedFolder, parentFolder string) error {
 	// Convert the temporary folder to the actual folder.
 	if err := os.Rename(tmpPath, destPath); err != nil {
 		return fmt.Errorf("failed to move directory from %s to %s: %w", nestedFolder, destPath, err)
+	}
+
+	return nil
+}
+
+func RemoveFolderRecursively(path string) error {
+	// Not exists, skip.
+	if !PathExists(path) {
+		return nil
+	}
+
+	entities, err := os.ReadDir(path)
+	if err != nil {
+		return err
+	}
+
+	// Empty folder, remove it.
+	if len(entities) == 0 {
+		if err := os.RemoveAll(path); err != nil {
+			return err
+		}
+
+		// Remove parent folder if it's empty.
+		if err := RemoveFolderRecursively(filepath.Dir(path)); err != nil {
+			return err
+		}
+
+		return nil
 	}
 
 	return nil

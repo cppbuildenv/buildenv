@@ -43,6 +43,9 @@ func Extract(archiveFile, destDir string) error {
 		return fmt.Errorf("unsupported archive file type: %s", archiveFile)
 	}
 
+	if err := os.RemoveAll(destDir); err != nil {
+		return fmt.Errorf("failed to remove directory: %w", err)
+	}
 	if err := os.MkdirAll(destDir, os.ModeDir|os.ModePerm); err != nil {
 		return fmt.Errorf("failed to mkdir for extract: %w", err)
 	}

@@ -1,6 +1,7 @@
 /build
 /conf
 /packages
+/tmp
 buildenv
 buildenv.json
 temp

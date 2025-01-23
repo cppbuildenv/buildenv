@@ -152,7 +152,7 @@ func (u uninstallCmd) uninstallPort(ctx config.Context, portNameVersion string) 
 		}
 
 		// Try remove parent folder if it's empty.
-		if err := u.removeFolderRecursively(filepath.Dir(packageDir)); err != nil {
+		if err := fileio.RemoveFolderRecursively(filepath.Dir(packageDir)); err != nil {
 			return fmt.Errorf("cannot remove parent folder: %s", err)
 		}
 	}
@@ -192,7 +192,7 @@ func (u uninstallCmd) doUninsallPort(ctx config.Context, portNameVersion string)
 		}
 
 		// Try remove parent folder if it's empty.
-		if err := u.removeFolderRecursively(filepath.Dir(fileToRemove)); err != nil {
+		if err := fileio.RemoveFolderRecursively(filepath.Dir(fileToRemove)); err != nil {
 			return fmt.Errorf("cannot remove parent folder: %s", err)
 		}
 
@@ -206,7 +206,7 @@ func (u uninstallCmd) doUninsallPort(ctx config.Context, portNameVersion string)
 	if err := os.RemoveAll(cmakeConfigDir); err != nil {
 		return fmt.Errorf("cannot remove cmake config folder: %s", err)
 	}
-	if err := u.removeFolderRecursively(filepath.Dir(cmakeConfigDir)); err != nil {
+	if err := fileio.RemoveFolderRecursively(filepath.Dir(cmakeConfigDir)); err != nil {
 		return fmt.Errorf("cannot clean cmake config folder: %s", err)
 	}
 
@@ -216,7 +216,7 @@ func (u uninstallCmd) doUninsallPort(ctx config.Context, portNameVersion string)
 	}
 
 	// Try to clean installed dir.
-	if err := u.removeFolderRecursively(filepath.Dir(infoPath)); err != nil {
+	if err := fileio.RemoveFolderRecursively(filepath.Dir(infoPath)); err != nil {
 		return fmt.Errorf("cannot remove parent folder: %s", err)
 	}
 
@@ -243,34 +243,6 @@ func (u uninstallCmd) removeFiles(path string) error {
 		if err := os.Remove(item); err != nil {
 			return err
 		}
-	}
-
-	return nil
-}
-
-func (u uninstallCmd) removeFolderRecursively(path string) error {
-	// Not exists, skip.
-	if !fileio.PathExists(path) {
-		return nil
-	}
-
-	entities, err := os.ReadDir(path)
-	if err != nil {
-		return err
-	}
-
-	// Empty folder, remove it.
-	if len(entities) == 0 {
-		if err := os.RemoveAll(path); err != nil {
-			return err
-		}
-
-		// Remove parent folder if it's empty.
-		if err := u.removeFolderRecursively(filepath.Dir(path)); err != nil {
-			return err
-		}
-
-		return nil
 	}
 
 	return nil

@@ -28,18 +28,20 @@ type PortConfig struct {
 	BuildDir      string // for example: ${buildenv}/buildtrees/ffmpeg/x86_64-linux-20.04-Release
 	PackageDir    string // ${buildenv}/packages/ffmpeg@n3.4.13-x86_64-linux-20.04-Release
 	InstalledDir  string // for example: ${buildenv}/installed/x86_64-linux-20.04-Release
+	TmpDir        string // for example: ${buildenv}/tmp
 	JobNum        int    // number of jobs to run in parallel
 }
 
 type BuildSystem interface {
 	GetLogPath(suffix string) string
 	Clone(repoUrl, repoRef string) error
-	SourceEnvs() error
 	Patch(repoRef string) error
 	Configure(buildType string) error
 	Build() error
 	Install() error
 	PackageFiles(packageDir, platformName, projectName, buildType string) ([]string, error)
+	injectBuildEnvs() error
+	withdrawBuildEnvs() error
 }
 
 type patch struct {
@@ -96,9 +98,25 @@ func (b BuildConfig) Clone(url, version string) error {
 		default:
 			// Check and repair resource.
 			archiveName := filepath.Base(url)
-			repair := fileio.NewDownloadRepair(url, archiveName, ".", b.PortConfig.SourceDir, b.PortConfig.DownloadedDir)
+			repair := fileio.NewDownloadRepair(url, archiveName, ".", b.PortConfig.TmpDir, b.PortConfig.DownloadedDir)
 			if err := repair.CheckAndRepair(); err != nil {
 				return err
+			}
+
+			// Move extracted files to source dir.
+			entities, err := os.ReadDir(b.PortConfig.TmpDir)
+			if err != nil || len(entities) == 0 {
+				return fmt.Errorf("cannot find extracted files under tmp dir: %w", err)
+			}
+			if len(entities) == 1 {
+				sourceDir := filepath.Join(b.PortConfig.TmpDir, entities[0].Name())
+				if err := fileio.RenameDir(sourceDir, b.PortConfig.SourceDir); err != nil {
+					return err
+				}
+			} else if len(entities) > 1 {
+				if err := fileio.RenameDir(b.PortConfig.TmpDir, b.PortConfig.SourceDir); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -131,72 +149,15 @@ func (b BuildConfig) Patch(repoRef string) error {
 	return nil
 }
 
-func (b BuildConfig) SourceEnvs() error {
-	for _, item := range b.EnvVars {
-		item = strings.TrimSpace(item)
-
-		index := strings.Index(item, "=")
-		if index == -1 {
-			return fmt.Errorf("invalid env var: %s", item)
-		}
-
-		key := strings.TrimSpace(item[:index])
-		value := strings.TrimSpace(item[index+1:])
-		value = strings.ReplaceAll(value, "${INSTALLED_DIR}", b.PortConfig.InstalledDir)
-		value = strings.ReplaceAll(value, "${SYSROOT}", b.PortConfig.RootFS)
-		value = strings.ReplaceAll(value, "${CFLAGS}", os.Getenv("CFLAGS"))
-		value = strings.ReplaceAll(value, "${CXXFLAGS}", os.Getenv("CXXFLAGS"))
-
-		if key == "PKG_CONFIG_PATH" {
-			value = fmt.Sprintf("%s%s%s", value, string(os.PathListSeparator), os.Getenv("PKG_CONFIG_PATH"))
-		}
-
-		if err := b.validateEnv(key); err != nil {
-			return err
-		}
-
-		os.Setenv(key, value)
-	}
-
-	return nil
-}
-
-// ReplaceHolders Replace placeholders with real paths and values.
-func (b *BuildConfig) replaceHolders() {
-	for index, argument := range b.Arguments {
-		if strings.Contains(argument, "${HOST}") {
-			b.Arguments[index] = strings.ReplaceAll(argument, "${HOST}", b.PortConfig.Host)
-		}
-
-		if strings.Contains(argument, "${SYSTEM_NAME}") {
-			b.Arguments[index] = strings.ReplaceAll(argument, "${SYSTEM_NAME}", strings.ToLower(b.PortConfig.SystemName))
-		}
-
-		if strings.Contains(argument, "${SYSTEM_PROCESSOR}") {
-			b.Arguments[index] = strings.ReplaceAll(argument, "${SYSTEM_PROCESSOR}", b.PortConfig.SystemProcessor)
-		}
-
-		if strings.Contains(argument, "${SYSROOT}") {
-			b.Arguments[index] = strings.ReplaceAll(argument, "${SYSROOT}", b.PortConfig.RootFS)
-		}
-
-		if strings.Contains(argument, "${CROSS_PREFIX}") {
-			b.Arguments[index] = strings.ReplaceAll(argument, "${CROSS_PREFIX}", b.PortConfig.ToolchainPrefix)
-		}
-
-		if strings.Contains(argument, "${INSTALLED_DIR}") {
-			b.Arguments[index] = strings.ReplaceAll(argument, "${INSTALLED_DIR}", b.PortConfig.InstalledDir)
-		}
-	}
-}
-
 func (b *BuildConfig) Install(url, version, buildType string) error {
 	if err := b.buildSystem.Clone(url, version); err != nil {
 		return err
 	}
-	if err := b.buildSystem.SourceEnvs(); err != nil {
+	if err := b.buildSystem.injectBuildEnvs(); err != nil {
 		return err
 	}
+	defer b.buildSystem.withdrawBuildEnvs()
+
 	if err := b.buildSystem.Patch(version); err != nil {
 		return err
 	}
@@ -287,6 +248,107 @@ func (b BuildConfig) PackageFiles(packageDir, platformName, projectName, buildTy
 
 func (b BuildConfig) BuildSystem() BuildSystem {
 	return b.buildSystem
+}
+
+func (b BuildConfig) injectBuildEnvs() error {
+	for _, item := range b.EnvVars {
+		item = strings.TrimSpace(item)
+
+		index := strings.Index(item, "=")
+		if index == -1 {
+			return fmt.Errorf("invalid env var: %s", item)
+		}
+
+		key := strings.TrimSpace(item[:index])
+		value := strings.TrimSpace(item[index+1:])
+		value = strings.ReplaceAll(value, "${INSTALLED_DIR}", b.PortConfig.InstalledDir)
+		value = strings.ReplaceAll(value, "${SYSROOT}", b.PortConfig.RootFS)
+		value = strings.ReplaceAll(value, "${CFLAGS}", os.Getenv("CFLAGS"))
+		value = strings.ReplaceAll(value, "${CXXFLAGS}", os.Getenv("CXXFLAGS"))
+
+		if key == "PKG_CONFIG_PATH" {
+			value = fmt.Sprintf("%s%s%s", value, string(os.PathListSeparator), os.Getenv("PKG_CONFIG_PATH"))
+		}
+
+		if err := b.validateEnv(key); err != nil {
+			return err
+		}
+
+		os.Setenv(key, value)
+	}
+
+	return nil
+}
+
+func (b BuildConfig) withdrawBuildEnvs() error {
+	for _, item := range b.EnvVars {
+		item = strings.TrimSpace(item)
+		index := strings.Index(item, "=")
+		if index == -1 {
+			return fmt.Errorf("invalid env var: %s", item)
+		}
+
+		key := strings.TrimSpace(item[:index])
+		value := strings.TrimSpace(item[index+1:])
+
+		switch key {
+		case "CFLAGS", "CXXFLAGS":
+			flagsValue := strings.ReplaceAll(os.Getenv(key), value, "")
+			if strings.TrimSpace(flagsValue) == "" {
+				os.Unsetenv(key)
+			} else {
+				os.Setenv(key, flagsValue)
+			}
+
+		case "PKG_CONFIG_PATH":
+			parts := strings.Split(os.Getenv("PKG_CONFIG_PATH"), string(os.PathListSeparator))
+			// Remove the value from the slice.
+			for i, part := range parts {
+				if part == value {
+					parts = append(parts[:i], parts[i+1:]...)
+					break
+				}
+			}
+
+			// Join the remaining parts back into a string.
+			if len(parts) == 0 {
+				os.Unsetenv("PKG_CONFIG_PATH")
+			} else {
+				os.Setenv("PKG_CONFIG_PATH", strings.Join(parts, string(os.PathListSeparator)))
+			}
+		}
+	}
+
+	return nil
+}
+
+// ReplaceHolders Replace placeholders with real paths and values.
+func (b *BuildConfig) replaceHolders() {
+	for index, argument := range b.Arguments {
+		if strings.Contains(argument, "${HOST}") {
+			b.Arguments[index] = strings.ReplaceAll(argument, "${HOST}", b.PortConfig.Host)
+		}
+
+		if strings.Contains(argument, "${SYSTEM_NAME}") {
+			b.Arguments[index] = strings.ReplaceAll(argument, "${SYSTEM_NAME}", strings.ToLower(b.PortConfig.SystemName))
+		}
+
+		if strings.Contains(argument, "${SYSTEM_PROCESSOR}") {
+			b.Arguments[index] = strings.ReplaceAll(argument, "${SYSTEM_PROCESSOR}", b.PortConfig.SystemProcessor)
+		}
+
+		if strings.Contains(argument, "${SYSROOT}") {
+			b.Arguments[index] = strings.ReplaceAll(argument, "${SYSROOT}", b.PortConfig.RootFS)
+		}
+
+		if strings.Contains(argument, "${CROSS_PREFIX}") {
+			b.Arguments[index] = strings.ReplaceAll(argument, "${CROSS_PREFIX}", b.PortConfig.ToolchainPrefix)
+		}
+
+		if strings.Contains(argument, "${INSTALLED_DIR}") {
+			b.Arguments[index] = strings.ReplaceAll(argument, "${INSTALLED_DIR}", b.PortConfig.InstalledDir)
+		}
+	}
 }
 
 func (b BuildConfig) validateEnv(envVar string) error {
