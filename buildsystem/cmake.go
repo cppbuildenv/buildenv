@@ -96,7 +96,7 @@ func (c cmake) Configure(buildType string) error {
 	configure := fmt.Sprintf("cmake -S %s -B %s %s", c.PortConfig.SourceDir, c.PortConfig.BuildDir, joinedArgs)
 
 	// Execute configure.
-	logPath := c.GetLogPath("configure")
+	logPath := c.getLogPath("configure")
 	title := fmt.Sprintf("[configure %s]", c.PortConfig.LibName)
 	if err := NewExecutor(title, configure).WithLogPath(logPath).Execute(); err != nil {
 		return err
@@ -110,7 +110,7 @@ func (c cmake) Build() error {
 	command := fmt.Sprintf("cmake --build %s --parallel %d", c.PortConfig.BuildDir, c.PortConfig.JobNum)
 
 	// Execute build.
-	logPath := c.GetLogPath("build")
+	logPath := c.getLogPath("build")
 	title := fmt.Sprintf("[build %s]", c.PortConfig.LibName)
 	if err := NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
 		return err
@@ -124,7 +124,7 @@ func (c cmake) Install() error {
 	command := fmt.Sprintf("cmake --install %s", c.PortConfig.BuildDir)
 
 	// Execute install.
-	logPath := c.GetLogPath("install")
+	logPath := c.getLogPath("install")
 	title := fmt.Sprintf("[install %s]", c.PortConfig.LibName)
 	if err := NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
 		return err

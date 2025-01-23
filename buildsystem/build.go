@@ -33,7 +33,6 @@ type PortConfig struct {
 }
 
 type BuildSystem interface {
-	GetLogPath(suffix string) string
 	Clone(repoUrl, repoRef string) error
 	Patch(repoRef string) error
 	Configure(buildType string) error
@@ -42,6 +41,7 @@ type BuildSystem interface {
 	PackageFiles(packageDir, platformName, projectName, buildType string) ([]string, error)
 	injectBuildEnvs() error
 	withdrawBuildEnvs() error
+	getLogPath(suffix string) string
 }
 
 type patch struct {
@@ -77,7 +77,7 @@ func (b BuildConfig) Verify() error {
 	return nil
 }
 
-func (b BuildConfig) GetLogPath(suffix string) string {
+func (b BuildConfig) getLogPath(suffix string) string {
 	parentDir := filepath.Dir(b.PortConfig.BuildDir)
 	fileName := filepath.Base(b.PortConfig.BuildDir) + fmt.Sprintf("-%s.log", suffix)
 	return filepath.Join(parentDir, fileName)

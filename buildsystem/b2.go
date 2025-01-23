@@ -41,7 +41,7 @@ func (b *b2) Configure(buildType string) error {
 	configure := fmt.Sprintf("./bootstrap.sh %s", joinedArgs)
 
 	// Execute configure.
-	logPath := b.GetLogPath("configure")
+	logPath := b.getLogPath("configure")
 	title := fmt.Sprintf("[configure %s]", b.PortConfig.LibName)
 	if err := NewExecutor(title, configure).WithLogPath(logPath).Execute(); err != nil {
 		return err
@@ -91,7 +91,7 @@ func (b b2) Build() error {
 	command := fmt.Sprintf("./b2 %s -j %d", joinedArgs, b.PortConfig.JobNum)
 
 	// Execute build.
-	logPath := b.GetLogPath("build")
+	logPath := b.getLogPath("build")
 	title := fmt.Sprintf("[build %s]", b.PortConfig.LibName)
 	if err := NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
 		return err
@@ -108,7 +108,7 @@ func (b b2) Install() error {
 	command := fmt.Sprintf("./b2 install %s", joinedArgs)
 
 	// Execute install.
-	logPath := b.GetLogPath("install")
+	logPath := b.getLogPath("install")
 	title := fmt.Sprintf("[install %s]", b.PortConfig.LibName)
 	if err := NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
 		return err
