@@ -12,24 +12,20 @@ import (
 )
 
 type PortConfig struct {
-	SystemName      string // like: `Linux`, `Darwin`, `Windows`
-	SystemProcessor string // like: `aarch64`, `x86_64`, `i386`
-	Host            string // like: `aarch64-linux-gnu`
-	RootFS          string // absolute path of rootfs
-	ToolchainPrefix string // like: `aarch64-linux-gnu-`
-	LibName         string // like: `ffmpeg`
-	LibVersion      string // like: `4.4`
+	LibName    string // like: `ffmpeg`
+	LibVersion string // like: `4.4`
 
 	// Internal fields
-	PortsDir      string // ${buildenv}/ports
-	DownloadedDir string // ${buildenv}/downloads
-	SourceDir     string // for example: ${buildenv}/buildtrees/ffmpeg/src
-	SourceFolder  string // Some thirdpartys' source code is not in the root folder, so we need to specify it.
-	BuildDir      string // for example: ${buildenv}/buildtrees/ffmpeg/x86_64-linux-20.04-Release
-	PackageDir    string // ${buildenv}/packages/ffmpeg@n3.4.13-x86_64-linux-20.04-Release
-	InstalledDir  string // for example: ${buildenv}/installed/x86_64-linux-20.04-Release
-	TmpDir        string // for example: ${buildenv}/tmp
-	JobNum        int    // number of jobs to run in parallel
+	CrossTools    CrossTools // cross tools like CC, CXX, FC, RANLIB, AR, LD, NM, OBJDUMP, STRIP
+	PortsDir      string     // ${buildenv}/ports
+	DownloadedDir string     // ${buildenv}/downloads
+	SourceDir     string     // for example: ${buildenv}/buildtrees/ffmpeg/src
+	SourceFolder  string     // Some thirdpartys' source code is not in the root folder, so we need to specify it.
+	BuildDir      string     // for example: ${buildenv}/buildtrees/ffmpeg/x86_64-linux-20.04-Release
+	PackageDir    string     // ${buildenv}/packages/ffmpeg@n3.4.13-x86_64-linux-20.04-Release
+	InstalledDir  string     // for example: ${buildenv}/installed/x86_64-linux-20.04-Release
+	TmpDir        string     // for example: ${buildenv}/tmp
+	JobNum        int        // number of jobs to run in parallel
 }
 
 type BuildSystem interface {
@@ -41,7 +37,27 @@ type BuildSystem interface {
 	PackageFiles(packageDir, platformName, projectName, buildType string) ([]string, error)
 	injectBuildEnvs() error
 	withdrawBuildEnvs() error
+	replaceHolders()
 	getLogPath(suffix string) string
+}
+
+// CrossTools same with `Toolchain` in config/toolchain.go
+// redefine to avoid import cycle.
+type CrossTools struct {
+	SystemName      string
+	SystemProcessor string
+	Host            string
+	RootFS          string
+	ToolchainPrefix string
+	CC              string
+	CXX             string
+	FC              string
+	RANLIB          string
+	AR              string
+	LD              string
+	NM              string
+	OBJDUMP         string
+	STRIP           string
 }
 
 type patch struct {
@@ -150,6 +166,9 @@ func (b BuildConfig) Patch(repoRef string) error {
 }
 
 func (b *BuildConfig) Install(url, version, buildType string) error {
+	// Replace placeholders with real value, like ${HOST}, ${SYSROOT} etc.
+	b.buildSystem.replaceHolders()
+
 	if err := b.buildSystem.Clone(url, version); err != nil {
 		return err
 	}
@@ -185,7 +204,7 @@ func (b *BuildConfig) Install(url, version, buildType string) error {
 	}
 	if cmakeConfig != nil {
 		cmakeConfig.Version = b.PortConfig.LibVersion
-		cmakeConfig.SystemName = b.PortConfig.SystemName
+		cmakeConfig.SystemName = b.PortConfig.CrossTools.SystemName
 		cmakeConfig.Libname = b.PortConfig.LibName
 		cmakeConfig.BuildType = buildType
 		if err := cmakeConfig.Generate(b.PortConfig.PackageDir); err != nil {
@@ -262,7 +281,7 @@ func (b BuildConfig) injectBuildEnvs() error {
 		key := strings.TrimSpace(item[:index])
 		value := strings.TrimSpace(item[index+1:])
 		value = strings.ReplaceAll(value, "${INSTALLED_DIR}", b.PortConfig.InstalledDir)
-		value = strings.ReplaceAll(value, "${SYSROOT}", b.PortConfig.RootFS)
+		value = strings.ReplaceAll(value, "${SYSROOT}", b.PortConfig.CrossTools.RootFS)
 		value = strings.ReplaceAll(value, "${CFLAGS}", os.Getenv("CFLAGS"))
 		value = strings.ReplaceAll(value, "${CXXFLAGS}", os.Getenv("CXXFLAGS"))
 
@@ -326,23 +345,23 @@ func (b BuildConfig) withdrawBuildEnvs() error {
 func (b *BuildConfig) replaceHolders() {
 	for index, argument := range b.Arguments {
 		if strings.Contains(argument, "${HOST}") {
-			b.Arguments[index] = strings.ReplaceAll(argument, "${HOST}", b.PortConfig.Host)
+			b.Arguments[index] = strings.ReplaceAll(argument, "${HOST}", b.PortConfig.CrossTools.Host)
 		}
 
 		if strings.Contains(argument, "${SYSTEM_NAME}") {
-			b.Arguments[index] = strings.ReplaceAll(argument, "${SYSTEM_NAME}", strings.ToLower(b.PortConfig.SystemName))
+			b.Arguments[index] = strings.ReplaceAll(argument, "${SYSTEM_NAME}", strings.ToLower(b.PortConfig.CrossTools.SystemName))
 		}
 
 		if strings.Contains(argument, "${SYSTEM_PROCESSOR}") {
-			b.Arguments[index] = strings.ReplaceAll(argument, "${SYSTEM_PROCESSOR}", b.PortConfig.SystemProcessor)
+			b.Arguments[index] = strings.ReplaceAll(argument, "${SYSTEM_PROCESSOR}", b.PortConfig.CrossTools.SystemProcessor)
 		}
 
 		if strings.Contains(argument, "${SYSROOT}") {
-			b.Arguments[index] = strings.ReplaceAll(argument, "${SYSROOT}", b.PortConfig.RootFS)
+			b.Arguments[index] = strings.ReplaceAll(argument, "${SYSROOT}", b.PortConfig.CrossTools.RootFS)
 		}
 
 		if strings.Contains(argument, "${CROSS_PREFIX}") {
-			b.Arguments[index] = strings.ReplaceAll(argument, "${CROSS_PREFIX}", b.PortConfig.ToolchainPrefix)
+			b.Arguments[index] = strings.ReplaceAll(argument, "${CROSS_PREFIX}", b.PortConfig.CrossTools.ToolchainPrefix)
 		}
 
 		if strings.Contains(argument, "${INSTALLED_DIR}") {

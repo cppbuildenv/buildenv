@@ -62,23 +62,36 @@ func (p *Port) Init(ctx Context, portPath string) error {
 	packageFolder := fmt.Sprintf("%s@%s@%s@%s", p.NameVersion(), ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
 	installedFolder := fmt.Sprintf("%s@%s@%s", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
 
-	portConfig := buildsystem.PortConfig{
+	crossTools := buildsystem.CrossTools{
 		SystemName:      ctx.SystemName(),
 		SystemProcessor: ctx.SystemProcessor(),
 		Host:            ctx.Host(),
 		RootFS:          ctx.RootFSPath(),
 		ToolchainPrefix: ctx.ToolchainPrefix(),
-		JobNum:          ctx.JobNum(),
-		LibName:         p.Name,
-		LibVersion:      p.Version,
-		SourceFolder:    p.SourceFolder,
-		PortsDir:        Dirs.PortsDir,
-		DownloadedDir:   Dirs.DownloadedDir,
-		SourceDir:       filepath.Join(Dirs.WorkspaceDir, "buildtrees", p.NameVersion(), "src"),
-		BuildDir:        filepath.Join(Dirs.WorkspaceDir, "buildtrees", buildFolder),
-		PackageDir:      filepath.Join(Dirs.WorkspaceDir, "packages", packageFolder),
-		InstalledDir:    filepath.Join(Dirs.InstalledDir, installedFolder),
-		TmpDir:          filepath.Join(Dirs.WorkspaceDir, "tmp"),
+		CC:              ctx.Toolchain().CC,
+		CXX:             ctx.Toolchain().CXX,
+		FC:              ctx.Toolchain().FC,
+		RANLIB:          ctx.Toolchain().RANLIB,
+		AR:              ctx.Toolchain().AR,
+		LD:              ctx.Toolchain().LD,
+		NM:              ctx.Toolchain().NM,
+		OBJDUMP:         ctx.Toolchain().OBJDUMP,
+		STRIP:           ctx.Toolchain().STRIP,
+	}
+
+	portConfig := buildsystem.PortConfig{
+		CrossTools:    crossTools,
+		JobNum:        ctx.JobNum(),
+		LibName:       p.Name,
+		LibVersion:    p.Version,
+		SourceFolder:  p.SourceFolder,
+		PortsDir:      Dirs.PortsDir,
+		DownloadedDir: Dirs.DownloadedDir,
+		SourceDir:     filepath.Join(Dirs.WorkspaceDir, "buildtrees", p.NameVersion(), "src"),
+		BuildDir:      filepath.Join(Dirs.WorkspaceDir, "buildtrees", buildFolder),
+		PackageDir:    filepath.Join(Dirs.WorkspaceDir, "packages", packageFolder),
+		InstalledDir:  filepath.Join(Dirs.InstalledDir, installedFolder),
+		TmpDir:        filepath.Join(Dirs.WorkspaceDir, "tmp"),
 	}
 
 	if len(p.BuildConfigs) > 0 {

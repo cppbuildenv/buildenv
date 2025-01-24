@@ -9,8 +9,6 @@ type ninja struct {
 }
 
 func (n ninja) Configure(buildType string) error {
-	// Replace placeholders with real paths and values.
-	n.replaceHolders()
 	return nil
 }
 

@@ -28,7 +28,7 @@ func Extract(archiveFile, destDir string) error {
 		command = fmt.Sprintf("tar -zxvf %s -C %s", archiveFile, destDir)
 
 	case strings.HasSuffix(archiveFile, ".tar.xz"):
-		command = fmt.Sprintf("tar -xf %s -C %s", archiveFile, destDir)
+		command = fmt.Sprintf("tar -xvf %s -C %s", archiveFile, destDir)
 
 	case strings.HasSuffix(archiveFile, ".tar.bz2"):
 		command = fmt.Sprintf("tar -xvjf %s -C %s", archiveFile, destDir)

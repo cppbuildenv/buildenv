@@ -19,9 +19,6 @@ type b2 struct {
 }
 
 func (b *b2) Configure(buildType string) error {
-	// Replace placeholders with real paths and values.
-	b.replaceHolders()
-
 	// Clean repo source before configuration.
 	if err := cleanRepo(b.PortConfig.SourceDir); err != nil {
 		return err
@@ -61,7 +58,7 @@ func (b *b2) Configure(buildType string) error {
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.Contains(line, "using gcc ;") {
-			line = fmt.Sprintf("    using gcc : : %sg++ ;", b.PortConfig.ToolchainPrefix)
+			line = fmt.Sprintf("    using gcc : : %sg++ ;", b.PortConfig.CrossTools.ToolchainPrefix)
 			buffer.WriteString(line + "\n")
 		} else {
 			buffer.WriteString(line + "\n")
@@ -80,9 +77,10 @@ func (b b2) Build() error {
 		return err
 	}
 
+	rootfs := b.PortConfig.CrossTools.RootFS
 	b.Arguments = append(b.Arguments, "toolset=gcc")
-	b.Arguments = append(b.Arguments, "cxxflags=--sysroot=%s", b.PortConfig.RootFS)
-	b.Arguments = append(b.Arguments, "linkflags=--sysroot=%s", b.PortConfig.RootFS)
+	b.Arguments = append(b.Arguments, "cxxflags=--sysroot=%s", rootfs)
+	b.Arguments = append(b.Arguments, "linkflags=--sysroot=%s", rootfs)
 
 	b.adjustForBuildInstall()
 

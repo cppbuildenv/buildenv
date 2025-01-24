@@ -9,8 +9,6 @@ type bazel struct {
 }
 
 func (b bazel) Configure(buildType string) error {
-	// Replace placeholders with real paths and values.
-	b.replaceHolders()
 	return nil
 }
 

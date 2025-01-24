@@ -1,6 +1,7 @@
 package buildsystem
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -17,9 +18,6 @@ type meson struct {
 }
 
 func (m meson) Configure(buildType string) error {
-	// Replace placeholders with real paths and values.
-	m.replaceHolders()
-
 	// Remove build dir and create it for configure.
 	if err := os.RemoveAll(m.PortConfig.BuildDir); err != nil {
 		return err
@@ -41,7 +39,7 @@ func (m meson) Configure(buildType string) error {
 	if !slices.ContainsFunc(m.Arguments, func(arg string) bool {
 		return strings.Contains(arg, "--buildtype")
 	}) {
-		buildType = m.FormatBuildType(buildType)
+		buildType = strings.ToLower(buildType)
 		m.Arguments = append(m.Arguments, "--buildtype="+buildType)
 	}
 
@@ -64,9 +62,14 @@ func (m meson) Configure(buildType string) error {
 		return err
 	}
 
+	crossFile, err := m.generateCrossFile()
+	if err != nil {
+		return fmt.Errorf("failed to generate cross_file.txt for meson: %v", err)
+	}
+
 	// Assemble args into a single command string.
 	joinedArgs := strings.Join(m.Arguments, " ")
-	configure := fmt.Sprintf("meson setup %s %s", m.PortConfig.BuildDir, joinedArgs)
+	configure := fmt.Sprintf("meson setup %s %s --cross-file %s", m.PortConfig.BuildDir, joinedArgs, crossFile)
 
 	// Execute configure.
 	logPath := m.getLogPath("configure")
@@ -80,7 +83,7 @@ func (m meson) Configure(buildType string) error {
 
 func (m meson) Build() error {
 	// Assemble script.
-	command := fmt.Sprintf("ninja -C %s -j %d", m.PortConfig.BuildDir, m.PortConfig.JobNum)
+	command := fmt.Sprintf("meson compile -C %s -j %d", m.PortConfig.BuildDir, m.PortConfig.JobNum)
 
 	// Execute build.
 	logPath := m.getLogPath("build")
@@ -94,7 +97,7 @@ func (m meson) Build() error {
 
 func (m meson) Install() error {
 	// Assemble script.
-	command := fmt.Sprintf("ninja -C %s install", m.PortConfig.BuildDir)
+	command := fmt.Sprintf("meson install -C %s", m.PortConfig.BuildDir)
 
 	// Execute install.
 	logPath := m.getLogPath("install")
@@ -106,6 +109,49 @@ func (m meson) Install() error {
 	return nil
 }
 
-func (m meson) FormatBuildType(buildType string) string {
-	return strings.ToLower(buildType)
+func (m meson) generateCrossFile() (string, error) {
+	var bytes bytes.Buffer
+	bytes.WriteString("[host_machine]\n")
+	bytes.WriteString(fmt.Sprintf("system = '%s'\n", m.PortConfig.CrossTools.SystemName))
+	bytes.WriteString(fmt.Sprintf("cpu_family = '%s'\n", m.PortConfig.CrossTools.SystemProcessor))
+	bytes.WriteString(fmt.Sprintf("cpu = '%s'\n", m.PortConfig.CrossTools.SystemProcessor))
+	bytes.WriteString("endian = 'little'\n")
+
+	bytes.WriteString("\n[toolchain]\n")
+	bytes.WriteString(fmt.Sprintf("c = '%s'\n", m.PortConfig.CrossTools.CC))
+	bytes.WriteString(fmt.Sprintf("cpp = '%s'\n", m.PortConfig.CrossTools.CXX))
+
+	if m.PortConfig.CrossTools.FC != "" {
+		bytes.WriteString(fmt.Sprintf("fc = '%s'\n", m.PortConfig.CrossTools.FC))
+	}
+	if m.PortConfig.CrossTools.RANLIB != "" {
+		bytes.WriteString(fmt.Sprintf("ranlib = '%s'\n", m.PortConfig.CrossTools.RANLIB))
+	}
+	if m.PortConfig.CrossTools.AR != "" {
+		bytes.WriteString(fmt.Sprintf("ar = '%s'\n", m.PortConfig.CrossTools.AR))
+	}
+	if m.PortConfig.CrossTools.LD != "" {
+		bytes.WriteString(fmt.Sprintf("ld = '%s'\n", m.PortConfig.CrossTools.LD))
+	}
+	if m.PortConfig.CrossTools.NM != "" {
+		bytes.WriteString(fmt.Sprintf("nm = '%s'\n", m.PortConfig.CrossTools.NM))
+	}
+	if m.PortConfig.CrossTools.OBJDUMP != "" {
+		bytes.WriteString(fmt.Sprintf("objdump = '%s'\n", m.PortConfig.CrossTools.OBJDUMP))
+	}
+	if m.PortConfig.CrossTools.STRIP != "" {
+		bytes.WriteString(fmt.Sprintf("strip = '%s'\n", m.PortConfig.CrossTools.STRIP))
+	}
+
+	bytes.WriteString("\n[properties]\n")
+	bytes.WriteString("cross_file = 'true'\n")
+	bytes.WriteString(fmt.Sprintf("sys_root = '%s'\n", m.PortConfig.CrossTools.RootFS))
+	bytes.WriteString(fmt.Sprintf("pkg_config_libdir = '%s'\n", os.Getenv("PKG_CONFIG_LIBDIR")))
+
+	crossFilePath := filepath.Join(m.PortConfig.BuildDir, "cross_file.txt")
+	if err := os.WriteFile(crossFilePath, bytes.Bytes(), os.ModePerm); err != nil {
+		return "", err
+	}
+
+	return crossFilePath, nil
 }
