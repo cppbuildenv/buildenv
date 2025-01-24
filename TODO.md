@@ -41,6 +41,7 @@ cmake_config的配置独立于version文件之外  | ✔
 支持通过命令创建tool和port  | ✔
 支持编译缓存共享  | ✔
 内部出现同一个库的不同版本依赖情况给与报错提示 | ✔
+支持clone时候连同submodule一起clone  | ✔
 运行tools需要将内部lib路径加入到LD_LIBRARY_PATH  | ✘
 支持 buildenv -upgrade 升级  | ✘
 动态生成的cmake config文件（windows还没测试）| ✘
