@@ -2,6 +2,7 @@ package buildsystem
 
 import (
 	"buildenv/generator"
+	"buildenv/pkg/cmd"
 	"buildenv/pkg/fileio"
 	"fmt"
 	"os"
@@ -73,8 +74,8 @@ type BuildConfig struct {
 	CMakeConfig string   `json:"cmake_config"`
 
 	// Internal fields
-	buildSystem BuildSystem
-	PortConfig  PortConfig
+	buildSystem BuildSystem `json:"-"`
+	PortConfig  PortConfig  `json:"-"`
 }
 
 func (b BuildConfig) Verify() error {
@@ -109,7 +110,7 @@ func (b BuildConfig) Clone(url, version string) error {
 				command = fmt.Sprintf("git clone --branch %s %s %s", version, url, b.PortConfig.SourceDir)
 			}
 			title := fmt.Sprintf("[clone %s]", b.PortConfig.LibName)
-			if err := NewExecutor(title, command).Execute(); err != nil {
+			if err := cmd.NewExecutor(title, command).Execute(); err != nil {
 				return err
 			}
 
@@ -168,7 +169,7 @@ func (b BuildConfig) Patch(repoRef string) error {
 		// Apply patch.
 		command := fmt.Sprintf("git apply %s", patchPath)
 		title := fmt.Sprintf("[patch %s]", b.PortConfig.LibName)
-		if err := NewExecutor(title, command).Execute(); err != nil {
+		if err := cmd.NewExecutor(title, command).Execute(); err != nil {
 			return err
 		}
 	}
@@ -180,14 +181,15 @@ func (b *BuildConfig) Install(url, version, buildType string) error {
 	// Replace placeholders with real value, like ${HOST}, ${SYSROOT} etc.
 	b.buildSystem.replaceHolders()
 
-	if err := b.buildSystem.Clone(url, version); err != nil {
-		return err
-	}
+	// Some third-party need extra environment variables.
 	if err := b.buildSystem.injectBuildEnvs(); err != nil {
 		return err
 	}
 	defer b.buildSystem.withdrawBuildEnvs()
 
+	if err := b.buildSystem.Clone(url, version); err != nil {
+		return err
+	}
 	if err := b.buildSystem.Patch(version); err != nil {
 		return err
 	}

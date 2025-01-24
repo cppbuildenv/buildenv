@@ -23,7 +23,7 @@ type Port struct {
 
 	// Internal fields.
 	ctx             Context
-	installInfoFile string // used to record installed state
+	installInfoFile string // Used to record installed state
 	isSubDep        bool
 }
 
@@ -66,25 +66,8 @@ func (p *Port) Init(ctx Context, portPath string) error {
 	packageFolder := fmt.Sprintf("%s@%s@%s@%s", p.NameVersion(), ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
 	installedFolder := fmt.Sprintf("%s@%s@%s", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
 
-	crossTools := buildsystem.CrossTools{
-		SystemName:      ctx.SystemName(),
-		SystemProcessor: ctx.SystemProcessor(),
-		Host:            ctx.Host(),
-		RootFS:          ctx.RootFSPath(),
-		ToolchainPrefix: ctx.ToolchainPrefix(),
-		CC:              ctx.Toolchain().CC,
-		CXX:             ctx.Toolchain().CXX,
-		FC:              ctx.Toolchain().FC,
-		RANLIB:          ctx.Toolchain().RANLIB,
-		AR:              ctx.Toolchain().AR,
-		LD:              ctx.Toolchain().LD,
-		NM:              ctx.Toolchain().NM,
-		OBJDUMP:         ctx.Toolchain().OBJDUMP,
-		STRIP:           ctx.Toolchain().STRIP,
-	}
-
 	portConfig := buildsystem.PortConfig{
-		CrossTools:    crossTools,
+		CrossTools:    p.buildCrossTools(),
 		JobNum:        ctx.JobNum(),
 		LibName:       p.Name,
 		LibVersion:    p.Version,
@@ -257,7 +240,7 @@ func (p Port) Install(silentMode bool) error {
 		}
 	}
 
-	// Write installed file list info into its installation info list.
+	// Write installed files info into its installation info list.
 	if err := os.MkdirAll(filepath.Dir(p.installInfoFile), os.ModePerm); err != nil {
 		return err
 	}
@@ -284,24 +267,6 @@ func (p Port) Install(silentMode bool) error {
 	return nil
 }
 
-func (p *Port) mergeBuildConfig(portBuildConfig *buildsystem.BuildConfig, overrides map[string]buildsystem.BuildConfig) {
-	if config, ok := overrides[p.NameVersion()]; ok {
-		if config.LibraryType != "" {
-			portBuildConfig.LibraryType = config.LibraryType
-		}
-		if len(config.EnvVars) > 0 {
-			portBuildConfig.EnvVars = config.EnvVars
-		}
-		if config.Patches != nil {
-			portBuildConfig.Patches = config.Patches
-		}
-		if len(config.Arguments) > 0 {
-			portBuildConfig.Arguments = config.Arguments
-		}
-		portBuildConfig.Depedencies = config.Depedencies
-	}
-}
-
 func (p Port) MatchPattern(pattern string) bool {
 	pattern = strings.TrimSpace(pattern)
 
@@ -323,6 +288,24 @@ func (p Port) MatchPattern(pattern string) bool {
 	}
 
 	return platformName == pattern
+}
+
+func (p *Port) mergeBuildConfig(portBuildConfig *buildsystem.BuildConfig, overrides map[string]buildsystem.BuildConfig) {
+	if config, ok := overrides[p.NameVersion()]; ok {
+		if config.LibraryType != "" {
+			portBuildConfig.LibraryType = config.LibraryType
+		}
+		if len(config.EnvVars) > 0 {
+			portBuildConfig.EnvVars = config.EnvVars
+		}
+		if config.Patches != nil {
+			portBuildConfig.Patches = config.Patches
+		}
+		if len(config.Arguments) > 0 {
+			portBuildConfig.Arguments = config.Arguments
+		}
+		portBuildConfig.Depedencies = config.Depedencies
+	}
 }
 
 func (p Port) installFromCache(matchedConfig *buildsystem.BuildConfig) (installed bool, cacheDir string, err error) {
@@ -349,9 +332,9 @@ func (p Port) installFromCache(matchedConfig *buildsystem.BuildConfig) (installe
 	return false, "", nil
 }
 
-func (p Port) installFromSource(silentMode bool, matchedConfig *buildsystem.BuildConfig) error {
+func (p Port) installFromSource(silentMode bool, buildConfig *buildsystem.BuildConfig) error {
 	// First, we must check and repair dependency ports.
-	for _, item := range matchedConfig.Depedencies {
+	for _, item := range buildConfig.Depedencies {
 		if strings.HasPrefix(item, p.Name) {
 			return fmt.Errorf("port.dependencies contains circular dependency: %s", item)
 		}
@@ -372,7 +355,7 @@ func (p Port) installFromSource(silentMode bool, matchedConfig *buildsystem.Buil
 	}
 
 	// Check and repair current port.
-	if err := matchedConfig.Install(p.Url, p.Version, p.ctx.BuildType()); err != nil {
+	if err := buildConfig.Install(p.Url, p.Version, p.ctx.BuildType()); err != nil {
 		return err
 	}
 
@@ -463,6 +446,30 @@ func (p Port) downloadAndDeploy(url, installedDir, downloadedDir string) error {
 	}
 
 	return nil
+}
+
+func (p Port) buildCrossTools() buildsystem.CrossTools {
+	crossTools := buildsystem.CrossTools{
+		SystemName:      p.ctx.SystemName(),
+		SystemProcessor: p.ctx.SystemProcessor(),
+		Host:            p.ctx.Host(),
+		RootFS:          p.ctx.RootFSPath(),
+		ToolchainPrefix: p.ctx.ToolchainPrefix(),
+	}
+
+	if p.ctx.Toolchain() != nil {
+		crossTools.CC = p.ctx.Toolchain().CC
+		crossTools.CXX = p.ctx.Toolchain().CXX
+		crossTools.FC = p.ctx.Toolchain().FC
+		crossTools.RANLIB = p.ctx.Toolchain().RANLIB
+		crossTools.AR = p.ctx.Toolchain().AR
+		crossTools.LD = p.ctx.Toolchain().LD
+		crossTools.NM = p.ctx.Toolchain().NM
+		crossTools.OBJDUMP = p.ctx.Toolchain().OBJDUMP
+		crossTools.STRIP = p.ctx.Toolchain().STRIP
+	}
+
+	return crossTools
 }
 
 func (p Port) tryRemoveBuildCache(logNamePrefix string) {

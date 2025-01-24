@@ -1,4 +1,4 @@
-package buildsystem
+package cmd
 
 import (
 	"bytes"
@@ -31,7 +31,7 @@ func SyncRepo(sourceDir, repoRef, libName string) error {
 	return nil
 }
 
-func cherryPick(title, sourceDir string, patches []string) error {
+func CherryPick(title, sourceDir string, patches []string) error {
 	// Change to source dir to execute git command.
 	if err := os.Chdir(sourceDir); err != nil {
 		return err
@@ -54,7 +54,7 @@ func cherryPick(title, sourceDir string, patches []string) error {
 	return nil
 }
 
-func rebase(title, sourceDir, repoRef string, rebaseRefs []string) error {
+func Rebase(title, sourceDir, repoRef string, rebaseRefs []string) error {
 	// Change to source dir to execute git command.
 	if err := os.Chdir(sourceDir); err != nil {
 		return err
@@ -77,7 +77,7 @@ func rebase(title, sourceDir, repoRef string, rebaseRefs []string) error {
 	return nil
 }
 
-func cleanRepo(repoDir string) error {
+func CleanRepo(repoDir string) error {
 	if err := os.Chdir(repoDir); err != nil {
 		return err
 	}

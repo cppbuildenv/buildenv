@@ -2,6 +2,7 @@ package buildsystem
 
 import (
 	"bufio"
+	"buildenv/pkg/cmd"
 	"bytes"
 	"fmt"
 	"os"
@@ -20,7 +21,7 @@ type b2 struct {
 
 func (b *b2) Configure(buildType string) error {
 	// Clean repo source before configuration.
-	if err := cleanRepo(b.PortConfig.SourceDir); err != nil {
+	if err := cmd.CleanRepo(b.PortConfig.SourceDir); err != nil {
 		return err
 	}
 
@@ -40,7 +41,7 @@ func (b *b2) Configure(buildType string) error {
 	// Execute configure.
 	logPath := b.getLogPath("configure")
 	title := fmt.Sprintf("[configure %s]", b.PortConfig.LibName)
-	if err := NewExecutor(title, configure).WithLogPath(logPath).Execute(); err != nil {
+	if err := cmd.NewExecutor(title, configure).WithLogPath(logPath).Execute(); err != nil {
 		return err
 	}
 
@@ -91,7 +92,7 @@ func (b b2) Build() error {
 	// Execute build.
 	logPath := b.getLogPath("build")
 	title := fmt.Sprintf("[build %s]", b.PortConfig.LibName)
-	if err := NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
+	if err := cmd.NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
 		return err
 	}
 
@@ -108,7 +109,7 @@ func (b b2) Install() error {
 	// Execute install.
 	logPath := b.getLogPath("install")
 	title := fmt.Sprintf("[install %s]", b.PortConfig.LibName)
-	if err := NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
+	if err := cmd.NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
 		return err
 	}
 

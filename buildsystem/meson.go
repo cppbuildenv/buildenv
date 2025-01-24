@@ -1,6 +1,7 @@
 package buildsystem
 
 import (
+	"buildenv/pkg/cmd"
 	"bytes"
 	"fmt"
 	"os"
@@ -22,6 +23,8 @@ func (m meson) Configure(buildType string) error {
 	if err := os.RemoveAll(m.PortConfig.BuildDir); err != nil {
 		return err
 	}
+
+	// Create build dir if not exists.
 	if err := os.MkdirAll(m.PortConfig.BuildDir, os.ModeDir|os.ModePerm); err != nil {
 		return err
 	}
@@ -74,7 +77,7 @@ func (m meson) Configure(buildType string) error {
 	// Execute configure.
 	logPath := m.getLogPath("configure")
 	title := fmt.Sprintf("[configure %s]", m.PortConfig.LibName)
-	if err := NewExecutor(title, configure).WithLogPath(logPath).Execute(); err != nil {
+	if err := cmd.NewExecutor(title, configure).WithLogPath(logPath).Execute(); err != nil {
 		return err
 	}
 
@@ -88,7 +91,7 @@ func (m meson) Build() error {
 	// Execute build.
 	logPath := m.getLogPath("build")
 	title := fmt.Sprintf("[build %s]", m.PortConfig.LibName)
-	if err := NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
+	if err := cmd.NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
 		return err
 	}
 
@@ -102,7 +105,7 @@ func (m meson) Install() error {
 	// Execute install.
 	logPath := m.getLogPath("install")
 	title := fmt.Sprintf("[install %s]", m.PortConfig.LibName)
-	if err := NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
+	if err := cmd.NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
 		return err
 	}
 

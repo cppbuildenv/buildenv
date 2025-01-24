@@ -1,4 +1,4 @@
-package buildsystem
+package cmd
 
 import (
 	"buildenv/pkg/color"

@@ -1,6 +1,7 @@
 package buildsystem
 
 import (
+	"buildenv/pkg/cmd"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -50,6 +51,8 @@ func (c cmake) Configure(buildType string) error {
 	if err := os.RemoveAll(c.PortConfig.BuildDir); err != nil {
 		return err
 	}
+
+	// Create build dir if not exists.
 	if err := os.MkdirAll(c.PortConfig.BuildDir, os.ModeDir|os.ModePerm); err != nil {
 		return err
 	}
@@ -129,7 +132,7 @@ func (c cmake) Configure(buildType string) error {
 	// Execute configure.
 	logPath := c.getLogPath("configure")
 	title := fmt.Sprintf("[configure %s]", c.PortConfig.LibName)
-	if err := NewExecutor(title, configure).WithLogPath(logPath).Execute(); err != nil {
+	if err := cmd.NewExecutor(title, configure).WithLogPath(logPath).Execute(); err != nil {
 		return err
 	}
 
@@ -143,7 +146,7 @@ func (c cmake) Build() error {
 	// Execute build.
 	logPath := c.getLogPath("build")
 	title := fmt.Sprintf("[build %s]", c.PortConfig.LibName)
-	if err := NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
+	if err := cmd.NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
 		return err
 	}
 
@@ -157,7 +160,7 @@ func (c cmake) Install() error {
 	// Execute install.
 	logPath := c.getLogPath("install")
 	title := fmt.Sprintf("[install %s]", c.PortConfig.LibName)
-	if err := NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
+	if err := cmd.NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
 		return err
 	}
 
