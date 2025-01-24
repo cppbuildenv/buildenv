@@ -119,7 +119,12 @@ func (c cmake) Configure(buildType string) error {
 
 	// Assemble args into a single command string.
 	joinedArgs := strings.Join(c.Arguments, " ")
-	configure := fmt.Sprintf("cmake -G %s -S %s -B %s %s", c.generator, c.PortConfig.SourceDir, c.PortConfig.BuildDir, joinedArgs)
+	var configure string
+	if c.generator == "" {
+		configure = fmt.Sprintf("cmake -S %s -B %s %s", c.PortConfig.SourceDir, c.PortConfig.BuildDir, joinedArgs)
+	} else {
+		configure = fmt.Sprintf("cmake -G %s -S %s -B %s %s", c.generator, c.PortConfig.SourceDir, c.PortConfig.BuildDir, joinedArgs)
+	}
 
 	// Execute configure.
 	logPath := c.getLogPath("configure")

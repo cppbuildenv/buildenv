@@ -34,11 +34,14 @@ func (p Port) NameVersion() string {
 func (p *Port) Init(ctx Context, portPath string) error {
 	portPath = strings.ReplaceAll(portPath, "@", "/")
 	if !fileio.PathExists(portPath) {
-		portName := fileio.FileBaseName(portPath)
+		version := fileio.FileBaseName(portPath)
+		name := fileio.FileBaseName(filepath.Dir(portPath))
+		nameVersion := name + "@" + version
+
 		if p.isSubDep {
-			return fmt.Errorf("sub depedency port %s does not exists", portName)
+			return fmt.Errorf("sub depedency port %s does not exists", nameVersion)
 		} else {
-			return fmt.Errorf("port %s does not exists", portName)
+			return fmt.Errorf("port %s does not exists", nameVersion)
 		}
 	}
 

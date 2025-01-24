@@ -22,7 +22,7 @@ type PortConfig struct {
 	SourceDir     string     // for example: ${buildenv}/buildtrees/ffmpeg/src
 	SourceFolder  string     // Some thirdpartys' source code is not in the root folder, so we need to specify it.
 	BuildDir      string     // for example: ${buildenv}/buildtrees/ffmpeg/x86_64-linux-20.04-Release
-	PackageDir    string     // ${buildenv}/packages/ffmpeg@n3.4.13-x86_64-linux-20.04-Release
+	PackageDir    string     // for example: ${buildenv}/packages/ffmpeg@n3.4.13-x86_64-linux-20.04-Release
 	InstalledDir  string     // for example: ${buildenv}/installed/x86_64-linux-20.04-Release
 	WithSubmodule bool       // if true, clone submodule when clone repository
 	JobNum        int        // number of jobs to run in parallel
@@ -36,6 +36,7 @@ type BuildSystem interface {
 	Build() error
 	Install() error
 	PackageFiles(packageDir, platformName, projectName, buildType string) ([]string, error)
+
 	injectBuildEnvs() error
 	withdrawBuildEnvs() error
 	replaceHolders()
@@ -61,17 +62,12 @@ type CrossTools struct {
 	STRIP           string
 }
 
-type patch struct {
-	Mode   string   `json:"mode"`
-	Refers []string `json:"refers"`
-}
-
 type BuildConfig struct {
 	Pattern     string   `json:"pattern"`
 	BuildTool   string   `json:"build_tool"`
 	LibraryType string   `json:"library_type"`
 	EnvVars     []string `json:"env_vars"`
-	Patches     *patch   `json:"patches"`
+	Patches     []string `json:"patches"`
 	Arguments   []string `json:"arguments"`
 	Depedencies []string `json:"dependencies"`
 	CMakeConfig string   `json:"cmake_config"`
@@ -147,25 +143,34 @@ func (b BuildConfig) Clone(url, version string) error {
 }
 
 func (b BuildConfig) Patch(repoRef string) error {
-	if b.Patches == nil || len(b.Patches.Refers) == 0 {
+	if len(b.Patches) == 0 {
 		return nil
 	}
 
-	switch b.Patches.Mode {
-	case "cherry-pick":
-		title := fmt.Sprintf("[patch %s]", b.PortConfig.LibName)
-		if err := cherryPick(title, b.PortConfig.SourceDir, b.Patches.Refers); err != nil {
-			return err
+	// Change to source dir.
+	if err := os.Chdir(b.PortConfig.SourceDir); err != nil {
+		return err
+	}
+
+	// Apply all patches.
+	for _, patch := range b.Patches {
+		patch = strings.TrimSpace(patch)
+		if patch == "" {
+			continue
 		}
 
-	case "rebase":
-		title := fmt.Sprintf("[patch %s]", b.PortConfig.LibName)
-		if err := rebase(title, b.PortConfig.SourceDir, repoRef, b.Patches.Refers); err != nil {
-			return err
+		// Check if patch file exists.
+		patchPath := filepath.Join(b.PortConfig.PortsDir, b.PortConfig.LibName, patch)
+		if !fileio.PathExists(patchPath) {
+			return fmt.Errorf("patch file %s not exists", patchPath)
 		}
 
-	default:
-		return fmt.Errorf("unsupported patch mode: %s", b.Patches.Mode)
+		// Apply patch.
+		command := fmt.Sprintf("git apply %s", patchPath)
+		title := fmt.Sprintf("[patch %s]", b.PortConfig.LibName)
+		if err := NewExecutor(title, command).Execute(); err != nil {
+			return err
+		}
 	}
 
 	return nil
