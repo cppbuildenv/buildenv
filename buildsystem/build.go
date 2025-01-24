@@ -24,8 +24,9 @@ type PortConfig struct {
 	BuildDir      string     // for example: ${buildenv}/buildtrees/ffmpeg/x86_64-linux-20.04-Release
 	PackageDir    string     // ${buildenv}/packages/ffmpeg@n3.4.13-x86_64-linux-20.04-Release
 	InstalledDir  string     // for example: ${buildenv}/installed/x86_64-linux-20.04-Release
-	TmpDir        string     // for example: ${buildenv}/tmp
+	WithSubmodule bool       // if true, clone submodule when clone repository
 	JobNum        int        // number of jobs to run in parallel
+	TmpDir        string     // for example: ${buildenv}/tmp
 }
 
 type BuildSystem interface {
@@ -105,7 +106,12 @@ func (b BuildConfig) Clone(url, version string) error {
 		switch {
 		case strings.HasSuffix(url, ".git"):
 			// Clone repo.
-			command := fmt.Sprintf("git clone --branch %s %s %s", version, url, b.PortConfig.SourceDir)
+			var command string
+			if b.PortConfig.WithSubmodule {
+				command = fmt.Sprintf("git clone --branch --recursive %s %s %s", version, url, b.PortConfig.SourceDir)
+			} else {
+				command = fmt.Sprintf("git clone --branch %s %s %s", version, url, b.PortConfig.SourceDir)
+			}
 			title := fmt.Sprintf("[clone %s]", b.PortConfig.LibName)
 			if err := NewExecutor(title, command).Execute(); err != nil {
 				return err
