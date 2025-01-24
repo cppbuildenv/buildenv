@@ -4,16 +4,45 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 )
 
-func NewCMake(config BuildConfig) *cmake {
-	return &cmake{BuildConfig: config}
+func NewCMake(config BuildConfig, generator string) *cmake {
+	// Set default generator if not specified.
+	if generator == "" {
+		switch runtime.GOOS {
+		case "darwin":
+			generator = "Xcode"
+		case "linux":
+			generator = "Unix Makefiles"
+		case "windows":
+			generator = "" // Let CMake choose the default Visual Studio generator.
+		}
+	}
+
+	// Normalize generator name.
+	switch strings.ToLower(generator) {
+	case "ninja":
+		generator = "Ninja"
+	case "makefiles":
+		generator = "Unix Makefiles"
+	case "xcode":
+		generator = "Xcode"
+	default:
+		generator = ""
+	}
+
+	return &cmake{
+		BuildConfig: config,
+		generator:   generator,
+	}
 }
 
 type cmake struct {
 	BuildConfig
+	generator string // e.g. Ninja, Unix Makefiles, Visual Studio 16 2019, etc.
 }
 
 func (c cmake) Configure(buildType string) error {
@@ -90,7 +119,7 @@ func (c cmake) Configure(buildType string) error {
 
 	// Assemble args into a single command string.
 	joinedArgs := strings.Join(c.Arguments, " ")
-	configure := fmt.Sprintf("cmake -S %s -B %s %s", c.PortConfig.SourceDir, c.PortConfig.BuildDir, joinedArgs)
+	configure := fmt.Sprintf("cmake -G %s -S %s -B %s %s", c.generator, c.PortConfig.SourceDir, c.PortConfig.BuildDir, joinedArgs)
 
 	// Execute configure.
 	logPath := c.getLogPath("configure")

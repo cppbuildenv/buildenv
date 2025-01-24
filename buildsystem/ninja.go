@@ -1,21 +1,23 @@
 package buildsystem
 
 func NewNinja(config BuildConfig) *ninja {
-	return &ninja{BuildConfig: config}
+	return &ninja{
+		cmake: *NewCMake(config, "ninja"),
+	}
 }
 
 type ninja struct {
-	BuildConfig
+	cmake
 }
 
 func (n ninja) Configure(buildType string) error {
-	return nil
+	return n.cmake.Configure(buildType)
 }
 
 func (n ninja) Build() error {
-	return nil
+	return n.cmake.Build()
 }
 
 func (n ninja) Install() error {
-	return nil
+	return n.cmake.Install()
 }

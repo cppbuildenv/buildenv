@@ -223,7 +223,7 @@ func (b *BuildConfig) Install(url, version, buildType string) error {
 func (b *BuildConfig) InitBuildSystem() error {
 	switch b.BuildTool {
 	case "cmake":
-		b.buildSystem = NewCMake(*b)
+		b.buildSystem = NewCMake(*b, "")
 	case "ninja":
 		b.buildSystem = NewNinja(*b)
 	case "makefiles":
