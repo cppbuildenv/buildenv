@@ -43,7 +43,10 @@ For third-party libraries that do not use CMake as a build system, like sqlite3-
 4. **Support specifying third-party library installation and uninstallation**:  
 Supports installing and uninstalling libraries along with their sub-dependencies.
 
-5. **Support sharing build cache**:  
+5. **Support detecting version conflict of same library with different versions in workspace**:
+Show error message to warning user if there are multiple versions of the same library in the workspace.
+
+6. **Support sharing build cache**:  
 Installed files of third-party can be shared with others by configure `cache_dirs` in buildenv's configure file.
 
 ## Installation Guide.

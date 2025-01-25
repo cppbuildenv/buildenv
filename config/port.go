@@ -11,8 +11,6 @@ import (
 	"strings"
 )
 
-type BuildTool int
-
 type Port struct {
 	Url           string                    `json:"url"`
 	Name          string                    `json:"name"`
@@ -234,7 +232,7 @@ func (p Port) Install(silentMode bool) error {
 			installedFrom = "source"
 		}
 
-		// This will copy all install files into installedDir.
+		// This will copy all install files into installed dir.
 		if err := p.installFromPackage(matchedConfig); err != nil {
 			return err
 		}
@@ -344,9 +342,6 @@ func (p Port) installFromSource(silentMode bool, buildConfig *buildsystem.BuildC
 		port.isSubDep = true
 		portPath := filepath.Join(Dirs.PortsDir, item+".json")
 		if err := port.Init(p.ctx, portPath); err != nil {
-			return err
-		}
-		if err := port.Verify(); err != nil {
 			return err
 		}
 		if err := port.Install(silentMode); err != nil {

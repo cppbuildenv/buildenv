@@ -32,7 +32,7 @@ type PortConfig struct {
 
 type BuildSystem interface {
 	Clone(repoUrl, repoRef string) error
-	Patch(repoRef string) error
+	Patch() error
 	Configure(buildType string) error
 	Build() error
 	Install() error
@@ -143,7 +143,7 @@ func (b BuildConfig) Clone(url, version string) error {
 	return nil
 }
 
-func (b BuildConfig) Patch(repoRef string) error {
+func (b BuildConfig) Patch() error {
 	if len(b.Patches) == 0 {
 		return nil
 	}
@@ -190,7 +190,7 @@ func (b *BuildConfig) Install(url, version, buildType string) error {
 	if err := b.buildSystem.Clone(url, version); err != nil {
 		return err
 	}
-	if err := b.buildSystem.Patch(version); err != nil {
+	if err := b.buildSystem.Patch(); err != nil {
 		return err
 	}
 	if err := b.buildSystem.Configure(buildType); err != nil {

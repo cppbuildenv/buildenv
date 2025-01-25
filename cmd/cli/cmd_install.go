@@ -19,7 +19,7 @@ type installCmd struct {
 }
 
 func (i *installCmd) register() {
-	flag.StringVar(&i.install, "install", "", "clone, configre, build and install a 3rd party port.")
+	flag.StringVar(&i.install, "install", "", "clone, configre, build and install a third-party library.")
 }
 
 func (i *installCmd) listen() (handled bool) {
@@ -34,11 +34,11 @@ func (i *installCmd) listen() (handled bool) {
 
 	buildenv := config.NewBuildEnv().SetBuildType(buildType.buildType)
 	if err := buildenv.Init(buildEnvPath); err != nil {
-		config.PrintError(err, "failed to init buildenv before install %s: %s.", i.install, err)
+		config.PrintError(err, "failed to init buildenv %s: %s.", i.install, err)
 		return true
 	}
 	if err := buildenv.Verify(request); err != nil {
-		config.PrintError(err, "%s install failed.", i.install)
+		config.PrintError(err, "install %s failed.", i.install)
 		return true
 	}
 
@@ -71,18 +71,14 @@ func (i *installCmd) listen() (handled bool) {
 	var port config.Port
 	portPath := filepath.Join(config.Dirs.PortsDir, portToInstall+".json")
 	if err := port.Init(buildenv, portPath); err != nil {
-		config.PrintError(err, "%s install failed.", i.install)
-		return true
-	}
-	if err := port.Verify(); err != nil {
-		config.PrintError(err, "%s install failed.", i.install)
+		config.PrintError(err, "install %s failed.", i.install)
 		return true
 	}
 	if err := port.Install(verify.silent); err != nil {
-		config.PrintError(err, "%s install failed.", i.install)
+		config.PrintError(err, "install %s failed.", i.install)
 		return true
 	}
 
-	config.PrintSuccess("%s install successfully.", portToInstall)
+	config.PrintSuccess("install %s successfully.", portToInstall)
 	return true
 }
