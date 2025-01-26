@@ -59,5 +59,4 @@ cmake_config的配置独立于version文件之外  | ✔
 支持在project里定义CMAKE_CXX_FLAGS和CMAKE_C_FLAGS，以及LDFLAGS | ✘
 检测代码如果跟目标不匹配什么都不做， 同时提供sync命令用于强行同步代码 | ✘
 将buildtype抽象到各个buildsystem里 | ✘
-install的时候指定-force则会删除build并重新编译 | ✘
 校验是否真的installed还需要判断文件是否存在 | ✘

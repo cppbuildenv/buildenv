@@ -91,12 +91,6 @@ func (b BuildConfig) Verify() error {
 	return nil
 }
 
-func (b BuildConfig) getLogPath(suffix string) string {
-	parentDir := filepath.Dir(b.PortConfig.BuildDir)
-	fileName := filepath.Base(b.PortConfig.BuildDir) + fmt.Sprintf("-%s.log", suffix)
-	return filepath.Join(parentDir, fileName)
-}
-
 func (b BuildConfig) Clone(url, version string) error {
 	// Clone repo only when source dir not exists.
 	if !fileio.PathExists(b.PortConfig.SourceDir) {
@@ -150,6 +144,11 @@ func (b BuildConfig) Patch() error {
 
 	// Change to source dir.
 	if err := os.Chdir(b.PortConfig.SourceDir); err != nil {
+		return err
+	}
+
+	// Clean repo.
+	if err := cmd.CleanRepo(b.PortConfig.SourceDir); err != nil {
 		return err
 	}
 
@@ -381,6 +380,12 @@ func (b *BuildConfig) replaceHolders() {
 			b.Arguments[index] = strings.ReplaceAll(argument, "${INSTALLED_DIR}", b.PortConfig.InstalledDir)
 		}
 	}
+}
+
+func (b BuildConfig) getLogPath(suffix string) string {
+	parentDir := filepath.Dir(b.PortConfig.BuildDir)
+	fileName := filepath.Base(b.PortConfig.BuildDir) + fmt.Sprintf("-%s.log", suffix)
+	return filepath.Join(parentDir, fileName)
 }
 
 func (b BuildConfig) validateEnv(envVar string) error {
