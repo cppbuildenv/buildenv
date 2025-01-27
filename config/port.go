@@ -77,7 +77,7 @@ func (p *Port) Init(ctx Context, portPath string) error {
 		PackageDir:    filepath.Join(Dirs.WorkspaceDir, "packages", packageFolder),
 		InstalledDir:  filepath.Join(Dirs.InstalledDir, installedFolder),
 		WithSubmodule: p.WithSubmodule,
-		TmpDir:        filepath.Join(Dirs.WorkspaceDir, "tmp"),
+		TmpDir:        filepath.Join(Dirs.DownloadedDir, "tmp"),
 	}
 
 	if len(p.BuildConfigs) > 0 {

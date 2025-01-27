@@ -12,7 +12,7 @@ import (
 
 func newPlatformSelectModel(callbacks config.BuildEnvCallbacks) *platformSelectModel {
 	const defaultWidth = 80
-	const defaultHeight = 10
+	const defaultHeight = 15
 
 	// Create platform dir if not exists.
 	if err := os.MkdirAll(config.Dirs.PlatformsDir, 0755); err != nil {

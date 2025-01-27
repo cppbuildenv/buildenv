@@ -27,7 +27,7 @@ type PortConfig struct {
 	InstalledDir  string     // for example: ${buildenv}/installed/x86_64-linux-20.04-Release
 	WithSubmodule bool       // if true, clone submodule when clone repository
 	JobNum        int        // number of jobs to run in parallel
-	TmpDir        string     // for example: ${buildenv}/tmp
+	TmpDir        string     // for example: ${buildenv}/downloaded/tmp
 }
 
 type BuildSystem interface {
@@ -80,11 +80,11 @@ type BuildConfig struct {
 
 func (b BuildConfig) Verify() error {
 	if b.BuildTool == "" {
-		return fmt.Errorf("build_tool is empty, it should be one of cmake, ninja, makefiles, autotools, meson, b2")
+		return fmt.Errorf("build_tool is empty, it should be one of cmake, ninja, makefiles, autotools, meson, b2, qmake")
 	}
 
-	if !slices.Contains([]string{"cmake", "ninja", "makefiles", "autotools", "meson", "b2"}, b.BuildTool) {
-		return fmt.Errorf("unsupported build tool: %s, it should be one of cmake, ninja, makefiles, autotools, meson, b2",
+	if !slices.Contains([]string{"cmake", "ninja", "makefiles", "autotools", "meson", "b2", "qmake"}, b.BuildTool) {
+		return fmt.Errorf("unsupported build tool: %s, it should be one of cmake, ninja, makefiles, autotools, meson, b2, qmake",
 			b.BuildTool)
 	}
 
@@ -94,8 +94,7 @@ func (b BuildConfig) Verify() error {
 func (b BuildConfig) Clone(url, version string) error {
 	// Clone repo only when source dir not exists.
 	if !fileio.PathExists(b.PortConfig.SourceDir) {
-		switch {
-		case strings.HasSuffix(url, ".git"):
+		if strings.HasSuffix(url, ".git") {
 			// Clone repo.
 			var command string
 			if b.PortConfig.WithSubmodule {
@@ -107,8 +106,7 @@ func (b BuildConfig) Clone(url, version string) error {
 			if err := cmd.NewExecutor(title, command).Execute(); err != nil {
 				return err
 			}
-
-		default:
+		} else {
 			// Check and repair resource.
 			archiveName := filepath.Base(url)
 			repair := fileio.NewDownloadRepair(url, archiveName, ".", b.PortConfig.TmpDir, b.PortConfig.DownloadedDir)
@@ -294,11 +292,13 @@ func (b BuildConfig) injectBuildEnvs() error {
 		value := strings.TrimSpace(item[index+1:])
 		value = strings.ReplaceAll(value, "${INSTALLED_DIR}", b.PortConfig.InstalledDir)
 		value = strings.ReplaceAll(value, "${SYSROOT}", b.PortConfig.CrossTools.RootFS)
-		value = strings.ReplaceAll(value, "${CFLAGS}", os.Getenv("CFLAGS"))
-		value = strings.ReplaceAll(value, "${CXXFLAGS}", os.Getenv("CXXFLAGS"))
 
-		if key == "PKG_CONFIG_PATH" {
-			value = fmt.Sprintf("%s%s%s", value, string(os.PathListSeparator), os.Getenv("PKG_CONFIG_PATH"))
+		switch key {
+		case "PKG_CONFIG_PATH", "PATH":
+			value = fmt.Sprintf("%s%s%s", value, string(os.PathListSeparator), os.Getenv(key))
+
+		case "CFLAGS", "CXXFLAGS":
+			os.Setenv(key, fmt.Sprintf("%s %s", os.Getenv(key), value))
 		}
 
 		if err := b.validateEnv(key); err != nil {

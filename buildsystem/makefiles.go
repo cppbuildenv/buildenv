@@ -53,10 +53,7 @@ func (m makefiles) Configure(buildType string) error {
 			m.Arguments = append(m.Arguments, "--disable-static")
 		}
 	}
-
-	if err := os.Chdir(m.PortConfig.BuildDir); err != nil {
-		return err
-	}
+	joinedArgs := strings.Join(m.Arguments, " ")
 
 	// Execute autogen.
 	if _, err := os.Stat(m.PortConfig.SourceDir + "/autogen.sh"); err == nil {
@@ -87,11 +84,8 @@ func (m makefiles) Configure(buildType string) error {
 		configureFile = "Configure"
 	}
 
-	// Join args into a string.
-	joinedArgs := strings.Join(m.Arguments, " ")
-	configure := fmt.Sprintf("%s/%s %s", m.PortConfig.SourceDir, configureFile, joinedArgs)
-
 	// Execute configure.
+	configure := fmt.Sprintf("%s/%s %s", m.PortConfig.SourceDir, configureFile, joinedArgs)
 	logPath := m.getLogPath("configure")
 	title := fmt.Sprintf("[configure %s]", m.PortConfig.LibName)
 	if err := cmd.NewExecutor(title, configure).WithLogPath(logPath).Execute(); err != nil {
