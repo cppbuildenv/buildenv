@@ -1,47 +1,47 @@
 package config
 
-type VerifyRequest interface {
+type SetupArgs interface {
 	Silent() bool
 	BuildType() string
 	RepairBuildenv() bool
 	InstallPorts() bool
 }
 
-type verifyRequest struct {
+type setupArgs struct {
 	silent         bool   // Always called from toolchain.cmake
 	buildType      string // CMAKE_BUILD_TYPE, default is 'Release'
 	repairBuildenv bool   // Called to check and fix build environment.
 	installPorts   bool   // Called to install a 3rd party ports.
 }
 
-func (v verifyRequest) Silent() bool {
-	return v.silent
+func (s setupArgs) Silent() bool {
+	return s.silent
 }
 
-func (v verifyRequest) BuildType() string {
-	return v.buildType
+func (s setupArgs) BuildType() string {
+	return s.buildType
 }
 
-func (v verifyRequest) RepairBuildenv() bool {
-	return v.repairBuildenv
+func (s setupArgs) RepairBuildenv() bool {
+	return s.repairBuildenv
 }
 
-func (v *verifyRequest) SetBuildType(buildType string) *verifyRequest {
-	v.buildType = buildType
-	return v
+func (s *setupArgs) SetBuildType(buildType string) *setupArgs {
+	s.buildType = buildType
+	return s
 }
 
-func (v verifyRequest) InstallPorts() bool {
-	return v.installPorts
+func (s setupArgs) InstallPorts() bool {
+	return s.installPorts
 }
 
-func (v *verifyRequest) SetInstallPorts(installPort bool) *verifyRequest {
-	v.installPorts = installPort
-	return v
+func (s *setupArgs) SetInstallPorts(installPort bool) *setupArgs {
+	s.installPorts = installPort
+	return s
 }
 
-func NewVerifyRequest(silent, repairBuildenv, installPorts bool) *verifyRequest {
-	return &verifyRequest{
+func NewSetupArgs(silent, repairBuildenv, installPorts bool) *setupArgs {
+	return &setupArgs{
 		silent:         silent,
 		buildType:      "Release",
 		repairBuildenv: repairBuildenv,

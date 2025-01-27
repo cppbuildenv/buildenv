@@ -78,7 +78,7 @@ type BuildConfig struct {
 	PortConfig  PortConfig  `json:"-"`
 }
 
-func (b BuildConfig) Verify() error {
+func (b BuildConfig) Validate() error {
 	if b.BuildTool == "" {
 		return fmt.Errorf("build_tool is empty, it should be one of cmake, ninja, makefiles, autotools, meson, b2, qmake")
 	}

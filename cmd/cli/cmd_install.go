@@ -28,7 +28,7 @@ func (i *installCmd) listen() (handled bool) {
 	}
 
 	// Make sure toolchain, rootfs and tools are prepared.
-	request := config.NewVerifyRequest(verify.silent, true, false).
+	args := config.NewSetupArgs(setup.silent, true, false).
 		SetBuildType(buildType.buildType)
 	buildEnvPath := filepath.Join(config.Dirs.WorkspaceDir, "buildenv.json")
 
@@ -37,7 +37,7 @@ func (i *installCmd) listen() (handled bool) {
 		config.PrintError(err, "failed to init buildenv %s: %s.", i.install, err)
 		return true
 	}
-	if err := buildenv.Verify(request); err != nil {
+	if err := buildenv.Setup(args); err != nil {
 		config.PrintError(err, "install %s failed.", i.install)
 		return true
 	}
@@ -74,7 +74,7 @@ func (i *installCmd) listen() (handled bool) {
 		config.PrintError(err, "install %s failed.", i.install)
 		return true
 	}
-	if err := port.Install(verify.silent); err != nil {
+	if err := port.Install(setup.silent); err != nil {
 		config.PrintError(err, "install %s failed.", i.install)
 		return true
 	}

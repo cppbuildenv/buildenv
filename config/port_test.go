@@ -13,7 +13,7 @@ func TestBuildGFlags(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := port.Verify(); err != nil {
+	if err := port.Validate(); err != nil {
 		t.Fatal(err)
 	}
 }

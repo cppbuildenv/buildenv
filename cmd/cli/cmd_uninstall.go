@@ -33,9 +33,9 @@ func (u *uninstallCmd) listen() (handled bool) {
 		return false
 	}
 
-	request := config.NewVerifyRequest(false, false, false).SetBuildType(buildType.buildType)
+	args := config.NewSetupArgs(false, false, false).SetBuildType(buildType.buildType)
 	buildenv := config.NewBuildEnv().SetBuildType(buildType.buildType)
-	if err := buildenv.Verify(request); err != nil {
+	if err := buildenv.Setup(args); err != nil {
 		config.PrintError(err, "%s uninstall failed.", u.uninstall)
 		return true
 	}
@@ -87,7 +87,7 @@ func (u uninstallCmd) uninstallPort(ctx config.Context, portNameVersion string) 
 	if err := port.Init(ctx, portPath); err != nil {
 		return err
 	}
-	if err := port.Verify(); err != nil {
+	if err := port.Validate(); err != nil {
 		return err
 	}
 
@@ -115,13 +115,13 @@ func (u uninstallCmd) uninstallPort(ctx config.Context, portNameVersion string) 
 				return fmt.Errorf("port.dependencies contains circular dependency: %s", item)
 			}
 
-			// Check and verify dependency.
+			// Check and validate dependency.
 			var port config.Port
 			portPath := filepath.Join(config.Dirs.PortsDir, item+".json")
 			if err := port.Init(ctx, portPath); err != nil {
 				return err
 			}
-			if err := port.Verify(); err != nil {
+			if err := port.Validate(); err != nil {
 				return err
 			}
 

@@ -10,7 +10,7 @@ toolchain里定义CC和CXX时候后面拼上 "--sysroot=xxx"  | ✔
 三方库如果编译后产生pkg-config文件，需要加入系统变量（ffmpeg在通过pkg-config寻找libx265）  | ✔
 path不存在，应该先尝试用下载后的文件解压，而不是直接重复下载，重新下载的前提是md5等校验没通过  | ✔
 每个installed的库添加platform目录，目的是为了支持不同平台的库共存  | ✔
-执行-verify打印所有已经准备好的tool和已经安装的port  | ✔
+执行-setup打印所有已经准备好的tool和已经安装的port  | ✔
 环境变量用os.PathListSeparator拼接  | ✔
 将download的资源统一解压到内部的tools目录  | ✔
 拓展project，将packages的配置文件放到project目录下  | ✔
@@ -47,6 +47,7 @@ cmake_config的配置独立于version文件之外  | ✔
 支持 buildenv -upgrade 升级  | ✘
 动态生成的cmake config文件（windows还没测试）| ✘
 支持ninja  |  ✔
+将buildtype抽象到各个buildsystem里 | ✔
 支持windows下工作  | ✘
 下载的库暂不支持生成cmake config文件  | ✘
 在创建的新tool和port里添加注释  | ✘
@@ -57,7 +58,5 @@ cmake_config的配置独立于version文件之外  | ✔
 如果发现资源包size跟最新不匹配，即便已经解压了也要重新下载 | ✘
 支持export功能 | ✘
 支持在project里定义CMAKE_CXX_FLAGS和CMAKE_C_FLAGS，以及LDFLAGS | ✘
-检测代码如果跟目标不匹配什么都不做， 同时提供sync命令用于强行同步代码 | ✘
-将buildtype抽象到各个buildsystem里 | ✘
+检测代码如果跟目标不匹配, 什么都不做，同时提供sync命令用于强行同步代码 | ✘
 校验是否真的installed还需要判断文件是否存在 | ✘
-根据当前选择的project选择对应的toolchain_file.cmake | ✘

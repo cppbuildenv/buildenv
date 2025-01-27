@@ -21,8 +21,8 @@ type RootFS struct {
 	cmakepath string `json:"-"`
 }
 
-func (r *RootFS) Verify() error {
-	// Verify rootfs download url.
+func (r *RootFS) Validate() error {
+	// Validate rootfs download url.
 	if r.Url == "" {
 		return fmt.Errorf("rootfs.url is empty")
 	}
@@ -30,7 +30,7 @@ func (r *RootFS) Verify() error {
 		return fmt.Errorf("rootfs.url of %s is not accessible", r.Url)
 	}
 
-	// Verify rootfs path and convert to absolute path.
+	// Validate rootfs path and convert to absolute path.
 	if r.Path == "" {
 		return fmt.Errorf("rootfs.path is empty")
 	}
@@ -56,7 +56,7 @@ func (r *RootFS) Verify() error {
 	return nil
 }
 
-func (r RootFS) CheckAndRepair(request VerifyRequest) error {
+func (r RootFS) CheckAndRepair(request SetupArgs) error {
 	if !request.RepairBuildenv() {
 		return nil
 	}

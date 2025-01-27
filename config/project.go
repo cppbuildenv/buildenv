@@ -82,21 +82,21 @@ func (p Project) Write(platformPath string) error {
 	return os.WriteFile(platformPath, bytes, os.ModePerm)
 }
 
-func (p Project) Verify(request VerifyRequest) error {
+func (p Project) Setup(request SetupArgs) error {
 	// Check if ports version conflicts in the project.
 	if err := p.checkPortsConflicts(); err != nil {
 		return err
 	}
 
-	// Verify dependencies.
-	verifyPort := func(portNameVersion string) error {
+	// Validate dependencies.
+	validatePort := func(portNameVersion string) error {
 		portPath := filepath.Join(Dirs.PortsDir, portNameVersion+".json")
 		var port Port
 		if err := port.Init(p.ctx, portPath); err != nil {
 			return fmt.Errorf("%s: %w", portNameVersion, err)
 		}
 
-		if err := port.Verify(); err != nil {
+		if err := port.Validate(); err != nil {
 			return fmt.Errorf("%s: %w", portNameVersion, err)
 		}
 
@@ -110,7 +110,7 @@ func (p Project) Verify(request VerifyRequest) error {
 	}
 
 	for _, item := range p.Ports {
-		if err := verifyPort(item); err != nil {
+		if err := validatePort(item); err != nil {
 			return err
 		}
 	}

@@ -14,7 +14,7 @@ type CacheDir struct {
 	Writable bool   `json:"writable"`
 }
 
-func (c CacheDir) Verify() error {
+func (c CacheDir) Validate() error {
 	if c.Dir == "" {
 		return fmt.Errorf("cache dir is empty")
 	}

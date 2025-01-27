@@ -24,7 +24,7 @@ var (
 	projectSelect  = newProjectSelectCmd(config.Callbacks)
 	toolCreate     = newToolCreateCmd(config.Callbacks)
 	portCreate     = newPortCreateCmd(config.Callbacks)
-	verify         = newVerifyCmd()
+	setup          = newSetupCmd()
 	install        = newInstallCmd()
 	uninstall      = newUninstallCmd()
 	about          = newAboutCmd(config.Callbacks)
@@ -38,7 +38,7 @@ var commands = []reisterable{
 	projectSelect,
 	toolCreate,
 	portCreate,
-	verify,
+	setup,
 	install,
 	uninstall,
 	about,

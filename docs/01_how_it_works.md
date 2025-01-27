@@ -145,16 +145,16 @@ Usage of ./buildenv:
   -select_project string
         select a project as current project.
   -silent
-        run buildenv no output, it's used with -verify.
+        run buildenv no output, it's used with -setup.
   -uninstall string
         uninstall a 3rd party port.
-  -verify
+  -setup
         check and repair cross build envronment for selected platform.
 ```
 
-## 4. Verify buildenv.
+## 4. Setup buildenv.
 
-After executing `./buildenv -verify`, buildenv will do works as below:
+After executing `./buildenv -setup`, buildenv will do works as below:
 
 - Check and repaire toolchain, rootfs and other tools for current selected platform. if missing, buildenv would download them and setup environment vars for them.
 - Check if third-party libraies were installed for current selected project. if missing, buildenv would clone their source then configure, build and install, even their sub-depedencies.

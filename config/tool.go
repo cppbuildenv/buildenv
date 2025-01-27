@@ -41,8 +41,8 @@ func (t *Tool) Init(toolpath string) error {
 	return nil
 }
 
-func (t *Tool) Verify() error {
-	// Verify tool download url.
+func (t *Tool) Validate() error {
+	// Validate tool download url.
 	if t.Url == "" {
 		return fmt.Errorf("url of %s is empty", t.toolName)
 	}
@@ -50,7 +50,7 @@ func (t *Tool) Verify() error {
 		return fmt.Errorf("tool.url of %s is not accessible", t.Url)
 	}
 
-	// Verify tool path and convert to absolute path.
+	// Validate tool path and convert to absolute path.
 	if t.Path == "" {
 		return fmt.Errorf("path of %s is empty", t.toolName)
 	}
@@ -64,7 +64,7 @@ func (t *Tool) Verify() error {
 	return nil
 }
 
-func (t Tool) CheckAndRepair(request VerifyRequest) error {
+func (t Tool) CheckAndRepair(request SetupArgs) error {
 	if !request.RepairBuildenv() {
 		return nil
 	}

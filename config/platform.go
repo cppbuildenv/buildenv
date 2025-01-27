@@ -86,30 +86,30 @@ func (p Platform) Write(platformPath string) error {
 	return os.WriteFile(platformPath, bytes, os.ModePerm)
 }
 
-func (p Platform) Verify(request VerifyRequest) error {
+func (p Platform) Setup(args SetupArgs) error {
 	// RootFS maybe nil when platform is native.
 	if p.RootFS != nil {
-		if err := p.RootFS.Verify(); err != nil {
+		if err := p.RootFS.Validate(); err != nil {
 			return err
 		}
 
-		if err := p.RootFS.CheckAndRepair(request); err != nil {
+		if err := p.RootFS.CheckAndRepair(args); err != nil {
 			return fmt.Errorf("buildenv.rootfs check and repair error: %w", err)
 		}
 	}
 
 	// Toolchain maybe nil when platform is native.
 	if p.Toolchain != nil {
-		if err := p.Toolchain.Verify(); err != nil {
+		if err := p.Toolchain.Validate(); err != nil {
 			return fmt.Errorf("buildenv.toolchain error: %w", err)
 		}
 
-		if err := p.Toolchain.CheckAndRepair(request); err != nil {
+		if err := p.Toolchain.CheckAndRepair(args); err != nil {
 			return fmt.Errorf("buildenv.toolchain check and repair error: %w", err)
 		}
 	}
 
-	// Verify tools.
+	// Validate tools.
 	for _, item := range p.Tools {
 		toolpath := filepath.Join(Dirs.ToolsDir, item+".json")
 		var tool Tool
@@ -118,11 +118,11 @@ func (p Platform) Verify(request VerifyRequest) error {
 			return fmt.Errorf("buildenv.tools[%s] read error: %w", item, err)
 		}
 
-		if err := tool.Verify(); err != nil {
-			return fmt.Errorf("buildenv.tools[%s] verify error: %w", item, err)
+		if err := tool.Validate(); err != nil {
+			return fmt.Errorf("buildenv.tools[%s] validate error: %w", item, err)
 		}
 
-		if err := tool.CheckAndRepair(request); err != nil {
+		if err := tool.CheckAndRepair(args); err != nil {
 			return fmt.Errorf("buildenv.tools[%s] check and repair error: %w", item, err)
 		}
 

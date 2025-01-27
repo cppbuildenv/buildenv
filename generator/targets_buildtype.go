@@ -29,7 +29,7 @@ func (g *targetsBuildType) generate(installedDir string) error {
 		return fmt.Errorf("build type is empty")
 	}
 
-	// Verify importName for windows and soName for linux.
+	// Validate importName for windows and soName for linux.
 	switch strings.ToLower(g.cmakeConfig.SystemName) {
 	case "windows":
 		if g.cmakeConfig.Libtype == "SHARED" && g.cmakeConfig.Impname == "" {

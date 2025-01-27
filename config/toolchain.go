@@ -33,10 +33,10 @@ type Toolchain struct {
 	cmakepath string `json:"-"`
 }
 
-func (t *Toolchain) Verify() error {
+func (t *Toolchain) Validate() error {
 	rootfs := os.Getenv("SYSROOT")
 
-	// Verify toolchain download url.
+	// Validate toolchain download url.
 	if t.Url == "" {
 		return fmt.Errorf("toolchain.url would be http url or local file url, but it's empty")
 	}
@@ -94,7 +94,7 @@ func (t *Toolchain) Verify() error {
 		return fmt.Errorf("toolchain.system_processor is empty")
 	}
 
-	// Verify toolchain prefix path and convert to absolute path.
+	// Validate toolchain prefix path and convert to absolute path.
 	if t.ToolchainPrefix == "" {
 		return fmt.Errorf("toolchain.toolchain_prefix should be like 'x86_64-linux-gnu-', but it's empty")
 	}
@@ -146,8 +146,8 @@ func (t *Toolchain) Verify() error {
 	return nil
 }
 
-func (t Toolchain) CheckAndRepair(request VerifyRequest) error {
-	if !request.RepairBuildenv() {
+func (t Toolchain) CheckAndRepair(args SetupArgs) error {
+	if !args.RepairBuildenv() {
 		return nil
 	}
 
@@ -161,7 +161,7 @@ func (t Toolchain) CheckAndRepair(request VerifyRequest) error {
 
 	// Check if tool exists.
 	if fileio.PathExists(t.fullpath) {
-		if !request.Silent() {
+		if !args.Silent() {
 			title := color.Sprintf(color.Green, "\n[✔] ---- Toolchain: %s\n", fileio.FileBaseName(t.Url))
 			fmt.Printf("%sLocation: %s\n", title, location)
 		}
@@ -182,7 +182,7 @@ func (t Toolchain) CheckAndRepair(request VerifyRequest) error {
 	}
 
 	// Print download & extract info.
-	if !request.Silent() {
+	if !args.Silent() {
 		title := color.Sprintf(color.Green, "\n[✔] ---- Toolchain: %s\n", fileio.FileBaseName(t.Url))
 		fmt.Printf("%sLocation: %s\n", title, location)
 	}

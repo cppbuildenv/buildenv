@@ -92,7 +92,7 @@ func (p *Port) Init(ctx Context, portPath string) error {
 	return nil
 }
 
-func (p *Port) Verify() error {
+func (p *Port) Validate() error {
 	if p.Url == "" {
 		return fmt.Errorf("url of %s is empty", p.Name)
 	}
@@ -110,7 +110,7 @@ func (p *Port) Verify() error {
 			continue
 		}
 
-		if err := config.Verify(); err != nil {
+		if err := config.Validate(); err != nil {
 			return err
 		}
 	}
