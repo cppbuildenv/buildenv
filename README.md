@@ -193,14 +193,7 @@ About to to use buildenv in cli mode please read docs below:
 
 ## 如何参与贡献 - How to Contribute.
 
-1.  Fork 本仓库
-2.  新建 feature_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
-
----
-
-1.  Fork this repository.
-2.  Create a new branch feature_xxx.
-3.  Submit your code changes.
-4.  Create a Pull Request.
+1.  Fork 本仓库 ------------------ Fork this repository.
+2.  新建 feature_xxx 分支 -------- Create a new branch feature_xxx.
+3.  提交代码 --------------------- Submit your code changes.
+4.  新建 Pull Request ------------ Create a Pull Request.
