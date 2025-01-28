@@ -76,7 +76,7 @@ Then you can define the cmake config in the [version].json file for different bu
 }
 ```
 
-After installation, you can see the generated cmake config files.
+After building and installing, you can see the generated cmake config files as below:
 
 ```
 lib
@@ -87,6 +87,15 @@ lib
         ├── x264Targets.cmake
         └── x264Targets-release.cmake
 ```
+
+Finally, you can use it in your cmake project as below:
+
+```cmake
+find_package(x264 REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE x264::x264)
+```
+
+> Please note that, the namespace is defined in cmake_config file, if not defined, it would be the same as the library name.
 
 ## 2. Library with components.
 
@@ -185,7 +194,7 @@ The file content would be like this, it would be a little different from library
 > Different components may have different dependencies, so we need to define them in the `dependencies` field.
 
 
-The final step is to define the cmake config in the [version].json file for different build_config sections.
+The next step is to define the cmake config in the [version].json file for different build_config sections.
 
 ```
 {
@@ -221,3 +230,33 @@ The final step is to define the cmake config in the [version].json file for diff
     ]
 }
 ```
+
+After building and installing, you can see the generated cmake config files as below:
+
+```
+lib
+└── cmake
+    └─── ffmpeg
+        ├── ffmpegConfig.cmake
+        ├── ffmpegConfigVersion.cmake
+        ├── ffmpegModules-release.cmake
+        └── ffmpegModules.cmake
+```
+
+Finally, you can use it in your cmake project as below:
+
+```cmake
+find_package(ffmpeg REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    FFmpeg::avutil
+    FFmpeg::avcodec
+    FFmpeg::avdevice
+    FFmpeg::avfilter
+    FFmpeg::avformat
+    FFmpeg::postproc
+    FFmpeg::swresample
+    FFmpeg::swscale
+)
+```
+
+> Please note that, the namespace is defined in cmake_config file, if not defined, it would be the same as the library name.

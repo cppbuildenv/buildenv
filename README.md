@@ -21,7 +21,7 @@ While third-party package management tools like `Conan` and `Vcpkg` are widely u
 
 - **Conan**: Although powerful, Conan depends on the additional Python language, which increases the learning curve. Conan not only supports CMake but also other build systems like `Meson`, `Makefile`, `MSBuild`, `SScon`, `QMake`, `Bazaar`, etc. This makes its API more deeply abstracted, requiring more time to learn new things. As we all known, many c++ developers are still not very familiar with CMake script, this would increase their learning burden.
   
-- **Vcpkg**: Easier to use in comparison, but due to networking issues in China, the experience is poor, and it is almost impossible to use properly. Additionally, Vcpkg's default package management only tracks the latest versions of third-party libraries, which complicates managing specific versions of dependencies within projects.
+- **Vcpkg**: Easier to use in comparison, but due to networking issues in China, the experience is poor, and it is almost impossible to use properly. Additionally, Vcpkg's default package management is too simplistic, and it is not flexible for managing multiple versions of dependencies.
 
 Furthermore, both Conan and Vcpkg do not effectively manage cross-compilation environments. During cross-compilation for multiple platforms, developers often have to manually configure the toolchain, rootfs, and various tools. This process is not only cumbersome but also error-prone.
 
@@ -49,12 +49,15 @@ Show error message to warning user if there are multiple versions of the same li
 6. **Support sharing build cache**:  
 Installed files of third-party can be shared with others by configure `cache_dirs` in buildenv's configure file.
 
-## Installation Guide.
+## Build Guide.
 
 1. Download the Go SDK.
 2. Run go build to compile the program successfully.
+3. You can also build it by execute `./build.sh`.
 
 ## Usage Instructions.
+
+buildenv providers two kinds of usage: cli and gui, cli mode will provide `install` and `uninstall` commands, and the usage of them is almost the same, except that cli mode will provide `install` and `uninstall` commands. The gui mode is as follows:
 
 **For more detailed information, please refer to the [Docs](./docs/01_how_it_works.md).**
 
@@ -93,6 +96,22 @@ source /mnt/data/work_phil/Golang/buildenv/script/environment
 
 [ctrl+c/q -> quit]
 ```
+
+About to to use buildenv in cli mode please read docs below:
+
+1. [how it works](./docs/01_how_it_works.md)
+2. [how to init buildenv](./docs/02_init_buildenv.md)
+3. [how to add new platform](./docs/03_add_new_platform.md)
+4. [how to add new project](./docs/04_add_new_project.md)
+5. [how to add new tool](./docs/05_add_new_tool.md)
+6. [how to add new port](./docs/06_add_new_port.md)
+7. [how to select platform](./docs/07_how_to_select_platform.md)
+8. [how to select project](./docs/08_how_to_select_project.md)
+9. [how to integrate buildenv](./docs/09_integrate_buildenv.md)
+10. [how to install a port](./docs/10_how_to_install_port.md)
+11. [how to uninstall a port](./docs/11_how_to_uninstall_port.md)
+12. [how to generate cmake config files](./docs/12_how_to_generate_cmake_config.md)
+13. [how to share installed packages](./docs/13_how_to_share_installed_libraries.md)
 
 ## How to Contribute.
 

@@ -18,9 +18,9 @@ CMake长期以来仅提供了 `find_package`和`find_program` 等功能，但缺
 
 尽管 Conan和Vcpkg等第三方包管理工具在社区中已经得到了广泛使用，但它们并不能完全满足某些需求：
 
-- **Conan**：虽然功能强大，但依赖于额外的 **Python** 语言，且上手成本较高。因为 Conan 不仅支持 **CMake**，还支持 **Meson**、**Makefile**、**MSBuild**、**SScon**、**QMake**、**Bazaar** 等构建系统，这导致其 API 封装较深，需要更多时间学习和上手，对于本来**CMake**掌握就一般的同学无疑又增加了额外新的学习成本。
+- **Conan**：虽然功能强大，但依赖于额外的 **Python** 语言和python包，且上手成本较高。因为 Conan 不仅支持 **CMake**，还支持 **Meson**、**Makefile**、**MSBuild**、**SScon**、**QMake**、**Bazaar** 等构建系统，这导致其 API 封装较深，需要更多时间学习和上手，对于本来**CMake**掌握就一般的同学无疑又增加了额外新的学习成本。
   
-- **Vcpkg**：相对容易上手，但由于 **国内网络环境问题**使用体验较差，几乎无法正常使用，而且**Vcpkg**对于三方库的版本管理默认仅管理最新版本，这让项目里依赖三方库的特定版本管理不是那么直接。
+- **Vcpkg**：相对容易上手，但由于 **国内网络环境问题**使用体验较差，几乎无法正常使用，而且**Vcpkg**对于三方库的版本管理过于简单，对于多版本依赖管理不灵活。
 
 另外，**Conan** 和 **Vcpkg** 都未能有效管理 **交叉编译环境**，在多个平台的交叉编译时，开发者通常需要手动配置 toolchain 和 rootfs, 以及各种tool的配置，这样不仅繁琐，而且容易出错。
 
@@ -34,7 +34,7 @@ CMake长期以来仅提供了 `find_package`和`find_program` 等功能，但缺
     - 让Unix Makefiles项目在编译期间能通过pc文件找到子依赖，即便当前workspace目录迁移了；
 
 2. **支持自动管理编译工具**：  
-通过配置实现自动下载 `toolchain`、`sysroot` 和 `CMake` 等以及配置其环境变量；
+通过配置实现自动下载 `toolchain`、`sysroot`、`CMake`、`ninja`、`nasm` 等以及配置其环境变量；
 
 3. **支持生成CMake配置文件**：  
 对于非CMake作为构建工具的三方库，可以自动生成对应的cmake config文件，方便在CMake项目中使用；
@@ -48,15 +48,14 @@ CMake长期以来仅提供了 `find_package`和`find_program` 等功能，但缺
 6. **支持编译缓存共享**:  
 通过配置`cache_dirs`，可进行局域网内网盘来托管和读取`install文件缓存`；
 
-## 安装教程
+## 如何编译出buildenv
 
-下载`golang sdk`，然后直接`go build`，即可编译成功。
+下载`golang sdk`，然后直接`go build`，即可编译成功，或者执行内置的脚本`build.sh`即可编译成功。
 
 ## 使用说明
 
-**有关更多详细信息，请参阅[Docs](./docs/01_how_it_works.md)。**
+buildenv 提供两种交互使用方式：cli和gui，前者便于CI/CD里使用，后者便于本地开发使用，除了cli模式会额外提供`install`和`uninstall`相关命令之外两者的使用方式基本一致, gui模式如下：
 
-```
 $ ./buildenv
 
 Welcome to buildenv!                                   
@@ -91,6 +90,22 @@ source /mnt/data/work_phil/Golang/buildenv/script/environment
 
 [ctrl+c/q -> quit]
 ```
+
+关于cli模式的使用，请参考以下文章：
+
+1. [buildenv是如何工作的](./docs/01_how_it_works.md)
+2. [如何初始化buildenv](./docs/02_init_buildenv.md)
+3. [如何添加一个新的平台](./docs/03_add_new_platform.md)
+4. [如何添加一个新的项目](./docs/04_add_new_project.md)
+5. [如何添加一个新的工具](./docs/05_add_new_tool.md)
+6. [如何添加一个新的三方库](./docs/06_add_new_port.md)
+7. [如何选择一个平台作为当前平台](./docs/07_how_to_select_platform.md)
+8. [如何选择一个项目作为当前项目](./docs/08_how_to_select_project.md)
+9. [如何集成buildenv](./docs/09_integrate_buildenv.md)
+10. [如何安装一个三方库](./docs/10_how_to_install_port.md)
+11. [如何卸载一个三方库](./docs/11_how_to_uninstall_port.md)
+12. [如何生成cmake配置文件](./docs/12_how_to_generate_cmake_config.md)
+13. [如何共享安装的三方库](./docs/13_how_to_share_installed_libraries.md)
 
 ## 如何参与贡献
 
