@@ -1,6 +1,6 @@
 # How to integarte.
 
-BuildEnv is just a standalone executable binary. However, to make it easier to invoke globally, we support adding the path of BuildEnv to the system environment variables, we can integrate buildenv via invoke cli with arguments or cli menus.
+buildenv is just a standalone executable binary. However, to make it easier to invoke globally, we support adding the path of buildenv to the system environment variables, we can integrate buildenv via invoke cli with arguments or cli menus.
 
 ## Integrate via cli arguments.
 

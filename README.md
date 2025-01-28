@@ -1,6 +1,6 @@
 # BuildEnv
 
-## 介绍 - Introduction
+## 1. 介绍 - Introduction
 
 buildenv是一个用 **Go语言** 实现的 **C/C++ 包管理器**，不需要掌握额外的脚本语言，只需了解 **JSON** 格式即可轻松管理包。该包管理器基于 **CMake**，作为 **CMake** 的补充，主要解决 **CMake 在多架构平台交叉编译环境下的编译、包管理以及所属工具资源绑定问题**。
 
@@ -9,7 +9,7 @@ buildenv是一个用 **Go语言** 实现的 **C/C++ 包管理器**，不需要�
 **buildenv** is a Go language-based C/C++ package manager that does not require mastering additional program languages. It is designed to simplify package management with JSON only. This package manager works with CMake, with this you can download and setup toolchain, rootfs and tools automacally, then cross-compilation third-party libraries in multiple architectures.
 
 
-## 背景问题 - Background.
+## 2. 背景问题 - Background.
 
 CMake长期以来仅提供了 `find_package`、`find_program`、`find_library`、`find_path` 等功能，但缺乏对包的管理能力，特别是在以下几个方面：
 
@@ -35,7 +35,7 @@ For a long time, CMake has only provided functions like  `find_package`、`find_
 
     In terms of cross-compilation support, CMake allows configuration of the cross-compilation environment by specifying the CMAKE_TOOLCHAIN_FILE, but still requires manual configuration.
 
-## 为什么不使用现有的包管理工具 - Why Not Use Existing Package Management Tools
+## 3. 为什么不使用现有的包管理工具 - Why Not Use Existing Package Management Tools
 
 尽管 Conan和Vcpkg等第三方包管理工具在社区中已经得到了广泛使用，但它们并不能完全满足某些需求：
 
@@ -61,7 +61,7 @@ While third-party package management tools like `Conan` and `Vcpkg` are widely u
 
 Furthermore, both Conan and Vcpkg do not effectively manage cross-compilation environments. During cross-compilation for multiple platforms, developers often have to manually configure the toolchain, rootfs, and various tools. This process is not only cumbersome but also error-prone.
 
-## 解决方案：
+## 4. 解决方案：
 
 为了解决上述问题，**buildenv** 作为一个新的工具应运而生，主要解决以下几个核心问题：
 
@@ -116,15 +116,13 @@ To solve the above issues, buildenv emerges as a new tool that solves the follow
     **Support sharing build cache**:  
 Installed files of third-party can be shared with others by configure `cache_dirs` in buildenv's configure file.
 
-## 如何编编译 - Build Guide.
+## 5. 如何编编译 - Build Guide.
 
 1. 下载`golang sdk` ------------------------------ Download the Go SDK.
-
 2. `go build`，即可编译成功 ---------------------- Run go build to compile the program successfully.
-
 3. 或者执行内置的脚本`build.sh`即可编译成功 ----- You can also build it by execute `./build.sh`.
 
-## 使用说明 - Usage Instructions.
+## 6. 使用说明 - Usage Instructions.
 
 buildenv 提供两种交互使用方式：cli和gui，前者便于CI/CD里使用，后者便于本地开发使用，除了cli模式会额外提供`install`和`uninstall`相关命令之外两者的使用方式基本一致, gui模式如下：
 
@@ -191,7 +189,7 @@ About to to use buildenv in cli mode please read docs below:
 12. [如何生成cmake配置文件 --------------- how to generate cmake config files](./docs/12_how_to_generate_cmake_config.md)
 13. [如何共享安装的三方库 ----------------- how to share installed packages](./docs/13_how_to_share_installed_libraries.md)
 
-## 如何参与贡献 - How to Contribute.
+## 7. 如何参与贡献 - How to Contribute.
 
 1.  Fork 本仓库 ------------------ Fork this repository.
 2.  新建 feature_xxx 分支 -------- Create a new branch feature_xxx.

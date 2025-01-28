@@ -1,6 +1,6 @@
-# How to init BuildEnv.
+# How to init buildenv.
 
-Buildenv depends on a set of configurations, which describe the toolchain, rootfs, cmake, tools used, and the third-party libraries it depends on. Then, BuildEnv will download resources, pull code, compile and build tools, and install them to the specified directory based on the configuration. This file is called BuildEnv.json.  
+Buildenv depends on a set of configurations, which describe the toolchain, rootfs, cmake, tools used, and the third-party libraries it depends on. Then, buildenv will download resources, pull code, compile and build tools, and install them to the specified directory based on the configuration. This file is called buildenv.json.  
 
 ## 1. What does buildens.json look like.
 

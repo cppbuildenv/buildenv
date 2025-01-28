@@ -1,6 +1,6 @@
 # 1. How it works.
 
-BuildEnv's workspace would be like below, it consists of **buildenv.json**, **conf**, **downloads**, **installed**, **packages** and **script**.
+buildenv's workspace would be like below, it consists of **buildenv.json**, **conf**, **downloads**, **installed**, **packages** and **script**.
 
 ```
 ├── buildenv.json
@@ -70,9 +70,9 @@ BuildEnv's workspace would be like below, it consists of **buildenv.json**, **co
 
 ## 2. Introduction
 
-- **buildenv.json**: This is BuildEnv's global config file, `conf repo`, `current platform`, `current project` and `cache_dirs` are defined in it, you can change it by BuildEnv's cli or text manually.
+- **buildenv.json**: This is buildenv's global config file, `conf repo`, `current platform`, `current project` and `cache_dirs` are defined in it, you can change it by buildenv's cli or text manually.
 
-- **conf**: This should be a repo to save BuildEnv's configuration files. All available `platform`, `ports`, `projects` and `tools` are defined here.
+- **conf**: This should be a repo to save buildenv's configuration files. All available `platform`, `ports`, `projects` and `tools` are defined here.
     - **platform**: This folder contains all available platform configuration files. Each file defines the toolchain, rootfs, and tools.
     - **ports**: This folder contains all available third-party port configuration files. Each file defines the third party's repository URL, ref, version, and build step.
     - **projects**: This folder contains all available project configuration files. Each file defines third parties, CMake variables, environment variables, and compile options.
@@ -86,7 +86,7 @@ Toolchain, rootfs, tools of different platforms would be download in this folder
 
 ## 3. Work modes
 
-BuildEnv provides two working mode: `cli menu` and `cli with argument`.
+buildenv provides two working mode: `cli menu` and `cli with argument`.
 
 ### 3.1 Command-Line menu.
 

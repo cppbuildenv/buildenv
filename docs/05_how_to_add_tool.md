@@ -16,7 +16,7 @@ for example: `conf/tools/nasm-2.16.03.json`:
 
 **Notes**:
 
-- url: It can be a url of http, https or ftp, BuildEnv will download it. It also can be a local file path, and should has a prefix "file:///", for example: `file:////home/phil/buildresource/nasm-2.16.03/bin`.
+- url: It can be a url of http, https or ftp, buildenv will download it. It also can be a local file path, and should has a prefix "file:///", for example: `file:////home/phil/buildresource/nasm-2.16.03/bin`.
 - archive_name: you can change archive's original file name.
 - path: It is typically extracted from a compressed file to an internal path, usually pointing to the directory where the internal bin is located.
 
