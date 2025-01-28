@@ -26,12 +26,12 @@ buildenv's workspace would be like below, it consists of **buildenv.json**, **co
 ├── downloads
 │   ├── cmake-3.30.5-linux-x86_64.tar.gz
 │   ├── gcc-9.5.0.tar.gz
-│   ├── nasm-2.16.03-x86_64-linux.tar.gz
+│   ├── nasm-2.16.03.tar.gz
 │   ├── ubuntu-base-20.04.5-base-amd64.tar.gz
 │   └── tools
 │        ├── cmake-3.30.5-linux-x86_64
 │        ├── gcc-9.5.0
-│        ├── nasm-2.16.03-x86_64-linux
+│        ├── nasm-2.16.03
 │        └── ubuntu-base-20.04.5-base-amd64
 ├── installed
 │   ├── buildenv

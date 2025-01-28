@@ -9,8 +9,8 @@ for example: `conf/tools/nasm-2.16.03.json`:
 ```json
 {
     "url": "http://192.168.0.1:8080/build_resource/nasm-2.16.03.tar.gz",
-    "archive_name":"nasm-2.16.03-x86_64-linux.tar.gz",
-    "path": "nasm-2.16.03-x86_64-linux/bin"
+    "archive_name":"nasm-2.16.03.tar.gz",
+    "path": "nasm-2.16.03/bin"
 }
 ```
 
