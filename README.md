@@ -43,23 +43,23 @@ For a long time, CMake has only provided functions like  `find_package`、`find_
 
 While third-party package management tools like `Conan` and `Vcpkg` are widely used in the community, they do not fully meet certain needs:
 
-1. **Conan**：虽然功能强大，但依赖于额外的 **Python** 语言和python包，且上手成本较高。因为 Conan 不仅支持 **CMake**，还支持 **Meson**、**Makefile**、**MSBuild**、**SScon**、**QMake**、**Bazaar** 等构建系统，这导致其 API 封装较深，需要更多时间学习和上手，对于本来**CMake**掌握就一般的同学无疑又增加了额外新的学习成本。
+1. **Conan**：虽然功能强大，但依赖于额外的 **Python** 语言和python包，且上手成本较高。因为 Conan 不仅支持 **CMake**，还支持 **Meson**、**Makefile**、**MSBuild**、**SScon**、**QMake**、**Bazaar** 等构建系统，这导致其 API 封装较深，需要更多时间学习和上手，对于本来**CMake**掌握就一般的同学无疑又增加了额外新的学习成本。其实，**Conan**重点解决的只是包的托管和含有依赖关系的库的下载，在编译环境层面并没有提供简化的解决方案，基本上这块工作留给了用户自己。
 
     ----
 
-    **Conan**: Although powerful, Conan depends on the additional Python language, which increases the learning curve. Conan not only supports CMake but also other build systems like `Meson`, `Makefile`, `MSBuild`, `SScon`, `QMake`, `Bazaar`, etc. This makes its API more deeply abstracted, requiring more time to learn new things. As we all known, many c++ developers are still not very familiar with CMake script, this would increase their learning burden.
+    **Conan**: Although powerful, Conan depends on the additional Python language, which increases the learning curve. Conan not only supports CMake but also other build systems like `Meson`, `Makefile`, `MSBuild`, `SScon`, `QMake`, `Bazaar`, etc. This makes its API more deeply abstracted, requiring more time to learn new things. As we all known, many c++ developers are still not very familiar with CMake script, this would increase their learning burden. In fact, **Conan** is mainly focused on package management and downloading libraries with dependencies, and it does not provide a simplified solution for the compilation environment. The compilation environment management is left to the user themselves.
   
-2. **Vcpkg**：相对容易上手，但由于 **国内网络环境问题**使用体验较差，几乎无法正常使用，而且**Vcpkg**对于三方库的版本管理过于简单，对于多版本依赖管理不灵活。
+2. **Vcpkg**：相对容易上手，但由于 **国内网络环境问题**使用体验较差，几乎无法正常使用，即便通过修改镜像代理最终体验也一言难尽，而且**Vcpkg**对于三方库的版本管理过于简单，对于多版本依赖管理不灵活也不直观。
 
     ----
 
-    **Vcpkg**: Easier to use in comparison, but due to networking issues in China, the experience is poor, and it is almost impossible to use properly. Additionally, Vcpkg's default package management is too simplistic, and it is not flexible for managing multiple versions of dependencies.
+    **Vcpkg**: Easy to use, but due to network issues in China, the experience is poor, and it is almost impossible to use properly. Even after modifying the mirror proxy, the experience is still unsatisfactory. In addition, **Vcpkg**'s default package management is too simplistic, and it is not flexible and intuitive for managing multiple versions of dependencies.
 
-另外，**Conan** 和 **Vcpkg** 都未能有效管理 **交叉编译环境**，在多个平台的交叉编译时，开发者通常需要手动配置 toolchain 和 rootfs, 以及各种tool的配置，这样不仅繁琐，而且容易出错。
+另外，**Conan** 和 **Vcpkg** 都未能有效解决或者简化 **交叉编译环境**的配置，在多个平台的交叉编译时，开发者通常需要手动配置 toolchain 和 rootfs, 以及各种tool的配置，这样不仅繁琐，而且容易出错。
 
 ----
 
-Furthermore, both Conan and Vcpkg do not effectively manage cross-compilation environments. During cross-compilation for multiple platforms, developers often have to manually configure the toolchain, rootfs, and various tools. This process is not only cumbersome but also error-prone.
+In addition, both Conan and Vcpkg have not effectively managed cross-compilation environments. During cross-compilation for multiple platforms, developers often have to manually configure the toolchain, rootfs, and various tools. This process is not only cumbersome but also error-prone.
 
 ## 4. 解决方案：
 
