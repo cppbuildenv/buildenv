@@ -118,23 +118,11 @@ Installed files of third-party can be shared with others by configure `cache_dir
 
 ## 如何编编译 - Build Guide.
 
-1. 下载`golang sdk`；
+1. 下载`golang sdk` ------------------------------ Download the Go SDK.
 
-    ----
+2. `go build`，即可编译成功 ---------------------- Run go build to compile the program successfully.
 
-    Download the Go SDK.
-
-2. `go build`，即可编译成功；
-
-    ----
-
-    Run go build to compile the program successfully.
-
-3. 或者执行内置的脚本`build.sh`即可编译成功。
-
-    ----
-
-    You can also build it by execute `./build.sh`.
+3. 或者执行内置的脚本`build.sh`即可编译成功 ----- You can also build it by execute `./build.sh`.
 
 ## 使用说明 - Usage Instructions.
 
@@ -197,7 +185,7 @@ About to to use buildenv in cli mode please read docs below:
 6. [如何添加一个新的三方库 --------------- how to add new port](./docs/06_add_new_port.md)
 7. [如何选择一个平台作为当前平台 -------- how to select platform](./docs/07_how_to_select_platform.md)
 8. [如何选择一个项目作为当前项目 -------- how to select project](./docs/08_how_to_select_project.md)
-9. [如何集成buildenv --------------------- how to integrate buildenv](./docs/09_integrate_buildenv.md)
+9. [如何集成buildenv ---------------------- how to integrate buildenv](./docs/09_integrate_buildenv.md)
 10. [如何安装一个三方库 ------------------- how to install a port](./docs/10_how_to_install_port.md)
 11. [如何卸载一个三方库 ------------------- how to uninstall a port](./docs/11_how_to_uninstall_port.md)
 12. [如何生成cmake配置文件 --------------- how to generate cmake config files](./docs/12_how_to_generate_cmake_config.md)
