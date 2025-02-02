@@ -16,6 +16,6 @@ func (b bazel) Build() error {
 	return nil
 }
 
-func (b bazel) Install(withSudo bool) error {
+func (b bazel) Install() error {
 	return nil
 }

@@ -43,15 +43,15 @@ cmake_config的配置独立于version文件之外  | ✔
 内部出现同一个库的不同版本依赖情况给与报错提示 | ✔
 支持clone时候连同submodule一起clone  | ✔
 支持meson  |  ✔
+支持ninja  |  ✔
+将buildtype抽象到各个buildsystem里 | ✔
+支持autotools  | ✔
 运行tools需要将内部lib路径加入到LD_LIBRARY_PATH  | ✘
 支持 buildenv -upgrade 升级  | ✘
 动态生成的cmake config文件（windows还没测试）| ✘
-支持ninja  |  ✔
-将buildtype抽象到各个buildsystem里 | ✔
 支持windows下工作  | ✘
 下载的库暂不支持生成cmake config文件  | ✘
 在创建的新tool和port里添加注释  | ✘
-支持autotools  | ✘
 支持ccache  | ✘
 支持fork到私有仓库  | ✘
 支持在project里覆盖默认port的配置  | ✘

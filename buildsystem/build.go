@@ -232,12 +232,12 @@ func (b *BuildConfig) InitBuildSystem() error {
 		b.buildSystem = NewNinja(*b)
 	case "makefiles":
 		b.buildSystem = NewMakefiles(*b)
-	case "autotools":
-		b.buildSystem = NewAutoTool(*b)
 	case "meson":
 		b.buildSystem = NewMeson(*b)
 	case "b2":
 		b.buildSystem = NewB2(*b)
+	case "bazel":
+		b.buildSystem = NewBazel(*b)
 	default:
 		return fmt.Errorf("unsupported build system: %s", b.BuildTool)
 	}
