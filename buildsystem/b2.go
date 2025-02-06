@@ -33,6 +33,11 @@ func (b *b2) Configure(buildType string) error {
 
 	// Append common variables for cross compiling.
 	b.Arguments = append(b.Arguments, fmt.Sprintf("--prefix=%s", b.PortConfig.PackageDir))
+	if b.AsDev {
+		b.Arguments = append(b.Arguments, "--build-type=release")
+	} else {
+		b.Arguments = append(b.Arguments, "--build-type="+strings.ToLower(buildType))
+	}
 
 	// Join args into a string.
 	joinedArgs := strings.Join(b.Arguments, " ")
@@ -41,33 +46,38 @@ func (b *b2) Configure(buildType string) error {
 	// Execute configure.
 	logPath := b.getLogPath("configure")
 	title := fmt.Sprintf("[configure %s]", b.PortConfig.LibName)
-	if err := cmd.NewExecutor(title, configure).WithLogPath(logPath).Execute(); err != nil {
+	executor := cmd.NewExecutor(title, configure)
+	executor.SetLogPath(logPath)
+	if err := executor.Execute(); err != nil {
 		return err
 	}
 
-	// Modify project-config.jam to set cross-compiling tool.
-	configPath := filepath.Join(b.PortConfig.SourceDir, "project-config.jam")
-	file, err := os.OpenFile(configPath, os.O_RDONLY, 0755)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	// Override project-config.jam.
-	var buffer bytes.Buffer
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.Contains(line, "using gcc ;") {
-			line = fmt.Sprintf("    using gcc : : %sg++ ;", b.PortConfig.CrossTools.ToolchainPrefix)
-			buffer.WriteString(line + "\n")
-		} else {
-			buffer.WriteString(line + "\n")
+	// Modify project-config.jam to set cross-compiling tool for none-runtime library.
+	if !b.AsDev {
+		configPath := filepath.Join(b.PortConfig.SourceDir, "project-config.jam")
+		file, err := os.OpenFile(configPath, os.O_RDONLY, 0755)
+		if err != nil {
+			return err
 		}
-	}
+		defer file.Close()
 
-	if err := os.WriteFile(configPath, buffer.Bytes(), 0755); err != nil {
-		return err
+		// Override project-config.jam.
+		var buffer bytes.Buffer
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			line := scanner.Text()
+			if strings.Contains(line, "using gcc ;") {
+				line = fmt.Sprintf("    using gcc : : %sg++ ;", b.PortConfig.CrossTools.ToolchainPrefix)
+				buffer.WriteString(line + "\n")
+			} else {
+				buffer.WriteString(line + "\n")
+			}
+		}
+
+		// Write override `project-config.jam`.
+		if err := os.WriteFile(configPath, buffer.Bytes(), 0755); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -80,19 +90,23 @@ func (b b2) Build() error {
 
 	rootfs := b.PortConfig.CrossTools.RootFS
 	b.Arguments = append(b.Arguments, "toolset=gcc")
-	b.Arguments = append(b.Arguments, "cxxflags=--sysroot=%s", rootfs)
-	b.Arguments = append(b.Arguments, "linkflags=--sysroot=%s", rootfs)
+	if !b.AsDev {
+		b.Arguments = append(b.Arguments, "cxxflags=--sysroot=%s", rootfs)
+		b.Arguments = append(b.Arguments, "linkflags=--sysroot=%s", rootfs)
+	}
 
-	b.adjustForBuildInstall()
+	b.prepareBuildInstall()
 
-	// Assemble script.
+	// Assemble command.
 	joinedArgs := strings.Join(b.Arguments, " ")
 	command := fmt.Sprintf("./b2 %s -j %d", joinedArgs, b.PortConfig.JobNum)
 
 	// Execute build.
 	logPath := b.getLogPath("build")
 	title := fmt.Sprintf("[build %s]", b.PortConfig.LibName)
-	if err := cmd.NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
+	executor := cmd.NewExecutor(title, command)
+	executor.SetLogPath(logPath)
+	if err := executor.Execute(); err != nil {
 		return err
 	}
 
@@ -100,24 +114,26 @@ func (b b2) Build() error {
 }
 
 func (b b2) Install() error {
-	b.adjustForBuildInstall()
+	b.prepareBuildInstall()
 
-	// Assemble script.
+	// Assemble command.
 	joinedArgs := strings.Join(b.Arguments, " ")
 	command := fmt.Sprintf("./b2 install %s", joinedArgs)
 
 	// Execute install.
 	logPath := b.getLogPath("install")
 	title := fmt.Sprintf("[install %s]", b.PortConfig.LibName)
-	if err := cmd.NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
+	executor := cmd.NewExecutor(title, command)
+	executor.SetLogPath(logPath)
+	if err := executor.Execute(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (b b2) adjustForBuildInstall() {
-	// During build and install, we don't need "--with-libraries" and "--without-libraries".
+func (b b2) prepareBuildInstall() {
+	// "--with-libraries" and "--without-libraries" should be removed during build and install.
 	b.Arguments = slices.DeleteFunc(b.Arguments, func(element string) bool {
 		return strings.HasPrefix(element, "--with-libraries") ||
 			strings.HasPrefix(element, "--without-libraries")

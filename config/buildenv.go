@@ -81,16 +81,8 @@ func (b *buildenv) Setup(args SetupArgs) error {
 		return err
 	}
 
-	// Append $PKG_CONFIG_PATH with pkgconfig path that in installed dir.
-	platformProject := fmt.Sprintf("%s@%s@%s", b.PlatformName, b.ProjectName, args.BuildType())
-	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", platformProject)
-	os.Setenv("CFLAGS", fmt.Sprintf("-I%s/include", installedDir)+" "+os.Getenv("CFLAGS"))
-	os.Setenv("CXXFLAGS", fmt.Sprintf("-I%s/include", installedDir)+" "+os.Getenv("CXXFLAGS"))
-	os.Setenv("LDFLAGS", fmt.Sprintf("-L%s/lib", installedDir)+" "+os.Getenv("LDFLAGS"))
-	os.Setenv("PKG_CONFIG_PATH", installedDir+"/lib/pkgconfig"+string(os.PathListSeparator)+os.Getenv("PKG_CONFIG_PATH"))
-
-	// We assume that pkg-config's sysroot is installedDir and change all pc file's prefix as "/".
-	os.Setenv("PKG_CONFIG_SYSROOT_DIR", installedDir)
+	// Append runtime bin path to PATH, this is required by some third-party libraries during build.
+	os.Setenv("PATH", filepath.Join(Dirs.InstalledDir, "dev", "bin")+string(os.PathListSeparator)+os.Getenv("PATH"))
 
 	// init and setup project.
 	if err := b.project.Init(b, b.ProjectName); err != nil {
@@ -202,7 +194,7 @@ get_filename_component(BUILDENV_ROOT_DIR "${_CURRENT_DIR}" PATH)`))
 	}
 
 	toolchain.WriteString("\n# Add `installed dir` into library search paths.\n")
-	platformProject := fmt.Sprintf("%s@%s@${CMAKE_BUILD_TYPE}", b.PlatformName, b.ProjectName)
+	platformProject := fmt.Sprintf("%s-%s-${CMAKE_BUILD_TYPE}", b.PlatformName, b.ProjectName)
 	installedDir := fmt.Sprintf("${BUILDENV_ROOT_DIR}/installed/%s", platformProject)
 	toolchain.WriteString(fmt.Sprintf("list(APPEND CMAKE_FIND_ROOT_PATH \"%s\")\n", installedDir))
 	toolchain.WriteString(fmt.Sprintf("list(APPEND CMAKE_PREFIX_PATH \"%s\")\n", installedDir))

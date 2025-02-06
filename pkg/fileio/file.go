@@ -156,6 +156,11 @@ func CopyFile(src, dest string) error {
 		return err
 	}
 
+	// Set the same permissions as the source file.
+	if err := os.Chmod(dest, info.Mode()); err != nil {
+		return err
+	}
+
 	return nil
 }
 

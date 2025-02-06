@@ -39,11 +39,18 @@ func (m meson) Configure(buildType string) error {
 	m.Arguments = append(m.Arguments, "--prefix="+m.PortConfig.PackageDir)
 
 	// Append 'CMAKE_BUILD_TYPE' if not contains it.
-	if !slices.ContainsFunc(m.Arguments, func(arg string) bool {
-		return strings.Contains(arg, "--buildtype")
-	}) {
-		buildType = strings.ToLower(buildType)
-		m.Arguments = append(m.Arguments, "--buildtype="+buildType)
+	if m.AsDev {
+		m.Arguments = slices.DeleteFunc(m.Arguments, func(element string) bool {
+			return strings.Contains(element, "--buildtype")
+		})
+		m.Arguments = append(m.Arguments, "--buildtype=release")
+	} else {
+		if !slices.ContainsFunc(m.Arguments, func(arg string) bool {
+			return strings.Contains(arg, "--buildtype")
+		}) {
+			buildType = strings.ToLower(buildType)
+			m.Arguments = append(m.Arguments, "--buildtype="+buildType)
+		}
 	}
 
 	// Override library type if specified.
@@ -65,19 +72,25 @@ func (m meson) Configure(buildType string) error {
 		return err
 	}
 
-	crossFile, err := m.generateCrossFile()
-	if err != nil {
-		return fmt.Errorf("failed to generate cross_file.txt for meson: %v", err)
-	}
-
-	// Assemble args into a single command string.
+	// Assemble command.
+	var command string
 	joinedArgs := strings.Join(m.Arguments, " ")
-	configure := fmt.Sprintf("meson setup %s %s --cross-file %s", m.PortConfig.BuildDir, joinedArgs, crossFile)
+	if m.BuildConfig.AsDev {
+		command = fmt.Sprintf("meson setup %s %s", m.PortConfig.BuildDir, joinedArgs)
+	} else {
+		crossFile, err := m.generateCrossFile()
+		if err != nil {
+			return fmt.Errorf("failed to generate cross_file.txt for meson: %v", err)
+		}
+		command = fmt.Sprintf("meson setup %s %s --cross-file %s", m.PortConfig.BuildDir, joinedArgs, crossFile)
+	}
 
 	// Execute configure.
 	logPath := m.getLogPath("configure")
 	title := fmt.Sprintf("[configure %s]", m.PortConfig.LibName)
-	if err := cmd.NewExecutor(title, configure).WithLogPath(logPath).Execute(); err != nil {
+	executor := cmd.NewExecutor(title, command)
+	executor.SetLogPath(logPath)
+	if err := executor.Execute(); err != nil {
 		return err
 	}
 
@@ -85,13 +98,15 @@ func (m meson) Configure(buildType string) error {
 }
 
 func (m meson) Build() error {
-	// Assemble script.
+	// Assemble command.
 	command := fmt.Sprintf("meson compile -C %s -j %d", m.PortConfig.BuildDir, m.PortConfig.JobNum)
 
 	// Execute build.
 	logPath := m.getLogPath("build")
 	title := fmt.Sprintf("[build %s]", m.PortConfig.LibName)
-	if err := cmd.NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
+	executor := cmd.NewExecutor(title, command)
+	executor.SetLogPath(logPath)
+	if err := executor.Execute(); err != nil {
 		return err
 	}
 
@@ -99,13 +114,15 @@ func (m meson) Build() error {
 }
 
 func (m meson) Install() error {
-	// Assemble script.
+	// Assemble command.
 	command := fmt.Sprintf("meson install -C %s", m.PortConfig.BuildDir)
 
 	// Execute install.
 	logPath := m.getLogPath("install")
 	title := fmt.Sprintf("[install %s]", m.PortConfig.LibName)
-	if err := cmd.NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
+	executor := cmd.NewExecutor(title, command)
+	executor.SetLogPath(logPath)
+	if err := executor.Execute(); err != nil {
 		return err
 	}
 

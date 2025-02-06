@@ -14,6 +14,7 @@ import (
 type executor struct {
 	title   string
 	command string
+	workDir string
 	logPath string
 }
 
@@ -21,11 +22,17 @@ func NewExecutor(title, command string) *executor {
 	return &executor{
 		title:   title,
 		command: command,
+		workDir: "",
 		logPath: "",
 	}
 }
 
-func (e *executor) WithLogPath(logPath string) *executor {
+func (e *executor) SetWorkDir(workDir string) *executor {
+	e.workDir = workDir
+	return e
+}
+
+func (e *executor) SetLogPath(logPath string) *executor {
 	e.logPath = logPath
 	return e
 }
@@ -40,6 +47,7 @@ func (e executor) Execute() error {
 	} else {
 		cmd = exec.Command("bash", "-c", e.command)
 	}
+	cmd.Dir = e.workDir
 	cmd.Env = os.Environ()
 
 	// Create log file if log path specified.

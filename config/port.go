@@ -20,16 +20,30 @@ type Port struct {
 	BuildConfigs  []buildsystem.BuildConfig `json:"build_configs"`
 
 	// Internal fields.
-	ctx             Context
-	installInfoFile string // Used to record installed state
-	isSubDep        bool
+	ctx       Context `json:"-"`
+	stateFile string  `json:"-"` // Used to record installed state
+	isSubDep  bool    `json:"-"`
+	AsDev     bool    `json:"-"`
 }
 
 func (p Port) NameVersion() string {
-	return p.Name + "@" + p.Version
+	if p.AsDev {
+		return p.Name + "@" + p.Version + "@dev"
+	} else {
+		return p.Name + "@" + p.Version
+	}
 }
 
 func (p *Port) Init(ctx Context, portPath string) error {
+	// Add file suffix and prefix if not exists.
+	if !strings.HasSuffix(portPath, ".json") {
+		portPath += ".json"
+	}
+	if !strings.HasPrefix(portPath, Dirs.PortsDir) {
+		portPath = filepath.Join(Dirs.PortsDir, portPath)
+	}
+
+	// Read name and version.
 	portPath = strings.ReplaceAll(portPath, "@", "/")
 	if !fileio.PathExists(portPath) {
 		version := fileio.FileBaseName(portPath)
@@ -43,26 +57,36 @@ func (p *Port) Init(ctx Context, portPath string) error {
 		}
 	}
 
+	// Decode JSON.
 	bytes, err := os.ReadFile(portPath)
 	if err != nil {
 		return err
 	}
-
 	if err := json.Unmarshal(bytes, p); err != nil {
 		return err
 	}
 
 	// Info file: used to record installed state.
 	nameVersion := p.NameVersion()
-	platformProject := fmt.Sprintf("%s@%s@%s.list", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
+	platformProject := fmt.Sprintf("%s-%s-%s", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
 
 	p.ctx = ctx
-	p.installInfoFile = filepath.Join(Dirs.InstalledDir, "buildenv", "info", nameVersion+"@"+platformProject)
+	p.stateFile = filepath.Join(Dirs.InstalledDir, "buildenv", "info", nameVersion+"-"+platformProject+".list")
 
-	// Init build config with rootfs, toolchain info.
-	buildFolder := filepath.Join(p.NameVersion(), ctx.Platform().Name+"@"+ctx.Project().Name+"@"+ctx.BuildType())
-	packageFolder := fmt.Sprintf("%s@%s@%s@%s", p.NameVersion(), ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
-	installedFolder := fmt.Sprintf("%s@%s@%s", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
+	var (
+		installedFolder string
+		packageFolder   string
+		buildFolder     string
+	)
+	if p.AsDev {
+		packageFolder = nameVersion
+		installedFolder = "dev"
+		buildFolder = filepath.Join(nameVersion, "dev")
+	} else {
+		packageFolder = fmt.Sprintf("%s-%s-%s-%s", nameVersion, ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
+		installedFolder = fmt.Sprintf("%s-%s-%s", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
+		buildFolder = filepath.Join(nameVersion, platformProject)
+	}
 
 	portConfig := buildsystem.PortConfig{
 		CrossTools:    p.buildCrossTools(),
@@ -72,7 +96,7 @@ func (p *Port) Init(ctx Context, portPath string) error {
 		SourceFolder:  p.SourceFolder,
 		PortsDir:      Dirs.PortsDir,
 		DownloadedDir: Dirs.DownloadedDir,
-		SourceDir:     filepath.Join(Dirs.WorkspaceDir, "buildtrees", p.NameVersion(), "src"),
+		SourceDir:     filepath.Join(Dirs.WorkspaceDir, "buildtrees", nameVersion, "src"),
 		BuildDir:      filepath.Join(Dirs.WorkspaceDir, "buildtrees", buildFolder),
 		PackageDir:    filepath.Join(Dirs.WorkspaceDir, "packages", packageFolder),
 		InstalledDir:  filepath.Join(Dirs.InstalledDir, installedFolder),
@@ -83,6 +107,7 @@ func (p *Port) Init(ctx Context, portPath string) error {
 	if len(p.BuildConfigs) > 0 {
 		for index := range p.BuildConfigs {
 			p.BuildConfigs[index].PortConfig = portConfig
+			p.BuildConfigs[index].AsDev = p.AsDev
 
 			// Merge project override ports.
 			p.mergeBuildConfig(&p.BuildConfigs[index], ctx.Project().OverridePorts)
@@ -119,12 +144,12 @@ func (p *Port) Validate() error {
 }
 
 func (p Port) Installed() bool {
-	if !fileio.PathExists(p.installInfoFile) {
+	if !fileio.PathExists(p.stateFile) {
 		return false
 	}
 
 	// File can be read?
-	bytes, err := os.ReadFile(p.installInfoFile)
+	bytes, err := os.ReadFile(p.stateFile)
 	if err != nil {
 		return false
 	}
@@ -158,7 +183,12 @@ func (p Port) Write(portPath string) error {
 }
 
 func (p Port) Install(silentMode bool) error {
-	installedDir := filepath.Join(Dirs.WorkspaceDir, "installed", p.ctx.Platform().Name+"-"+p.ctx.BuildType())
+	var installedDir string
+	if p.AsDev {
+		installedDir = filepath.Join(Dirs.WorkspaceDir, "installed", "dev")
+	} else {
+		installedDir = filepath.Join(Dirs.WorkspaceDir, "installed", p.ctx.Platform().Name+"-"+p.ctx.BuildType())
+	}
 	if p.Installed() {
 		if !silentMode {
 			title := color.Sprintf(color.Green, "\n[✔] ---- Port: %s\n", p.NameVersion())
@@ -209,7 +239,7 @@ func (p Port) Install(silentMode bool) error {
 			installedFrom = fmt.Sprintf("cache [%s]", fromDir)
 		} else {
 			// Remove build cache from buildtrees.
-			platformProject := fmt.Sprintf("%s@%s@%s", p.ctx.Platform().Name, p.ctx.Project().Name, p.ctx.BuildType())
+			platformProject := fmt.Sprintf("%s-%s-%s", p.ctx.Platform().Name, p.ctx.Project().Name, p.ctx.BuildType())
 			logPathPrefix := filepath.Join(p.NameVersion(), platformProject)
 			p.tryRemoveBuildCache(logPathPrefix)
 
@@ -218,14 +248,17 @@ func (p Port) Install(silentMode bool) error {
 				return err
 			}
 
-			// Write package to cache dirs so that others can share installed libraries.
-			for _, cacheDir := range p.ctx.CacheDirs() {
-				if !cacheDir.Writable {
-					continue
-				}
+			// Write package to cache dirs so that others can share installed libraries,
+			// but only for none-dev lib.
+			if !p.AsDev {
+				for _, cacheDir := range p.ctx.CacheDirs() {
+					if !cacheDir.Writable {
+						continue
+					}
 
-				if err := cacheDir.Write(matchedConfig.PortConfig.PackageDir); err != nil {
-					return err
+					if err := cacheDir.Write(matchedConfig.PortConfig.PackageDir); err != nil {
+						return err
+					}
 				}
 			}
 
@@ -239,7 +272,7 @@ func (p Port) Install(silentMode bool) error {
 	}
 
 	// Write installed files info into its installation info list.
-	if err := os.MkdirAll(filepath.Dir(p.installInfoFile), os.ModePerm); err != nil {
+	if err := os.MkdirAll(filepath.Dir(p.stateFile), os.ModePerm); err != nil {
 		return err
 	}
 	packageFiles, err := matchedConfig.BuildSystem().PackageFiles(
@@ -251,7 +284,7 @@ func (p Port) Install(silentMode bool) error {
 	if err != nil {
 		return err
 	}
-	if err := os.WriteFile(p.installInfoFile, []byte(strings.Join(packageFiles, "\n")), os.ModePerm); err != nil {
+	if err := os.WriteFile(p.stateFile, []byte(strings.Join(packageFiles, "\n")), os.ModePerm); err != nil {
 		return err
 	}
 
@@ -303,6 +336,7 @@ func (p *Port) mergeBuildConfig(portBuildConfig *buildsystem.BuildConfig, overri
 			portBuildConfig.Arguments = config.Arguments
 		}
 		portBuildConfig.Depedencies = config.Depedencies
+		portBuildConfig.DevDepedencies = config.DevDepedencies
 	}
 }
 
@@ -331,10 +365,29 @@ func (p Port) installFromCache(matchedConfig *buildsystem.BuildConfig) (installe
 }
 
 func (p Port) installFromSource(silentMode bool, buildConfig *buildsystem.BuildConfig) error {
-	// First, we must check and repair dependency ports.
+	// 1. check and repair dev_dependencies.
+	for _, item := range buildConfig.DevDepedencies {
+		if strings.HasPrefix(item, p.Name) {
+			return fmt.Errorf("%s's dev_dependencies contains circular dependency: %s", p.NameVersion(), item)
+		}
+
+		// Check and repair dependency.
+		var port Port
+		port.isSubDep = true
+		port.AsDev = true
+		portPath := filepath.Join(Dirs.PortsDir, item+".json")
+		if err := port.Init(p.ctx, portPath); err != nil {
+			return err
+		}
+		if err := port.Install(silentMode); err != nil {
+			return err
+		}
+	}
+
+	// 2. check and repair dependencies.
 	for _, item := range buildConfig.Depedencies {
 		if strings.HasPrefix(item, p.Name) {
-			return fmt.Errorf("port.dependencies contains circular dependency: %s", item)
+			return fmt.Errorf("%s's dependencies contains circular dependency: %s", p.NameVersion(), item)
 		}
 
 		// Check and repair dependency.
@@ -358,7 +411,7 @@ func (p Port) installFromSource(silentMode bool, buildConfig *buildsystem.BuildC
 }
 
 func (p Port) installFromPackage(matchedConfig *buildsystem.BuildConfig) error {
-	platformProject := fmt.Sprintf("%s@%s@%s", p.ctx.Platform().Name, p.ctx.Project().Name, p.ctx.BuildType())
+	platformProject := fmt.Sprintf("%s-%s-%s", p.ctx.Platform().Name, p.ctx.Project().Name, p.ctx.BuildType())
 
 	// First, we must check and repair dependency ports.
 	for _, nameVersion := range matchedConfig.Depedencies {
@@ -366,7 +419,7 @@ func (p Port) installFromPackage(matchedConfig *buildsystem.BuildConfig) error {
 			return fmt.Errorf("port.dependencies contains circular dependency: %s", nameVersion)
 		}
 
-		packageDir := filepath.Join(Dirs.WorkspaceDir, "packages", nameVersion+"@"+platformProject)
+		packageDir := filepath.Join(Dirs.WorkspaceDir, "packages", nameVersion+"-"+platformProject)
 		packageFiles, err := matchedConfig.BuildSystem().PackageFiles(
 			packageDir,
 			p.ctx.Platform().Name,
@@ -409,7 +462,12 @@ func (p Port) installFromPackage(matchedConfig *buildsystem.BuildConfig) error {
 
 	// Copy files from package to installed dir.
 	for _, file := range packageFiles {
-		file = strings.TrimPrefix(file, platformProject+"/")
+		if p.AsDev {
+			file = strings.TrimPrefix(file, "dev/")
+		} else {
+			file = strings.TrimPrefix(file, platformProject+"/")
+		}
+
 		src := filepath.Join(matchedConfig.PortConfig.PackageDir, file)
 		dest := filepath.Join(matchedConfig.PortConfig.InstalledDir, file)
 

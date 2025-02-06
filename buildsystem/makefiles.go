@@ -18,6 +18,20 @@ type makefiles struct {
 }
 
 func (m makefiles) Configure(buildType string) error {
+	// Prepare envs for configure.
+	m.setupDependencyPaths()
+
+	// Different Makefile projects set the build_type in inconsistent ways,
+	// Fortunately, it can be configured through CFLAGS and CXXFLAGS.
+	m.setBuildType(buildType)
+
+	// Clear cross build envs when build as dev.
+	if m.BuildConfig.AsDev {
+		m.PortConfig.CrossTools.ClearEnvs()
+	} else {
+		m.PortConfig.CrossTools.SetEnvs()
+	}
+
 	// Remove build dir and create it for configure process.
 	if err := os.RemoveAll(m.PortConfig.BuildDir); err != nil {
 		return err
@@ -55,18 +69,31 @@ func (m makefiles) Configure(buildType string) error {
 	}
 	joinedArgs := strings.Join(m.Arguments, " ")
 
-	// Execute autogen.
-	if _, err := os.Stat(m.PortConfig.SourceDir + "/autogen.sh"); err == nil {
-		if err := os.Chdir(m.PortConfig.SourceDir); err != nil {
-			return err
-		}
+	// Find `configure` or `Configure`.
+	var configureFile string
+	if _, err := os.Stat(m.PortConfig.SourceDir + "/configure"); err == nil {
+		configureFile = "configure"
+	}
+	if _, err := os.Stat(m.PortConfig.SourceDir + "/Configure"); err == nil {
+		configureFile = "Configure"
+	}
 
-		parentDir := filepath.Dir(m.PortConfig.BuildDir)
-		fileName := filepath.Base(m.PortConfig.BuildDir) + "-autogen.log"
-		logPath := filepath.Join(parentDir, fileName)
-		title := fmt.Sprintf("[autogen %s]", m.PortConfig.LibName)
-		if err := cmd.NewExecutor(title, "./autogen.sh").WithLogPath(logPath).Execute(); err != nil {
-			return err
+	// Execute autogen.
+	if configureFile == "" {
+		if _, err := os.Stat(m.PortConfig.SourceDir + "/autogen.sh"); err == nil {
+			if err := os.Chdir(m.PortConfig.SourceDir); err != nil {
+				return err
+			}
+
+			parentDir := filepath.Dir(m.PortConfig.BuildDir)
+			fileName := filepath.Base(m.PortConfig.BuildDir) + "-autogen.log"
+			logPath := filepath.Join(parentDir, fileName)
+			title := fmt.Sprintf("[autogen %s]", m.PortConfig.LibName)
+			executor := cmd.NewExecutor(title, "./autogen.sh")
+			executor.SetLogPath(logPath)
+			if err := executor.Execute(); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -76,7 +103,6 @@ func (m makefiles) Configure(buildType string) error {
 	}
 
 	// Find `configure` or `Configure`.
-	var configureFile string
 	if _, err := os.Stat(m.PortConfig.SourceDir + "/configure"); err == nil {
 		configureFile = "configure"
 	}
@@ -88,7 +114,9 @@ func (m makefiles) Configure(buildType string) error {
 	configure := fmt.Sprintf("%s/%s %s", m.PortConfig.SourceDir, configureFile, joinedArgs)
 	logPath := m.getLogPath("configure")
 	title := fmt.Sprintf("[configure %s]", m.PortConfig.LibName)
-	if err := cmd.NewExecutor(title, configure).WithLogPath(logPath).Execute(); err != nil {
+	executor := cmd.NewExecutor(title, configure)
+	executor.SetLogPath(logPath)
+	if err := executor.Execute(); err != nil {
 		return err
 	}
 
@@ -96,13 +124,15 @@ func (m makefiles) Configure(buildType string) error {
 }
 
 func (m makefiles) Build() error {
-	// Assemble script.
+	// Assemble command.
 	command := fmt.Sprintf("make -j %d", m.PortConfig.JobNum)
 
 	// Execute build.
 	logPath := m.getLogPath("build")
 	title := fmt.Sprintf("[build %s]", m.PortConfig.LibName)
-	if err := cmd.NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
+	executor := cmd.NewExecutor(title, command)
+	executor.SetLogPath(logPath)
+	if err := executor.Execute(); err != nil {
 		return err
 	}
 
@@ -110,15 +140,87 @@ func (m makefiles) Build() error {
 }
 
 func (m makefiles) Install() error {
-	// Assemble script.
+	// Assemble command.
 	command := "make install"
 
 	// Execute install.
 	logPath := m.getLogPath("install")
 	title := fmt.Sprintf("[install %s]", m.PortConfig.LibName)
-	if err := cmd.NewExecutor(title, command).WithLogPath(logPath).Execute(); err != nil {
+	executor := cmd.NewExecutor(title, command)
+	executor.SetLogPath(logPath)
+	if err := executor.Execute(); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (m makefiles) setupDependencyPaths() {
+	// Some third-party libraries cannot find headers and libs with sysroot,
+	// so we need to set CFLAGS, CXXFLAGS, LDFLAGS to let these third-party libaries find them.
+	installedDir := m.BuildConfig.PortConfig.InstalledDir
+	cflags := os.Getenv("CFLAGS")
+	cxxflags := os.Getenv("CXXFLAGS")
+	ldflags := os.Getenv("LDFLAGS")
+
+	if strings.TrimSpace(cflags) == "" {
+		os.Setenv("CFLAGS", fmt.Sprintf("-I%s/include", installedDir))
+	} else {
+		os.Setenv("CFLAGS", fmt.Sprintf("-I%s/include", installedDir)+" "+cflags)
+	}
+	if strings.TrimSpace(cxxflags) == "" {
+		os.Setenv("CXXFLAGS", fmt.Sprintf("-I%s/include", installedDir))
+	} else {
+		os.Setenv("CXXFLAGS", fmt.Sprintf("-I%s/include", installedDir)+" "+cxxflags)
+	}
+	if strings.TrimSpace(ldflags) == "" {
+		os.Setenv("LDFLAGS", fmt.Sprintf("-L%s/lib", installedDir))
+	} else {
+		os.Setenv("LDFLAGS", fmt.Sprintf("-L%s/lib", installedDir)+" "+ldflags)
+	}
+
+	// Append $PKG_CONFIG_PATH with pkgconfig path that in installed dir.
+	pkgConfigPath := os.Getenv("PKG_CONFIG_PATH")
+	if strings.TrimSpace(pkgConfigPath) == "" {
+		os.Setenv("PKG_CONFIG_PATH", installedDir+"/lib/pkgconfig")
+	} else {
+		os.Setenv("PKG_CONFIG_PATH", installedDir+"/lib/pkgconfig"+string(os.PathListSeparator)+pkgConfigPath)
+	}
+
+	// We assume that pkg-config's sysroot is installedDir and change all pc file's prefix as "/".
+	os.Setenv("PKG_CONFIG_SYSROOT_DIR", installedDir)
+}
+
+func (m makefiles) setBuildType(buildType string) {
+	// Remove all -g and -O flags.
+	cflags := strings.Split(os.Getenv("CFLAGS"), " ")
+	cflags = slices.DeleteFunc(cflags, func(element string) bool {
+		return strings.Contains(element, "-g") || strings.Contains(element, "-O")
+	})
+
+	cxxflags := strings.Split(os.Getenv("CXXFLAGS"), " ")
+	cxxflags = slices.DeleteFunc(cxxflags, func(element string) bool {
+		return strings.Contains(element, "-g") || strings.Contains(element, "-O")
+	})
+
+	if m.AsDev {
+		// Set -O3 for dev.
+		cflags = append(cflags, "-O3")
+		cxxflags = append(cxxflags, "-O3")
+		os.Setenv("CFLAGS", strings.Join(cflags, " "))
+		os.Setenv("CXXFLAGS", strings.Join(cxxflags, " "))
+	} else {
+		// Set -g for debug and -O3 for release.
+		var flags string
+		if strings.ToLower(buildType) == "debug" {
+			flags = "-g"
+		} else {
+			flags = "-O3"
+		}
+
+		cflags = append(cflags, flags)
+		cxxflags = append(cxxflags, flags)
+		os.Setenv("CFLAGS", strings.Join(cflags, " "))
+		os.Setenv("CXXFLAGS", strings.Join(cxxflags, " "))
+	}
 }
