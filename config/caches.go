@@ -57,20 +57,19 @@ func (c CacheDir) Write(packageDir string) error {
 	}
 
 	// Create a tarball from package dir.
-	parts := strings.Split(filepath.Base(packageDir), "@")
-	if len(parts) != 5 {
+	parts := strings.Split(filepath.Base(packageDir), "^")
+	if len(parts) != 4 {
 		return fmt.Errorf("invalid package dir: %s", packageDir)
 	}
 
 	var (
-		libName      = parts[0]
-		libVersion   = parts[1]
-		platformName = parts[2]
-		projectName  = parts[3]
-		buildType    = parts[4]
+		nameVersion  = parts[0]
+		platformName = parts[1]
+		projectName  = parts[2]
+		buildType    = parts[3]
 	)
 
-	archiveName := fmt.Sprintf("%s@%s.tar.gz", libName, libVersion)
+	archiveName := fmt.Sprintf("%s.tar.gz", nameVersion)
 	destPath := filepath.Join(os.TempDir(), archiveName)
 	if err := fileio.Targz(destPath, packageDir, false); err != nil {
 		return err

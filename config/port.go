@@ -66,7 +66,6 @@ func (p *Port) Init(ctx Context, portPath string) error {
 
 	// Info file: used to record installed state.
 	nameVersion := p.NameVersion()
-	platformProject := fmt.Sprintf("%s-%s-%s", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
 
 	var (
 		installedFolder string
@@ -79,9 +78,10 @@ func (p *Port) Init(ctx Context, portPath string) error {
 		buildFolder = filepath.Join(nameVersion, "dev")
 		p.stateFile = filepath.Join(Dirs.InstalledDir, "buildenv", "info", nameVersion+"-dev.list")
 	} else {
-		packageFolder = fmt.Sprintf("%s-%s-%s-%s", nameVersion, ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
+		platformProject := fmt.Sprintf("%s-%s-%s", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
+		packageFolder = fmt.Sprintf("%s^%s^%s^%s", nameVersion, ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
 		installedFolder = fmt.Sprintf("%s-%s-%s", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
-		buildFolder = filepath.Join(nameVersion, platformProject)
+		buildFolder = filepath.Join(nameVersion, fmt.Sprintf("%s-%s-%s", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType()))
 		p.stateFile = filepath.Join(Dirs.InstalledDir, "buildenv", "info", nameVersion+"-"+platformProject+".list")
 	}
 
