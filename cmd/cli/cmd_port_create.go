@@ -18,7 +18,7 @@ type portCreateCmd struct {
 }
 
 func (p *portCreateCmd) register() {
-	flag.StringVar(&p.portNameVersion, "create_port", "", "create a new port with template.")
+	flag.StringVar(&p.portNameVersion, "create_port", "", "create a new port with template, for example: ./buildenv --create_port=glog@v0.6.0")
 }
 
 func (p *portCreateCmd) listen() (handled bool) {

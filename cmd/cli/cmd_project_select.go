@@ -18,7 +18,7 @@ type projectSelectCmd struct {
 }
 
 func (p *projectSelectCmd) register() {
-	flag.StringVar(&p.projectName, "select_project", "", "select a project as current project.")
+	flag.StringVar(&p.projectName, "select_project", "", "select a project as current project, for example: ./buildenv --select_project=my_project")
 }
 
 func (p *projectSelectCmd) listen() (handled bool) {

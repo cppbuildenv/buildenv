@@ -18,7 +18,7 @@ type toolCreateCmd struct {
 }
 
 func (t *toolCreateCmd) register() {
-	flag.StringVar(&t.toolName, "create_tool", "", "create a new tool with template.")
+	flag.StringVar(&t.toolName, "create_tool", "", "create a new tool with template, for example:./buildenv --create_tool=cmake-3.30.5-linux-x86_64")
 }
 
 func (t *toolCreateCmd) listen() (handled bool) {

@@ -16,7 +16,7 @@ type projectCreateCmd struct {
 }
 
 func (p *projectCreateCmd) register() {
-	flag.StringVar(&p.projectName, "create_project", "", "create a new project with template.")
+	flag.StringVar(&p.projectName, "create_project", "", "create a new project with template, for example: ./buildenv --create_project=my_project")
 }
 
 func (p *projectCreateCmd) listen() (handled bool) {

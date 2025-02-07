@@ -94,12 +94,12 @@ To solve the above issues, buildenv emerges as a new tool that solves the follow
 
     For third-party libraries that do not use CMake as a build system, like sqlite3-config.cmake, buildenv can generate them, which making it easy to integrate them into CMake-based projects.
 
-4. **支持指定三方库的install和uninstall** - **Support specifying third-party library installation and uninstallation**:  
+4. **支持指定三方库的install和remove** - **Support specifying third-party library installation and removing**:  
 自动编译和安装子依赖，支持卸载库同时卸载子依赖；
 
     ----
 
-    Supports installing and uninstalling libraries along with their sub-dependencies.
+    Supports to install and remove libraries along with their sub-dependencies.
 
 5. **支持内部版本冲突检查** - **Support detecting version conflict of same library with different versions in workspace**：
 内部版本冲突检查，即检查当前workspace下的三方库是否存在多个版本，若存在多个版本，会提示用户选择一个版本；
@@ -124,10 +124,10 @@ Installed files of third-party can be shared with others by configure `cache_dir
 
 ## 6. 使用说明 - Usage Instructions.
 
-buildenv 提供两种交互使用方式：cli和gui，前者便于CI/CD里使用，后者便于本地开发使用，除了cli模式会额外提供`install`和`uninstall`相关命令之外两者的使用方式基本一致, gui模式如下：
+buildenv 提供两种交互使用方式：cli和gui，前者便于CI/CD里使用，后者便于本地开发使用，除了cli模式会额外提供`install`和`remove`相关命令之外两者的使用方式基本一致, gui模式如下：
 
 ---
-buildenv providers two kinds of usage: cli and gui, cli mode will provide `install` and `uninstall` commands, and the usage of them is almost the same, except that cli mode will provide `install` and `uninstall` commands. The gui mode is as follows:
+buildenv providers two kinds of usage: cli and gui, cli mode will provide `install` and `remove` commands, and the usage of them is almost the same, except that cli mode will provide `install` and `remove` commands. The gui mode is as follows:
 
 ```
 $ ./buildenv
@@ -185,7 +185,7 @@ About to to use buildenv in cli mode please read docs below:
 8. [如何选择一个项目作为当前项目 -------- how to select project](./docs/08_how_to_select_project.md)
 9. [如何集成buildenv ---------------------- how to integrate buildenv](./docs/09_integrate_buildenv.md)
 10. [如何安装一个三方库 ------------------- how to install a port](./docs/10_how_to_install_port.md)
-11. [如何卸载一个三方库 ------------------- how to uninstall a port](./docs/11_how_to_uninstall_port.md)
+11. [如何卸载一个三方库 ------------------- how to remove a port](./docs/11_how_to_remove.md)
 12. [如何生成cmake配置文件 --------------- how to generate cmake config files](./docs/12_how_to_generate_cmake_config.md)
 13. [如何共享安装的三方库 ----------------- how to share installed packages](./docs/13_how_to_share_installed_libraries.md)
 

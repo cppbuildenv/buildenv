@@ -19,7 +19,7 @@ type installCmd struct {
 }
 
 func (i *installCmd) register() {
-	flag.StringVar(&i.install, "install", "", "clone, configre, build and install a third-party library.")
+	flag.StringVar(&i.install, "install", "", "clone, configre, build and install a third-party library, example: ./buildenv --install=sqlite3@v3.4.5.")
 }
 
 func (i *installCmd) listen() (handled bool) {
@@ -42,10 +42,6 @@ func (i *installCmd) listen() (handled bool) {
 		return true
 	}
 
-	// Check if install port as dev.
-	asDev := strings.HasSuffix(i.install, "@dev")
-	i.install = strings.TrimSuffix(i.install, "@dev")
-
 	// Exact check if port to install is exists.
 	if strings.Count(i.install, "@") > 0 {
 		parts := strings.Split(i.install, "@")
@@ -67,7 +63,7 @@ func (i *installCmd) listen() (handled bool) {
 
 	// Install the port.
 	var port config.Port
-	port.AsDev = asDev
+	port.AsDev = dev.dev
 	if err := port.Init(buildenv, i.install); err != nil {
 		config.PrintError(err, "install %s failed.", i.install)
 		return true

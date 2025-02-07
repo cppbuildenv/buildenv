@@ -16,7 +16,7 @@ type platformCreateCmd struct {
 }
 
 func (p *platformCreateCmd) register() {
-	flag.StringVar(&p.platformName, "create_platform", "", "create a new platform with template.")
+	flag.StringVar(&p.platformName, "create_platform", "", "create a new platform with template, for example: ./buildenv --create_platform=aarch64-linux-jetson")
 }
 
 func (p *platformCreateCmd) listen() (handled bool) {

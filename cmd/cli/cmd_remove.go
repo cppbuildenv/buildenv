@@ -13,80 +13,82 @@ import (
 	"strings"
 )
 
-func newUninstallCmd() *uninstallCmd {
-	return &uninstallCmd{}
+func newRemoveCmd() *removeCmd {
+	return &removeCmd{}
 }
 
-type uninstallCmd struct {
-	uninstall string
-	recursive bool
-	purge     bool
+type removeCmd struct {
+	remove      string
+	purge       string
+	recursive   bool
+	portRemoved func(ctx config.Context, port config.Port) error
 }
 
-func (u *uninstallCmd) register() {
-	flag.StringVar(&u.uninstall, "uninstall", "", "uninstall a 3rd party port.")
-	flag.BoolVar(&u.recursive, "recursive", false, "uninstall dependencies also, it works with -uninstall.")
-	flag.BoolVar(&u.purge, "purge", false, "remove installed files after uninstall, it works with -uninstall.")
+func (r *removeCmd) register() {
+	flag.StringVar(&r.remove, "remove", "", "remove a third-party from installed dir, for example: glog@v0.6.0, "+
+		" you can also call with '--dev' suffix to remove a dev third-pary.")
+	flag.BoolVar(&r.recursive, "recursive", false, "remove a third-party with dependencies also, it works with --remove and --purge.")
 }
 
-func (u *uninstallCmd) listen() (handled bool) {
-	if strings.TrimSpace(u.uninstall) == "" {
+func (r *removeCmd) listen() (handled bool) {
+	var targetPort string
+	if strings.TrimSpace(r.remove) != "" {
+		targetPort = r.remove
+	} else if strings.TrimSpace(r.purge) != "" {
+		targetPort = r.purge
+	}
+	if targetPort == "" {
 		return false
 	}
 
 	args := config.NewSetupArgs(false, false, false).SetBuildType(buildType.buildType)
 	buildenv := config.NewBuildEnv().SetBuildType(buildType.buildType)
 	if err := buildenv.Setup(args); err != nil {
-		config.PrintError(err, "%s uninstall failed.", u.uninstall)
+		config.PrintError(err, "%s remove failed.", targetPort)
 		return true
 	}
 
-	// Check if install port as dev.
-	asDev := strings.HasSuffix(u.uninstall, "@dev")
-	u.uninstall = strings.TrimSuffix(u.uninstall, "@dev")
-
-	// Check if port to uninstall is exists in project.
+	// Check if port to remove is exists in project.
 	index := slices.IndexFunc(buildenv.Project().Ports, func(item string) bool {
 		// exact match
-		if item == u.uninstall {
+		if item == targetPort {
 			return true
 		}
 
 		// name match and the name must be someone of the ports in the project.
-		if strings.Split(item, "@")[0] == u.uninstall {
+		if strings.Split(item, "@")[0] == targetPort {
 			return true
 		}
 
 		return false
 	})
 
-	// Get the port to uninstall.
-	var portToUninstall string
+	// Get the port to remove.
+	var portToRemove string
 	if index == -1 {
-		if !strings.Contains(u.uninstall, "@") {
+		if !strings.Contains(targetPort, "@") {
 			config.PrintError(fmt.Errorf("cannot determine the exact port, "+
-				"because %s is not included in the port list of the current project", u.uninstall),
-				"%s uninstall failed.", u.uninstall)
+				"because %s is not included in the port list of the current project", r.remove),
+				"%s remove failed.", r.remove)
 			return true
 		}
 
-		portToUninstall = u.uninstall
+		portToRemove = targetPort
 	} else {
-		portToUninstall = buildenv.Project().Ports[index]
+		portToRemove = buildenv.Project().Ports[index]
 	}
 
-	// Uninstall port.
-	if err := u.uninstallPort(buildenv, portToUninstall, asDev); err != nil {
-		config.PrintError(err, "%s uninstall failed.", u.uninstall)
+	// Remove port.
+	if err := r.removePort(buildenv, portToRemove, dev.dev); err != nil {
+		config.PrintError(err, "%s remove failed.", targetPort)
 		return true
 	}
 
-	config.PrintSuccess("%s uninstall successfully.", portToUninstall)
-
+	config.PrintSuccess("%s remove successfully.", portToRemove)
 	return true
 }
 
-func (u uninstallCmd) uninstallPort(ctx config.Context, nameVersion string, asDev bool) error {
+func (r removeCmd) removePort(ctx config.Context, nameVersion string, asDev bool) error {
 	// Check port is configured ok.
 	var port config.Port
 	port.AsDev = asDev
@@ -114,9 +116,9 @@ func (u uninstallCmd) uninstallPort(ctx config.Context, nameVersion string, asDe
 		return fmt.Errorf("no matching build_config found to build")
 	}
 
-	// Try to uninstall dependencies firstly.
-	if u.recursive {
-		uninstall := func(nameVersion string, asDev bool) error {
+	// Try to remove dependencies firstly.
+	if r.recursive {
+		remove := func(nameVersion string, asDev bool) error {
 			if strings.HasPrefix(nameVersion, port.Name) {
 				return fmt.Errorf("%s's dependencies contains circular dependency: %s",
 					port.NameVersion(), nameVersion)
@@ -133,8 +135,8 @@ func (u uninstallCmd) uninstallPort(ctx config.Context, nameVersion string, asDe
 				return err
 			}
 
-			// Uninstall dependency.
-			if err := u.uninstallPort(ctx, nameVersion, asDev); err != nil {
+			// Remove dependency.
+			if err := r.removePort(ctx, nameVersion, asDev); err != nil {
 				return err
 			}
 
@@ -142,51 +144,33 @@ func (u uninstallCmd) uninstallPort(ctx config.Context, nameVersion string, asDe
 		}
 
 		for _, nameVersion := range matchedConfig.Depedencies {
-			if err := uninstall(nameVersion, false); err != nil {
+			if err := remove(nameVersion, false); err != nil {
 				return err
 			}
 		}
 		for _, nameVersion := range matchedConfig.DevDepedencies {
-			if err := uninstall(nameVersion, true); err != nil {
+			if err := remove(nameVersion, true); err != nil {
 				return err
 			}
 		}
 	}
 
-	// Do uninstall port itself.
-	if err := u.doUninsallPort(ctx, port); err != nil {
+	// Do remove port itself.
+	if err := r.doRemovePort(ctx, port); err != nil {
 		return err
 	}
 
-	// Remove package files if purge option is specified.
-	if u.purge {
-		var folderName string
-		if port.AsDev {
-			folderName = port.NameVersion()
-		} else {
-			folderName = fmt.Sprintf("%s-%s-%s-%s",
-				port.NameVersion(),
-				ctx.Platform().Name,
-				ctx.Project().Name,
-				ctx.BuildType())
-		}
-
-		// Remove port's package files.
-		packageDir := filepath.Join(config.Dirs.WorkspaceDir, "packages", folderName)
-		if err := os.RemoveAll(packageDir); err != nil {
-			return fmt.Errorf("cannot remove package files: %s", err)
-		}
-
-		// Try remove parent folder if it's empty.
-		if err := fileio.RemoveFolderRecursively(filepath.Dir(packageDir)); err != nil {
-			return fmt.Errorf("cannot remove parent folder: %s", err)
+	// PurgeCmd would listen to this callback to remove port from package.
+	if r.portRemoved != nil {
+		if err := r.portRemoved(ctx, port); err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
-func (u uninstallCmd) doUninsallPort(ctx config.Context, port config.Port) error {
+func (r removeCmd) doRemovePort(ctx config.Context, port config.Port) error {
 	// Check if port is installed.
 	var stateFileName string
 	if port.AsDev {
@@ -220,7 +204,7 @@ func (u uninstallCmd) doUninsallPort(ctx config.Context, port config.Port) error
 		if !fileio.PathExists(line) {
 			fileToRemove = filepath.Join(config.Dirs.WorkspaceDir, "installed", line)
 		}
-		if err := u.removeFiles(fileToRemove); err != nil {
+		if err := r.removeFiles(fileToRemove); err != nil {
 			return fmt.Errorf("cannot remove file: %s", err)
 		}
 
@@ -256,7 +240,7 @@ func (u uninstallCmd) doUninsallPort(ctx config.Context, port config.Port) error
 }
 
 // removeFiles remove files and all related shared libraries.
-func (u uninstallCmd) removeFiles(path string) error {
+func (r removeCmd) removeFiles(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return nil
 	}

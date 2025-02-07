@@ -20,7 +20,7 @@ type aboutCmd struct {
 }
 
 func (a *aboutCmd) register() {
-	flag.BoolVar(&a.about, "about", false, "about buildenv and how to use it.")
+	flag.BoolVar(&a.about, "about", false, "about buildenv and how to use it, for example: ./buildenv --about")
 }
 
 func (a *aboutCmd) listen() (handled bool) {

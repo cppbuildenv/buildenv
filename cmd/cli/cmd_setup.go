@@ -15,8 +15,8 @@ type setupCmd struct {
 }
 
 func (s *setupCmd) register() {
-	flag.BoolVar(&s.setup, "setup", false, "setup cross build envronment for selected platform.")
-	flag.BoolVar(&s.silent, "silent", false, "run buildenv no output, it's used with -setup.")
+	flag.BoolVar(&s.setup, "setup", false, "setup cross build envronment for selected platform and project, for example:./buildenv --setup")
+	flag.BoolVar(&s.silent, "silent", false, "run buildenv without output log, works with --setup.")
 }
 
 func (s *setupCmd) listen() (handled bool) {
