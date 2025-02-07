@@ -22,19 +22,17 @@ type Port struct {
 	// Internal fields.
 	ctx       Context `json:"-"`
 	stateFile string  `json:"-"` // Used to record installed state
-	isSubDep  bool    `json:"-"`
+	AsSubDep  bool    `json:"-"`
 	AsDev     bool    `json:"-"`
 }
 
 func (p Port) NameVersion() string {
-	if p.AsDev {
-		return p.Name + "@" + p.Version + "@dev"
-	} else {
-		return p.Name + "@" + p.Version
-	}
+	return p.Name + "@" + p.Version
 }
 
 func (p *Port) Init(ctx Context, portPath string) error {
+	p.ctx = ctx
+
 	// Add file suffix and prefix if not exists.
 	if !strings.HasSuffix(portPath, ".json") {
 		portPath += ".json"
@@ -50,7 +48,7 @@ func (p *Port) Init(ctx Context, portPath string) error {
 		name := fileio.FileBaseName(filepath.Dir(portPath))
 		nameVersion := name + "@" + version
 
-		if p.isSubDep {
+		if p.AsSubDep {
 			return fmt.Errorf("sub depedency port %s does not exists", nameVersion)
 		} else {
 			return fmt.Errorf("port %s does not exists", nameVersion)
@@ -70,9 +68,6 @@ func (p *Port) Init(ctx Context, portPath string) error {
 	nameVersion := p.NameVersion()
 	platformProject := fmt.Sprintf("%s-%s-%s", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
 
-	p.ctx = ctx
-	p.stateFile = filepath.Join(Dirs.InstalledDir, "buildenv", "info", nameVersion+"-"+platformProject+".list")
-
 	var (
 		installedFolder string
 		packageFolder   string
@@ -82,10 +77,12 @@ func (p *Port) Init(ctx Context, portPath string) error {
 		packageFolder = nameVersion
 		installedFolder = "dev"
 		buildFolder = filepath.Join(nameVersion, "dev")
+		p.stateFile = filepath.Join(Dirs.InstalledDir, "buildenv", "info", nameVersion+"-dev.list")
 	} else {
 		packageFolder = fmt.Sprintf("%s-%s-%s-%s", nameVersion, ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
 		installedFolder = fmt.Sprintf("%s-%s-%s", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
 		buildFolder = filepath.Join(nameVersion, platformProject)
+		p.stateFile = filepath.Join(Dirs.InstalledDir, "buildenv", "info", nameVersion+"-"+platformProject+".list")
 	}
 
 	portConfig := buildsystem.PortConfig{
@@ -373,7 +370,7 @@ func (p Port) installFromSource(silentMode bool, buildConfig *buildsystem.BuildC
 
 		// Check and repair dependency.
 		var port Port
-		port.isSubDep = true
+		port.AsSubDep = true
 		port.AsDev = true
 		portPath := filepath.Join(Dirs.PortsDir, item+".json")
 		if err := port.Init(p.ctx, portPath); err != nil {
@@ -392,7 +389,7 @@ func (p Port) installFromSource(silentMode bool, buildConfig *buildsystem.BuildC
 
 		// Check and repair dependency.
 		var port Port
-		port.isSubDep = true
+		port.AsSubDep = true
 		portPath := filepath.Join(Dirs.PortsDir, item+".json")
 		if err := port.Init(p.ctx, portPath); err != nil {
 			return err

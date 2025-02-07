@@ -116,15 +116,17 @@ func (u uninstallCmd) uninstallPort(ctx config.Context, nameVersion string, asDe
 
 	// Try to uninstall dependencies firstly.
 	if u.recursive {
-		for _, item := range matchedConfig.Depedencies {
-			if strings.HasPrefix(item, port.Name) {
-				return fmt.Errorf("%s's dependencies contains circular dependency: %s", port.NameVersion(), item)
+		uninstall := func(nameVersion string, asDev bool) error {
+			if strings.HasPrefix(nameVersion, port.Name) {
+				return fmt.Errorf("%s's dependencies contains circular dependency: %s",
+					port.NameVersion(), nameVersion)
 			}
 
 			// Check and validate dependency.
 			var port config.Port
-			portPath := filepath.Join(config.Dirs.PortsDir, item+".json")
-			if err := port.Init(ctx, portPath); err != nil {
+			port.AsDev = asDev
+			port.AsSubDep = true
+			if err := port.Init(ctx, nameVersion); err != nil {
 				return err
 			}
 			if err := port.Validate(); err != nil {
@@ -132,7 +134,20 @@ func (u uninstallCmd) uninstallPort(ctx config.Context, nameVersion string, asDe
 			}
 
 			// Uninstall dependency.
-			if err := u.uninstallPort(ctx, item, false); err != nil {
+			if err := u.uninstallPort(ctx, nameVersion, asDev); err != nil {
+				return err
+			}
+
+			return nil
+		}
+
+		for _, nameVersion := range matchedConfig.Depedencies {
+			if err := uninstall(nameVersion, false); err != nil {
+				return err
+			}
+		}
+		for _, nameVersion := range matchedConfig.DevDepedencies {
+			if err := uninstall(nameVersion, true); err != nil {
 				return err
 			}
 		}
@@ -173,14 +188,19 @@ func (u uninstallCmd) uninstallPort(ctx config.Context, nameVersion string, asDe
 
 func (u uninstallCmd) doUninsallPort(ctx config.Context, port config.Port) error {
 	// Check if port is installed.
-	infoName := fmt.Sprintf("%s-%s-%s-%s.list", port.NameVersion(), ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
-	infoPath := filepath.Join(config.Dirs.WorkspaceDir, "installed", "buildenv", "info", infoName)
-	if !fileio.PathExists(infoPath) {
+	var stateFileName string
+	if port.AsDev {
+		stateFileName = fmt.Sprintf("%s-dev.list", port.NameVersion())
+	} else {
+		stateFileName = fmt.Sprintf("%s-%s-%s-%s.list", port.NameVersion(), ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
+	}
+	stateFilePath := filepath.Join(config.Dirs.WorkspaceDir, "installed", "buildenv", "info", stateFileName)
+	if !fileio.PathExists(stateFilePath) {
 		return fmt.Errorf("%s is not installed", port.NameVersion())
 	}
 
 	// Open install info file.
-	file, err := os.OpenFile(infoPath, os.O_RDONLY, os.ModePerm)
+	file, err := os.OpenFile(stateFilePath, os.O_RDONLY, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("cannot open install info file: %s", err)
 	}
@@ -223,12 +243,12 @@ func (u uninstallCmd) doUninsallPort(ctx config.Context, port config.Port) error
 	}
 
 	// Remove install info file.
-	if err := os.Remove(infoPath); err != nil {
+	if err := os.Remove(stateFilePath); err != nil {
 		return fmt.Errorf("cannot remove install info file: %s", err)
 	}
 
 	// Try to clean installed dir.
-	if err := fileio.RemoveFolderRecursively(filepath.Dir(infoPath)); err != nil {
+	if err := fileio.RemoveFolderRecursively(filepath.Dir(stateFilePath)); err != nil {
 		return fmt.Errorf("cannot remove parent folder: %s", err)
 	}
 
