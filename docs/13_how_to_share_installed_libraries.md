@@ -33,9 +33,9 @@ mnt
     └── x86_64-linux-ubuntu-20.04
         └── project_01
             └── Release
-                ├── ffmpeg@n3.4.13.tar.gz
+                ├── ffmpeg@3.4.13.tar.gz
                 ├── opencv@4.5.1.tar.gz
-                ├── sqlite3@version-3.47.0.tar.gz
+                ├── sqlite3@3.49.0.tar.gz
                 ├── x264@stable.tar.gz
                 ├── x265@4.0.tar.gz
                 └── zlib@v1.3.1.tar.gz
@@ -48,5 +48,5 @@ It must satisfy five matching elements to conclude that it is the cache target b
 1. platform name: for example `x86_64-linux-ubuntu-20.04.5`
 2. project name: for example `project_01`
 3. library name: for example `ffmpeg`
-4. library version: for example `n3.4.13`
+4. library version: for example `3.4.13`
 5. build config: for example `Release`

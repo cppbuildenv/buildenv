@@ -36,7 +36,7 @@ buildenv's workspace would be like below, it consists of **buildenv.json**, **co
 ├── installed
 │   ├── buildenv
 │   │   └── info
-│   │       ├── ffmpeg@n3.4.13-x86_64-linux-20.04-Release.list
+│   │       ├── ffmpeg@3.4.13-x86_64-linux-20.04-Release.list
 │   │       ├── opencv@3.4.18-x86_64-linux-20.04-Release.list
 │   │       ├── x264@stable-x86_64-linux-20.04-Release.list
 │   │       ├── x265@4.0-x86_64-linux-20.04-Release.list
@@ -47,7 +47,7 @@ buildenv's workspace would be like below, it consists of **buildenv.json**, **co
 │       ├── lib
 │       └── share
 ├── packages
-│   ├── ffmpeg@n3.4.13-x86_64-linux-20.04-Release
+│   ├── ffmpeg@3.4.13-x86_64-linux-20.04-Release
 │   │   ├── include
 │   │   ├── lib
 │   │   └── share

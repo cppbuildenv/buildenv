@@ -10,9 +10,9 @@ for example: `conf/projects/project_001.json`:
 {
     "ports": [
         "x264@stable",
-        "sqlite3@v3.47.0",
+        "sqlite3@v3.49.0",
         "x265@4.0",
-        "ffmpeg@n3.4.13",
+        "ffmpeg@3.4.13",
         "zlib@v1.3.1",
         "opencv@3.4.18"
     ],

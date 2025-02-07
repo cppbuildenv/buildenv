@@ -103,8 +103,8 @@ Alike library without components, you still need to define a [version]@cmake_con
 
 ```
 └── ffmpeg
-    ├── n3.4.13@cmake_config.json
-    └── n3.4.13.json
+    ├── 3.4.13@cmake_config.json
+    └── 3.4.13.json
 ```
 
 The file content would be like this, it would be a little different from library without components, we can define different file names for different platforms and components.
@@ -200,7 +200,7 @@ The next step is to define the cmake config in the [version].json file for diffe
 {
     "url": "ssh://git@192.168.12.18:7999/thdpty/ffmpeg.git",
     "name": "ffmpeg",
-    "version": "n3.4.13",
+    "version": "3.4.13",
     "build_configs": [
         {
             "pattern": "*linux*",

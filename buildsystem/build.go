@@ -22,7 +22,7 @@ type PortConfig struct {
 	SourceDir     string     // for example: ${buildenv}/buildtrees/ffmpeg/src
 	SourceFolder  string     // Some thirdpartys' source code is not in the root folder, so we need to specify it.
 	BuildDir      string     // for example: ${buildenv}/buildtrees/ffmpeg/x86_64-linux-20.04-Release
-	PackageDir    string     // for example: ${buildenv}/packages/ffmpeg-n3.4.13-x86_64-linux-20.04-Release
+	PackageDir    string     // for example: ${buildenv}/packages/ffmpeg-3.4.13-x86_64-linux-20.04-Release
 	InstalledDir  string     // for example: ${buildenv}/installed/x86_64-linux-20.04-Release
 	WithSubmodule bool       // if true, clone submodule when clone repository
 	JobNum        int        // number of jobs to run in parallel
