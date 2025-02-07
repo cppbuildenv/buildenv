@@ -20,24 +20,27 @@ type b2 struct {
 }
 
 func (b *b2) Configure(buildType string) error {
-	// Clean repo source before configuration.
-	if err := cmd.CleanRepo(b.PortConfig.SourceDir); err != nil {
-		return err
-	}
-
 	// Some third-party's configure scripts is not exist in the source folder root.
 	b.PortConfig.SourceDir = filepath.Join(b.PortConfig.SourceDir, b.PortConfig.SourceFolder)
 	if err := os.Chdir(b.PortConfig.SourceDir); err != nil {
 		return err
 	}
 
+	// Clean build cache files.
+	for _, path := range []string{
+		"b2",
+		"b2.exe",
+		"bin.v2",
+		"project-config.jam",
+		"tools/build/src/engine/b2",
+	} {
+		os.RemoveAll(path)
+	}
+
+	b.setBuildType(buildType)
+
 	// Append common variables for cross compiling.
 	b.Arguments = append(b.Arguments, fmt.Sprintf("--prefix=%s", b.PortConfig.PackageDir))
-	if b.AsDev {
-		b.Arguments = append(b.Arguments, "--build-type=release")
-	} else {
-		b.Arguments = append(b.Arguments, "--build-type="+strings.ToLower(buildType))
-	}
 
 	// Join args into a string.
 	joinedArgs := strings.Join(b.Arguments, " ")

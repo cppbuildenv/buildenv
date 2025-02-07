@@ -58,7 +58,7 @@ func (c callbackImpl) OnInitBuildEnv(confRepoUrl, confRepoRef string) (string, e
 	}
 
 	// Sync repo.
-	return buildenv.Synchronize(buildenv.ConfRepoUrl, buildenv.ConfRepoRef)
+	return buildenv.SyncRepo(buildenv.ConfRepoUrl, buildenv.ConfRepoRef)
 }
 
 func (c callbackImpl) OnCreatePlatform(platformName string) error {

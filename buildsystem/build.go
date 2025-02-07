@@ -41,6 +41,7 @@ type BuildSystem interface {
 	appendBuildEnvs() error
 	removeBuildEnvs() error
 	fillPlaceHolders()
+	setBuildType(buildType string)
 	getLogPath(suffix string) string
 }
 
@@ -499,6 +500,40 @@ func (b *BuildConfig) fillPlaceHolders() {
 				b.Arguments[index] = strings.ReplaceAll(argument, "${SOURCE_DIR}", b.PortConfig.SourceDir)
 			}
 		}
+	}
+}
+
+func (b BuildConfig) setBuildType(buildType string) {
+	// Remove all -g and -O flags.
+	cflags := strings.Split(os.Getenv("CFLAGS"), " ")
+	cflags = slices.DeleteFunc(cflags, func(element string) bool {
+		return strings.Contains(element, "-g") || strings.Contains(element, "-O")
+	})
+
+	cxxflags := strings.Split(os.Getenv("CXXFLAGS"), " ")
+	cxxflags = slices.DeleteFunc(cxxflags, func(element string) bool {
+		return strings.Contains(element, "-g") || strings.Contains(element, "-O")
+	})
+
+	if b.AsDev {
+		// Set -O3 for dev.
+		cflags = append(cflags, "-O3")
+		cxxflags = append(cxxflags, "-O3")
+		os.Setenv("CFLAGS", strings.Join(cflags, " "))
+		os.Setenv("CXXFLAGS", strings.Join(cxxflags, " "))
+	} else {
+		// Set -g for debug and -O3 for release.
+		var flags string
+		if strings.ToLower(buildType) == "debug" {
+			flags = "-g"
+		} else {
+			flags = "-O3"
+		}
+
+		cflags = append(cflags, flags)
+		cxxflags = append(cxxflags, flags)
+		os.Setenv("CFLAGS", strings.Join(cflags, " "))
+		os.Setenv("CXXFLAGS", strings.Join(cxxflags, " "))
 	}
 }
 

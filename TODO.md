@@ -19,8 +19,8 @@ git在下载代码时候没有过程log  | ✔
 添加-install参数，用于指定三方库的编译  | ✔
 --sysroot和--cross-prefix自动设置  | ✔
 git 同步代码需要优化  | ✔
-预编译好的三方库需要支持uninstall  | ✔
-支持uninstall功能, 同时支持recursive 模式  | ✔
+预编译好的三方库需要支持remove  | ✔
+支持remove功能, 同时支持recursive 模式  | ✔
 makefile的安装路径和依赖寻找路径应该自动管理 | ✔
 install 三方库的时候，如果已经配置到project里了，无需指定版本  | ✔
 cmd/cli缺少创建和选择project的功能  | ✔
@@ -47,6 +47,8 @@ cmake_config的配置独立于version文件之外  | ✔
 将buildtype抽象到各个buildsystem里 | ✔
 支持autotools  | ✔
 支持编译三方库作为dev | ✔
+用-purge代替-uninstall -purge | ✔
+完善cmd描述，并告知候选参数是什么 | ✔
 运行tools需要将内部lib路径加入到LD_LIBRARY_PATH  | ✘
 支持 buildenv -upgrade 升级  | ✘
 动态生成的cmake config文件（windows还没测试）| ✘
@@ -61,5 +63,4 @@ cmake_config的配置独立于version文件之外  | ✔
 支持在project里定义CMAKE_CXX_FLAGS和CMAKE_C_FLAGS，以及LDFLAGS | ✘
 检测代码如果跟目标不匹配, 什么都不做，同时提供sync命令用于强行同步代码 | ✘
 校验是否真的installed还需要判断文件是否存在 | ✘
-完善cmd描述，并告知候选参数是什么 | ✘
-用-purge代替-uninstall -purge | ✘
+支持offline模式 | ✘

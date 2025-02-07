@@ -16,7 +16,6 @@ func SyncRepo(sourceDir, repoRef, libName string) error {
 	}
 
 	var commands []string
-	commands = append(commands, "git reset --hard && git clean -xfd")
 	commands = append(commands, fmt.Sprintf("git -C %s fetch origin", sourceDir))
 	commands = append(commands, fmt.Sprintf("git -C %s checkout %s", sourceDir, repoRef))
 	commands = append(commands, fmt.Sprintf("git -C %s pull origin %s", sourceDir, repoRef))
@@ -39,7 +38,6 @@ func CherryPick(title, sourceDir string, patches []string) error {
 
 	// Execute patch command.
 	var commands []string
-	commands = append(commands, "git reset --hard && git clean -xfd")
 	commands = append(commands, fmt.Sprintf("git -C %s fetch origin", sourceDir))
 
 	for _, patch := range patches {
@@ -61,7 +59,6 @@ func Rebase(title, sourceDir, repoRef string, rebaseRefs []string) error {
 	}
 
 	var commands []string
-	commands = append(commands, "git reset --hard && git clean -xfd")
 	commands = append(commands, fmt.Sprintf("git -C %s fetch origin", sourceDir))
 
 	for _, ref := range rebaseRefs {

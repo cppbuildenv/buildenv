@@ -95,7 +95,7 @@ func (b *buildenv) Setup(args SetupArgs) error {
 	return nil
 }
 
-func (b buildenv) Synchronize(repo, ref string) (string, error) {
+func (b buildenv) SyncRepo(repo, ref string) (string, error) {
 	if b.ConfRepoUrl == "" {
 		return "", fmt.Errorf("no conf repo has been provided for buildenv")
 	}
@@ -129,9 +129,9 @@ func (b buildenv) Synchronize(repo, ref string) (string, error) {
 		commands = append(commands, fmt.Sprintf("git clone --branch %s --single-branch %s %s", ref, repo, confDir))
 	}
 
-	commandLine := strings.Join(commands, " && ")
 	// Execute clone command.
-	output, err := b.execute(commandLine)
+	commandLine := strings.Join(commands, " && ")
+	output, err := b.execute(commandLine, confDir)
 	if err != nil {
 		return "", err
 	}
@@ -332,7 +332,7 @@ func (b buildenv) writeTools(toolchain, environment *strings.Builder) error {
 	return nil
 }
 
-func (b buildenv) execute(command string) (string, error) {
+func (b buildenv) execute(command, workDir string) (string, error) {
 	var cmd *exec.Cmd
 
 	if runtime.GOOS == "windows" {
@@ -346,6 +346,7 @@ func (b buildenv) execute(command string) (string, error) {
 	cmd.Stderr = &buffer
 
 	cmd.Env = os.Environ()
+	cmd.Dir = workDir
 	if err := cmd.Run(); err != nil {
 		return "", err
 	}
