@@ -194,7 +194,7 @@ get_filename_component(BUILDENV_ROOT_DIR "${_CURRENT_DIR}" PATH)`))
 	}
 
 	toolchain.WriteString("\n# Add `installed dir` into library search paths.\n")
-	platformProject := fmt.Sprintf("%s-%s-${CMAKE_BUILD_TYPE}", b.PlatformName, b.ProjectName)
+	platformProject := fmt.Sprintf("%s^%s^${CMAKE_BUILD_TYPE}", b.PlatformName, b.ProjectName)
 	installedDir := fmt.Sprintf("${BUILDENV_ROOT_DIR}/installed/%s", platformProject)
 	toolchain.WriteString(fmt.Sprintf("list(APPEND CMAKE_FIND_ROOT_PATH \"%s\")\n", installedDir))
 	toolchain.WriteString(fmt.Sprintf("list(APPEND CMAKE_PREFIX_PATH \"%s\")\n", installedDir))

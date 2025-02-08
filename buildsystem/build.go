@@ -332,7 +332,7 @@ func (b BuildConfig) PackageFiles(packageDir, platformName, projectName, buildTy
 		if b.AsDev {
 			files = append(files, filepath.Join("dev", relativePath))
 		} else {
-			platformProject := fmt.Sprintf("%s-%s-%s", platformName, projectName, buildType)
+			platformProject := fmt.Sprintf("%s^%s^%s", platformName, projectName, buildType)
 			files = append(files, filepath.Join(platformProject, relativePath))
 		}
 		return nil

@@ -27,7 +27,7 @@ func (p *purgeCmd) register() {
 		if port.AsDev {
 			folderName = port.NameVersion()
 		} else {
-			folderName = fmt.Sprintf("%s-%s-%s-%s",
+			folderName = fmt.Sprintf("%s^%s^%s^%s",
 				port.NameVersion(),
 				ctx.Platform().Name,
 				ctx.Project().Name,

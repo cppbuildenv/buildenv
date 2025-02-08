@@ -76,13 +76,13 @@ func (p *Port) Init(ctx Context, portPath string) error {
 		packageFolder = nameVersion
 		installedFolder = "dev"
 		buildFolder = filepath.Join(nameVersion, "dev")
-		p.stateFile = filepath.Join(Dirs.InstalledDir, "buildenv", "info", nameVersion+"-dev.list")
+		p.stateFile = filepath.Join(Dirs.InstalledDir, "buildenv", "info", nameVersion+"^dev.list")
 	} else {
-		platformProject := fmt.Sprintf("%s-%s-%s", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
+		platformProject := fmt.Sprintf("%s^%s^%s", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
 		packageFolder = fmt.Sprintf("%s^%s^%s^%s", nameVersion, ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
-		installedFolder = fmt.Sprintf("%s-%s-%s", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
-		buildFolder = filepath.Join(nameVersion, fmt.Sprintf("%s-%s-%s", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType()))
-		p.stateFile = filepath.Join(Dirs.InstalledDir, "buildenv", "info", nameVersion+"-"+platformProject+".list")
+		installedFolder = fmt.Sprintf("%s^%s^%s", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
+		buildFolder = filepath.Join(nameVersion, fmt.Sprintf("%s^%s^%s", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType()))
+		p.stateFile = filepath.Join(Dirs.InstalledDir, "buildenv", "info", nameVersion+"^"+platformProject+".list")
 	}
 
 	portConfig := buildsystem.PortConfig{
@@ -236,7 +236,7 @@ func (p Port) Install(silentMode bool) error {
 			installedFrom = fmt.Sprintf("cache [%s]", fromDir)
 		} else {
 			// Remove build cache from buildtrees.
-			platformProject := fmt.Sprintf("%s-%s-%s", p.ctx.Platform().Name, p.ctx.Project().Name, p.ctx.BuildType())
+			platformProject := fmt.Sprintf("%s^%s^%s", p.ctx.Platform().Name, p.ctx.Project().Name, p.ctx.BuildType())
 			logPathPrefix := filepath.Join(p.NameVersion(), platformProject)
 			p.tryRemoveBuildCache(logPathPrefix)
 
@@ -408,7 +408,7 @@ func (p Port) installFromSource(silentMode bool, buildConfig *buildsystem.BuildC
 }
 
 func (p Port) installFromPackage(matchedConfig *buildsystem.BuildConfig) error {
-	platformProject := fmt.Sprintf("%s-%s-%s", p.ctx.Platform().Name, p.ctx.Project().Name, p.ctx.BuildType())
+	platformProject := fmt.Sprintf("%s^%s^%s", p.ctx.Platform().Name, p.ctx.Project().Name, p.ctx.BuildType())
 
 	// First, we must check and repair dependency ports.
 	for _, nameVersion := range matchedConfig.Depedencies {

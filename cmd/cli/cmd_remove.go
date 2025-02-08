@@ -174,9 +174,9 @@ func (r removeCmd) doRemovePort(ctx config.Context, port config.Port) error {
 	// Check if port is installed.
 	var stateFileName string
 	if port.AsDev {
-		stateFileName = fmt.Sprintf("%s-dev.list", port.NameVersion())
+		stateFileName = fmt.Sprintf("%s^dev.list", port.NameVersion())
 	} else {
-		stateFileName = fmt.Sprintf("%s-%s-%s-%s.list", port.NameVersion(), ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
+		stateFileName = fmt.Sprintf("%s^%s^%s^%s.list", port.NameVersion(), ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
 	}
 	stateFilePath := filepath.Join(config.Dirs.WorkspaceDir, "installed", "buildenv", "info", stateFileName)
 	if !fileio.PathExists(stateFilePath) {
@@ -190,7 +190,7 @@ func (r removeCmd) doRemovePort(ctx config.Context, port config.Port) error {
 	}
 	defer file.Close()
 
-	platformProject := fmt.Sprintf("%s-%s-%s", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
+	platformProject := fmt.Sprintf("%s^%s^%s", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType())
 
 	// Read line by line to remove installed file.
 	scanner := bufio.NewScanner(file)
