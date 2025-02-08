@@ -89,8 +89,8 @@ func (c cmake) Configure(buildType string) error {
 		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_C_FLAGS_INIT=--sysroot=%s", c.PortConfig.CrossTools.RootFS))
 		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_CXX_FLAGS_INIT=--sysroot=%s", c.PortConfig.CrossTools.RootFS))
 
-		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH=%s",
-			strings.Join([]string{c.PortConfig.CrossTools.RootFS, c.PortConfig.InstalledDir}, string(os.PathListSeparator))))
+		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH=%s", fmt.Sprintf("%s;%s",
+			c.PortConfig.CrossTools.RootFS, c.PortConfig.InstalledDir)))
 		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=%s", "NEVER"))
 		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=%s", "ONLY"))
 		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=%s", "ONLY"))
