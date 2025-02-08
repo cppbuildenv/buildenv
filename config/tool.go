@@ -64,8 +64,8 @@ func (t *Tool) Validate() error {
 	return nil
 }
 
-func (t Tool) CheckAndRepair(request SetupArgs) error {
-	if !request.RepairBuildenv() {
+func (t Tool) CheckAndRepair(args SetupArgs) error {
+	if !args.RepairBuildenv() {
 		return nil
 	}
 
@@ -80,7 +80,7 @@ func (t Tool) CheckAndRepair(request SetupArgs) error {
 
 	// Check if tool exists.
 	if fileio.PathExists(t.fullpath) {
-		if !request.Silent() {
+		if !args.Silent() {
 			title := color.Sprintf(color.Green, "\n[✔] ---- Tool: %s\n", fileio.FileBaseName(t.Url))
 			fmt.Printf("%sLocation: %s\n", title, location)
 		}
@@ -100,7 +100,7 @@ func (t Tool) CheckAndRepair(request SetupArgs) error {
 	}
 
 	// Print download & extract info.
-	if !request.Silent() {
+	if !args.Silent() {
 		title := color.Sprintf(color.Green, "\n[✔] ---- Tool: %s\n", fileio.FileBaseName(t.Url))
 		fmt.Printf("%sLocation: %s\n", title, location)
 	}

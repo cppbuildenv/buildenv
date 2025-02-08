@@ -82,7 +82,7 @@ func (p Project) Write(platformPath string) error {
 	return os.WriteFile(platformPath, bytes, os.ModePerm)
 }
 
-func (p Project) Setup(request SetupArgs) error {
+func (p Project) Setup(args SetupArgs) error {
 	// Check if ports version conflicts in the project.
 	if err := p.checkPortsConflicts(); err != nil {
 		return err
@@ -100,8 +100,8 @@ func (p Project) Setup(request SetupArgs) error {
 			return fmt.Errorf("%s: %w", portNameVersion, err)
 		}
 
-		if request.InstallPorts() {
-			if err := port.Install(request.Silent()); err != nil {
+		if args.InstallPorts() {
+			if err := port.Install(args.Silent()); err != nil {
 				return fmt.Errorf("%s: %w", portNameVersion, err)
 			}
 		}
