@@ -137,7 +137,7 @@ func (m meson) generateCrossFile() (string, error) {
 	bytes.WriteString(fmt.Sprintf("cpu = '%s'\n", m.PortConfig.CrossTools.SystemProcessor))
 	bytes.WriteString("endian = 'little'\n")
 
-	bytes.WriteString("\n[toolchain]\n")
+	bytes.WriteString("\n[binaries]\n")
 	bytes.WriteString(fmt.Sprintf("c = '%s'\n", m.PortConfig.CrossTools.CC))
 	bytes.WriteString(fmt.Sprintf("cpp = '%s'\n", m.PortConfig.CrossTools.CXX))
 
