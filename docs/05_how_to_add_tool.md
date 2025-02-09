@@ -23,7 +23,7 @@ for example: `conf/tools/nasm-2.16.03.json`:
 ## 2. Create it by cli with arguments.
 
 ```
-./buildenv -create_tool cmake-3.30.5-linux-x86_64
+./buildenv create --tool=cmake-3.30.5-linux-x86_64
 
 [✔] ========  cmake-3.30.5-linux-x86_64 is created but need to config it later. ========
 ```

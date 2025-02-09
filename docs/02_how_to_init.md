@@ -21,7 +21,7 @@ The generated `buildenv.json` would be like below:
 ## 2. Init by cli argments.
 
 ```
-$ ./buildenv -init -conf_repo_url=ssh://git@192.168.12.34:8890/buildenvconf.git -conf_repo_ref=master
+$ ./buildenv init -url=ssh://git@192.168.12.34:8890/buildenvconf.git -branch=master
 HEAD is now at 5a024af update config
 Already on 'develop'
 Your branch is up to date with 'origin/develop'.

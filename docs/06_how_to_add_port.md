@@ -73,7 +73,7 @@ Makefile project port example:
 ## 2. Create it by cli with arguments.
 
 ```
-./buildenv -create_port glog@v0.6.0
+./buildenv create --port=glog@v0.6.0
 
 [✔] ======== glog@v0.6.0 is created but need to config it later. ========
 ```

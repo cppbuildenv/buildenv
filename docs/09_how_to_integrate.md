@@ -5,7 +5,7 @@ buildenv is just a standalone executable binary. However, to make it easier to i
 ## Integrate via cli arguments.
 
 ```
-./buildenv -integrate
+./buildenv integrate
 
 [✔] ======== buildenv is installed.
 ```

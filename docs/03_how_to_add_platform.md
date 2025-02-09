@@ -48,7 +48,7 @@ for example: `conf/platforms/x86_64-linux-20.04.json`:
 ## 2. Create it by cli with arguments.
 
 ```
-$ ./buildenv -create_platform x86_64-linux-22.04
+$ ./buildenv create --platform=x86_64-linux-22.04
 
 [✔] ======== x86_64-linux-22.04 is created but need to config it later. ========
 ```

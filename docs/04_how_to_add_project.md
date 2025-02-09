@@ -37,7 +37,7 @@ for example: `conf/projects/project_001.json`:
 ## 2. Create it by cli with arguments.
 
 ```
-$ ./buildenv -create_platform project_003
+$ ./buildenv create --project=project_003
 
 [✔] ======== project_003 is created but need to config it later. ========
 ```

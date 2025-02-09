@@ -5,7 +5,7 @@ buildenv.json is the global configuration file of buildenv and `project` is part
 ## 2. Select it by cli with arguments.
 
 ```
-$ ./buildenv -select_project project_001
+$ ./buildenv select --project=project_001
 
 [✔] ======== current project: project_001. ========
 ```

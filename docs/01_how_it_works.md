@@ -36,30 +36,30 @@ buildenv's workspace would be like below, it consists of **buildenv.json**, **co
 ├── installed
 │   ├── buildenv
 │   │   └── info
-│   │       ├── ffmpeg@3.4.13-x86_64-linux-20.04-Release.list
-│   │       ├── opencv@3.4.18-x86_64-linux-20.04-Release.list
-│   │       ├── x264@stable-x86_64-linux-20.04-Release.list
-│   │       ├── x265@4.0-x86_64-linux-20.04-Release.list
-│   │       └── zlib@v1.3.1-x86_64-linux-20.04-Release.list
-│   └── x86_64-linux-20.04-Release
+│   │       ├── ffmpeg@3.4.13^x86_64-linux-20.04^Release.list
+│   │       ├── opencv@3.4.18^x86_64-linux-20.04^Release.list
+│   │       ├── x264@stable^x86_64-linux-20.04^Release.list
+│   │       ├── x265@4.0^x86_64-linux-20.04^Release.list
+│   │       └── zlib@v1.3.1-x86_64-linux-20.04^Release.list
+│   └── x86_64-linux-20.04^Release
 │       ├── bin
 │       ├── include
 │       ├── lib
 │       └── share
 ├── packages
-│   ├── ffmpeg@3.4.13-x86_64-linux-20.04-Release
+│   ├── ffmpeg@3.4.13^x86_64-linux-20.04^Release
 │   │   ├── include
 │   │   ├── lib
 │   │   └── share
-│   ├── opencv@3.4.18-x86_64-linux-20.04-Release
+│   ├── opencv@3.4.18^x86_64-linux-20.04^Release
 │   │   ├── bin
 │   │   ├── include
 │   │   ├── lib
 │   │   └── share
-│   ├── x264@stable-x86_64-linux-20.04-Release
+│   ├── x264@stable^x86_64-linux-20.04^Release
 │   │   ├── include
 │   │   └── lib
-│   └── x265@4.0-x86_64-linux-20.04-Release
+│   └── x265@4.0^x86_64-linux-20.04^Release
 │       ├── include
 │       ├── lib
 │       └── share
@@ -113,45 +113,20 @@ Please choose an option from the menu below...
 ### 3.2 Execute command with parameters.
 
 ```
-Usage of ./buildenv:
-  -about
-        about buildenv and how to use it.
-  -build_type string
-        set build type and works with --install and --setup. (default "Release")
-  -conf_repo_ref string
-        set conf repo's ref and works with -init.
-  -conf_repo_url string
-        set conf repo's url and wotks with -init.
-  -create_platform string
-        create a new platform with template, for example: ./buildenv --create_platform=aarch64-linux-jetson.json
-  -create_port string
-        create a new port with template, for example: ./buildenv --create_port=glog@v0.6.0
-  -create_project string
-        create a new project with template, for example: ./buildenv --create_project=my_project
-  -create_tool string
-        create a new tool with template.
-  -dev
-        install or remove a third-party as dev, works with --install, --remove and --purge.
-  -init
-        init buildenv with config repo, works with --conf_repo_url and --conf_repo_ref to set repo url and ref.
-  -install string
-        clone, configre, build and install a third-party library, example: ./buildenv --install=sqlite3@v3.4.5.
-  -integrate
-        integrate buildenv so can use it everywhere.
-  -purge string
-        remove a third-party from installed dir and package dir,  for example: ./buildenv --purge glog@v0.6.0, you can also call with '--dev' to remove a dev third-party.
-  -recursive
-        remove a third-party with dependencies also, it works with --remove and --purge.
-  -remove string
-        remove a third-party from installed dir, for example: glog@v0.6.0,  you can also call with '--dev' suffix to remove a dev third-pary.
-  -select_platform string
-        select a platform as cross build environment, for example: ./buildenv --select_platform=aarch64-linux
-  -select_project string
-        select a project as current project, for example:./buildenv --select_project=my_project
-  -setup
-        setup cross build envronment for selected platform and project.
-  -silent
-        run buildenv without output, works with --setup.
+$ ./buildenv -h
+Usage: ./buildenv [command] [options]
+
+Available commands:
+  init      Initialize buildenv.
+  setup     Setup buildenv for selected platform and project.
+  install   Install a third-party library.
+  remove    Remove an installed third-party library.
+  create    Create platform, project, tool or port.
+  select    Select platform or platform.
+  integrate Integrate buildenv so can call it anywhere.
+  about     About buildenv and usage.
+
+Run './buildenv [command] --help' for more information about a command.  
 ```
 
 ## 4. Setup buildenv.

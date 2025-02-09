@@ -5,7 +5,7 @@ buildenv.json is the global configuration file of buildenv and `platform` is par
 ## 2. Select it by cli with arguments.
 
 ```
-$ ./buildenv -select_platform x86_64-linux-20.04
+$ ./buildenv select --platform=x86_64-linux-20.04
 
 [✔] ======== current platform: x86_64-linux-20.04. ========
 ```
