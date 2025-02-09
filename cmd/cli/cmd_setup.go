@@ -3,38 +3,36 @@ package cli
 import (
 	"buildenv/config"
 	"flag"
+	"fmt"
+	"os"
 )
 
-func newSetupCmd() *setupCmd {
-	return &setupCmd{}
-}
+func handleSetup(callbacks config.BuildEnvCallbacks) {
+	var (
+		silent    bool
+		buildType string
+	)
 
-type setupCmd struct {
-	setup  bool
-	silent bool
-}
+	cmd := flag.NewFlagSet("setup", flag.ExitOnError)
+	cmd.BoolVar(&silent, "silent", false, "run in silent mode, no output log.")
+	cmd.StringVar(&buildType, "build_type", "Release", "build type, for example: Release, Debug, etc.")
 
-func (s *setupCmd) register() {
-	flag.BoolVar(&s.setup, "setup", false, "setup cross build envronment for selected platform and project, for example:./buildenv --setup")
-	flag.BoolVar(&s.silent, "silent", false, "run buildenv without output log, works with --setup.")
-}
-
-func (s *setupCmd) listen() (handled bool) {
-	if !s.setup {
-		return false
+	cmd.Usage = func() {
+		fmt.Print("Usage: buildenv setup [options]\n\n")
+		fmt.Println("options:")
+		cmd.PrintDefaults()
 	}
 
-	request := config.NewSetupArgs(s.silent, true, true).SetBuildType(buildType.buildType)
-	buildenv := config.NewBuildEnv().SetBuildType(buildType.buildType)
+	cmd.Parse(os.Args[2:])
+	args := config.NewSetupArgs(silent, true, true).SetBuildType(buildType)
+	buildenv := config.NewBuildEnv().SetBuildType(buildType)
 
-	if err := buildenv.Setup(request); err != nil {
+	if err := buildenv.Setup(args); err != nil {
 		config.PrintError(err, "failed to setup buildenv.")
-		return true
+		return
 	}
 
-	if !s.silent {
+	if !silent {
 		config.PrintSuccess("buildenv is ready for project: %s.", buildenv.ProjectName)
 	}
-
-	return true
 }

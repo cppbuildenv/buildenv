@@ -31,3 +31,15 @@ func (a *aboutCmd) listen() (handled bool) {
 
 	return false
 }
+
+func handleAbout(callbacks config.BuildEnvCallbacks) {
+	cmd := flag.NewFlagSet("about", flag.ExitOnError)
+
+	cmd.Usage = func() {
+		fmt.Print("Usage: buildenv about\n\n")
+		fmt.Println("options:")
+		cmd.PrintDefaults()
+	}
+
+	fmt.Print(callbacks.About(Version))
+}

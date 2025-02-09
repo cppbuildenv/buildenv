@@ -2,78 +2,53 @@ package cli
 
 import (
 	"buildenv/config"
-	"flag"
-	"runtime"
 )
 
-type reisterable interface {
-	register()
+type command struct {
+	Name        string
+	Description string
+	Handler     func(callbacks config.BuildEnvCallbacks)
 }
 
-type responsible interface {
-	reisterable
-	listen() (handled bool)
-}
-
-var (
-	buildType      = newBuildTypeCmd()
-	initConfig     = newInitConfCmd(config.Callbacks)
-	platformCreate = newPlatformCreateCmd()
-	platformSelect = newPlatformSelectCmd(config.Callbacks)
-	projectCreate  = newProjectCreateCmd()
-	projectSelect  = newProjectSelectCmd(config.Callbacks)
-	toolCreate     = newToolCreateCmd(config.Callbacks)
-	portCreate     = newPortCreateCmd(config.Callbacks)
-	setup          = newSetupCmd()
-	dev            = newDevCmd()
-	install        = newInstallCmd()
-	remove         = newRemoveCmd()
-	purge          = newPurgeCmd()
-	about          = newAboutCmd(config.Callbacks)
-)
-var commands = []reisterable{
-	buildType,
-	initConfig,
-	platformCreate,
-	platformSelect,
-	projectCreate,
-	projectSelect,
-	toolCreate,
-	portCreate,
-	setup,
-	dev,
-	install,
-	remove,
-	purge,
-	about,
-}
-
-func BuildType() string {
-	return buildType.buildType
-}
-
-// Listen listen commands input
-func Listen() bool {
-	// `integrate` is supported in unix like system only.
-	if runtime.GOOS == "linux" {
-		integrate := newIntegrateCmd()
-		commands = append(commands, integrate)
-	}
-
-	// Read command with flag
-	for i := 0; i < len(commands); i++ {
-		commands[i].register()
-	}
-	flag.Parse()
-
-	// Handle commands
-	for i := 0; i < len(commands); i++ {
-		if cmd, ok := commands[i].(responsible); ok {
-			if cmd.listen() {
-				return true
-			}
-		}
-	}
-
-	return false
+var Commands = []command{
+	{
+		Name:        "init",
+		Description: "Initialize buildenv.",
+		Handler:     handleInitialize,
+	},
+	{
+		Name:        "setup",
+		Description: "Setup buildenv for selected platform and project.",
+		Handler:     handleSetup,
+	},
+	{
+		Name:        "install",
+		Description: "Install a third-party library.",
+		Handler:     handleInstall,
+	},
+	{
+		Name:        "remove",
+		Description: "Remove an installed third-party library.",
+		Handler:     handleRemove,
+	},
+	{
+		Name:        "create",
+		Description: "Create platform, project, tool or port.",
+		Handler:     handleCreate,
+	},
+	{
+		Name:        "select",
+		Description: "Select platform or platform.",
+		Handler:     handleSelect,
+	},
+	{
+		Name:        "integrate",
+		Description: "Integrate buildenv so can call it anywhere.",
+		Handler:     handleIntegrate,
+	},
+	{
+		Name:        "about",
+		Description: "About buildenv and usage.",
+		Handler:     handleAbout,
+	},
 }

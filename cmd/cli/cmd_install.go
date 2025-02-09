@@ -5,74 +5,78 @@ import (
 	"buildenv/pkg/fileio"
 	"flag"
 	"fmt"
+	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 )
 
-func newInstallCmd() *installCmd {
-	return &installCmd{}
-}
+func handleInstall(callbacks config.BuildEnvCallbacks) {
+	var (
+		buildType string
+		dev       bool
+	)
 
-type installCmd struct {
-	install string
-}
+	cmd := flag.NewFlagSet("install", flag.ExitOnError)
+	cmd.StringVar(&buildType, "build_type", "Release", "build type, for example: Release, Debug, etc.")
+	cmd.BoolVar(&dev, "dev", false, "install a dev third-party.")
 
-func (i *installCmd) register() {
-	flag.StringVar(&i.install, "install", "", "clone, configre, build and install a third-party library, example: ./buildenv --install=sqlite3@v3.4.5.")
-}
+	cmd.Usage = func() {
+		fmt.Print("Usage: buildenv install <name@version|name>\n\n")
+	}
 
-func (i *installCmd) listen() (handled bool) {
-	if strings.TrimSpace(i.install) == "" {
-		return false
+	cmd.Parse(os.Args[2:])
+	nameValue := os.Args[2]
+	if nameValue == "" {
+		fmt.Println("Error: The <name@value|name> must be specified.")
+		cmd.Usage()
+		os.Exit(1)
 	}
 
 	// Make sure toolchain, rootfs and tools are prepared.
-	args := config.NewSetupArgs(setup.silent, true, false).
-		SetBuildType(buildType.buildType)
+	args := config.NewSetupArgs(false, true, false).SetBuildType(buildType)
 	buildEnvPath := filepath.Join(config.Dirs.WorkspaceDir, "buildenv.json")
 
-	buildenv := config.NewBuildEnv().SetBuildType(buildType.buildType)
+	buildenv := config.NewBuildEnv().SetBuildType(buildType)
 	if err := buildenv.Init(buildEnvPath); err != nil {
-		config.PrintError(err, "failed to init buildenv %s: %s.", i.install, err)
-		return true
+		config.PrintError(err, "failed to init buildenv %s: %s.", nameValue, err)
+		return
 	}
 	if err := buildenv.Setup(args); err != nil {
-		config.PrintError(err, "install %s failed.", i.install)
-		return true
+		config.PrintError(err, "install %s failed.", nameValue)
+		return
 	}
 
 	// Exact check if port to install is exists.
-	if strings.Count(i.install, "@") > 0 {
-		parts := strings.Split(i.install, "@")
+	if strings.Count(nameValue, "@") > 0 {
+		parts := strings.Split(nameValue, "@")
 		portPaths := filepath.Join(config.Dirs.PortsDir, parts[0], parts[1]+".json")
 		if !fileio.PathExists(portPaths) {
-			config.PrintError(fmt.Errorf("port %s is not found", i.install), "%s install failed.", i.install)
-			return true
+			config.PrintError(fmt.Errorf("port %s is not found", nameValue), "%s install failed.", nameValue)
+			return
 		}
 	} else {
 		// Check if port to install is exists in project.
 		index := slices.IndexFunc(buildenv.Project().Ports, func(item string) bool {
-			return strings.Split(item, "@")[0] == i.install
+			return strings.Split(item, "@")[0] == nameValue
 		})
 		if index == -1 {
-			config.PrintError(fmt.Errorf("port %s is not found", i.install), "%s install failed.", i.install)
-			return true
+			config.PrintError(fmt.Errorf("port %s is not found", nameValue), "%s install failed.", nameValue)
+			return
 		}
 	}
 
 	// Install the port.
 	var port config.Port
-	port.AsDev = dev.dev
-	if err := port.Init(buildenv, i.install); err != nil {
-		config.PrintError(err, "install %s failed.", i.install)
-		return true
+	port.AsDev = dev
+	if err := port.Init(buildenv, nameValue); err != nil {
+		config.PrintError(err, "install %s failed.", nameValue)
+		return
 	}
-	if err := port.Install(setup.silent); err != nil {
-		config.PrintError(err, "install %s failed.", i.install)
-		return true
+	if err := port.Install(false); err != nil {
+		config.PrintError(err, "install %s failed.", nameValue)
+		return
 	}
 
-	config.PrintSuccess("install %s successfully.", i.install)
-	return true
+	config.PrintSuccess("install %s successfully.", nameValue)
 }

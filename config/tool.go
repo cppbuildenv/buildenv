@@ -11,9 +11,9 @@ import (
 )
 
 type Tool struct {
-	Url         string `json:"url"`                    // Download url.
-	ArchiveName string `json:"archive_name,omitempty"` // Archive name can be changed to avoid conflict.
-	Path        string `json:"path"`                   // Runtime path of tool, it's relative path  and would be converted to absolute path later.
+	Url         string `json:"url"`          // Download url.
+	ArchiveName string `json:"archive_name"` // Archive name can be changed to avoid conflict.
+	Path        string `json:"path"`         // Runtime path of tool, it's relative path  and would be converted to absolute path later.
 
 	// Internal fields.
 	toolName  string `json:"-"`

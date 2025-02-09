@@ -4,25 +4,18 @@ import (
 	"buildenv/config"
 	"buildenv/pkg/env"
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 )
 
-func newIntegrateCmd() *integrateCmd {
-	return &integrateCmd{}
-}
+func handleIntegrate(callbacks config.BuildEnvCallbacks) {
+	cmd := flag.NewFlagSet("integrate", flag.ExitOnError)
 
-type integrateCmd struct {
-	integrate bool
-}
-
-func (i *integrateCmd) register() {
-	flag.BoolVar(&i.integrate, "integrate", false, "integrate buildenv so can use it everywhere.")
-}
-
-func (c *integrateCmd) listen() (handled bool) {
-	if !c.integrate {
-		return false
+	cmd.Usage = func() {
+		fmt.Print("Usage: buildenv integrate\n\n")
+		fmt.Println("options:")
+		cmd.PrintDefaults()
 	}
 
 	exePath, err := os.Executable()
@@ -37,5 +30,4 @@ func (c *integrateCmd) listen() (handled bool) {
 	}
 
 	config.PrintSuccess("buildenv is integrated.")
-	return true
 }

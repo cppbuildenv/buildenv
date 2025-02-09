@@ -13,50 +13,50 @@ import (
 	"strings"
 )
 
-func newRemoveCmd() *removeCmd {
-	return &removeCmd{}
-}
+func handleRemove(callbacks config.BuildEnvCallbacks) {
+	var (
+		buildType string
+		recurse   bool
+		purge     bool
+		dev       bool
+	)
 
-type removeCmd struct {
-	remove      string
-	purge       string
-	recursive   bool
-	portRemoved func(ctx config.Context, port config.Port) error
-}
+	cmd := flag.NewFlagSet("remove", flag.ExitOnError)
+	cmd.StringVar(&buildType, "build_type", "Release", "build type, for example: Release, Debug, etc.")
+	cmd.BoolVar(&recurse, "recurse", false, "Remove a third-party with its dependencies also.")
+	cmd.BoolVar(&purge, "purge", false, "Remove a third-party with its package also.")
+	cmd.BoolVar(&dev, "dev", false, "Remove a dev third-party.")
 
-func (r *removeCmd) register() {
-	flag.StringVar(&r.remove, "remove", "", "remove a third-party from installed dir, for example: glog@v0.6.0, "+
-		" you can also call with '--dev' suffix to remove a dev third-pary.")
-	flag.BoolVar(&r.recursive, "recursive", false, "remove a third-party with dependencies also, it works with --remove and --purge.")
-}
-
-func (r *removeCmd) listen() (handled bool) {
-	var targetPort string
-	if strings.TrimSpace(r.remove) != "" {
-		targetPort = r.remove
-	} else if strings.TrimSpace(r.purge) != "" {
-		targetPort = r.purge
-	}
-	if targetPort == "" {
-		return false
+	cmd.Usage = func() {
+		fmt.Print("Usage: buildenv remove <name@value|name> [options]\n\n")
+		fmt.Println("options:")
+		cmd.PrintDefaults()
 	}
 
-	args := config.NewSetupArgs(false, false, false).SetBuildType(buildType.buildType)
-	buildenv := config.NewBuildEnv().SetBuildType(buildType.buildType)
+	cmd.Parse(os.Args[3:])
+	nameVersion := os.Args[2]
+	if nameVersion == "" {
+		fmt.Println("Error: The <name@value|name> must be specified.")
+		cmd.Usage()
+		os.Exit(1)
+	}
+
+	args := config.NewSetupArgs(false, false, false).SetBuildType(buildType)
+	buildenv := config.NewBuildEnv().SetBuildType(buildType)
 	if err := buildenv.Setup(args); err != nil {
-		config.PrintError(err, "%s remove failed.", targetPort)
-		return true
+		config.PrintError(err, "%s remove failed.", nameVersion)
+		os.Exit(1)
 	}
 
-	// Check if port to remove is exists in project.
+	// Check if port to remove exists in project.
 	index := slices.IndexFunc(buildenv.Project().Ports, func(item string) bool {
 		// exact match
-		if item == targetPort {
+		if item == nameVersion {
 			return true
 		}
 
 		// name match and the name must be someone of the ports in the project.
-		if strings.Split(item, "@")[0] == targetPort {
+		if strings.Split(item, "@")[0] == nameVersion {
 			return true
 		}
 
@@ -66,29 +66,28 @@ func (r *removeCmd) listen() (handled bool) {
 	// Get the port to remove.
 	var portToRemove string
 	if index == -1 {
-		if !strings.Contains(targetPort, "@") {
+		if !strings.Contains(nameVersion, "@") {
 			config.PrintError(fmt.Errorf("cannot determine the exact port, "+
-				"because %s is not included in the port list of the current project", r.remove),
-				"%s remove failed.", r.remove)
-			return true
+				"because %s is not included in the port list of the current project", nameVersion),
+				"%s remove failed.", nameVersion)
+			os.Exit(1)
 		}
 
-		portToRemove = targetPort
+		portToRemove = nameVersion
 	} else {
 		portToRemove = buildenv.Project().Ports[index]
 	}
 
 	// Remove port.
-	if err := r.removePort(buildenv, portToRemove, dev.dev); err != nil {
-		config.PrintError(err, "%s remove failed.", targetPort)
-		return true
+	if err := removePort(buildenv, portToRemove, dev, purge, recurse); err != nil {
+		config.PrintError(err, "%s remove failed.", nameVersion)
+		os.Exit(1)
 	}
 
 	config.PrintSuccess("%s remove successfully.", portToRemove)
-	return true
 }
 
-func (r removeCmd) removePort(ctx config.Context, nameVersion string, asDev bool) error {
+func removePort(ctx config.Context, nameVersion string, asDev, purge, recurse bool) error {
 	// Check port is configured ok.
 	var port config.Port
 	port.AsDev = asDev
@@ -117,7 +116,7 @@ func (r removeCmd) removePort(ctx config.Context, nameVersion string, asDev bool
 	}
 
 	// Try to remove dependencies firstly.
-	if r.recursive {
+	if recurse {
 		remove := func(nameVersion string, asDev bool) error {
 			if strings.HasPrefix(nameVersion, port.Name) {
 				return fmt.Errorf("%s's dependencies contains circular dependency: %s",
@@ -136,7 +135,7 @@ func (r removeCmd) removePort(ctx config.Context, nameVersion string, asDev bool
 			}
 
 			// Remove dependency.
-			if err := r.removePort(ctx, nameVersion, asDev); err != nil {
+			if err := removePort(ctx, nameVersion, asDev, purge, recurse); err != nil {
 				return err
 			}
 
@@ -156,13 +155,13 @@ func (r removeCmd) removePort(ctx config.Context, nameVersion string, asDev bool
 	}
 
 	// Do remove port itself.
-	if err := r.doRemovePort(ctx, port); err != nil {
+	if err := doRemovePort(ctx, port); err != nil {
 		return err
 	}
 
-	// PurgeCmd would listen to this callback to remove port from package.
-	if r.portRemoved != nil {
-		if err := r.portRemoved(ctx, port); err != nil {
+	// Remove port's package files.
+	if purge {
+		if err := removePackage(ctx, port); err != nil {
 			return err
 		}
 	}
@@ -170,7 +169,7 @@ func (r removeCmd) removePort(ctx config.Context, nameVersion string, asDev bool
 	return nil
 }
 
-func (r removeCmd) doRemovePort(ctx config.Context, port config.Port) error {
+func doRemovePort(ctx config.Context, port config.Port) error {
 	// Check if port is installed.
 	var stateFileName string
 	if port.AsDev {
@@ -204,7 +203,7 @@ func (r removeCmd) doRemovePort(ctx config.Context, port config.Port) error {
 		if !fileio.PathExists(line) {
 			fileToRemove = filepath.Join(config.Dirs.WorkspaceDir, "installed", line)
 		}
-		if err := r.removeFiles(fileToRemove); err != nil {
+		if err := removeFiles(fileToRemove); err != nil {
 			return fmt.Errorf("cannot remove file: %s", err)
 		}
 
@@ -239,8 +238,35 @@ func (r removeCmd) doRemovePort(ctx config.Context, port config.Port) error {
 	return nil
 }
 
+func removePackage(ctx config.Context, port config.Port) error {
+	var folderName string
+	if port.AsDev {
+		folderName = port.NameVersion()
+	} else {
+		folderName = fmt.Sprintf("%s^%s^%s^%s",
+			port.NameVersion(),
+			ctx.Platform().Name,
+			ctx.Project().Name,
+			ctx.BuildType(),
+		)
+	}
+
+	// Remove port's package files.
+	packageDir := filepath.Join(config.Dirs.WorkspaceDir, "packages", folderName)
+	if err := os.RemoveAll(packageDir); err != nil {
+		return fmt.Errorf("cannot remove package files: %s", err)
+	}
+
+	// Try remove parent folder if it's empty.
+	if err := fileio.RemoveFolderRecursively(filepath.Dir(packageDir)); err != nil {
+		return fmt.Errorf("cannot remove parent folder: %s", err)
+	}
+
+	return nil
+}
+
 // removeFiles remove files and all related shared libraries.
-func (r removeCmd) removeFiles(path string) error {
+func removeFiles(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return nil
 	}

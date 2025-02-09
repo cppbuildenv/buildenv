@@ -4,40 +4,38 @@ import (
 	"buildenv/config"
 	"flag"
 	"fmt"
+	"os"
 )
 
-func newInitConfCmd(callbacks config.BuildEnvCallbacks) *initConfCmd {
-	return &initConfCmd{
-		callbacks: callbacks,
-	}
-}
+func handleInitialize(callbacks config.BuildEnvCallbacks) {
+	var (
+		url    string
+		branch string
+	)
 
-type initConfCmd struct {
-	init        bool
-	confRepoUrl string
-	confRepoRef string
-	callbacks   config.BuildEnvCallbacks
-}
+	cmd := flag.NewFlagSet("init", flag.ExitOnError)
+	cmd.StringVar(&url, "url", "", "conf repo url")
+	cmd.StringVar(&branch, "branch", "master", "conf repo branch")
 
-func (i *initConfCmd) register() {
-	flag.BoolVar(&i.init, "init", false, "init buildenv with config repo, works with '--conf_repo_url' and '--conf_repo_ref' to set repo url and ref.")
-	flag.StringVar(&i.confRepoUrl, "conf_repo_url", "", "set conf repo's url and wotks with '--init'.")
-	flag.StringVar(&i.confRepoRef, "conf_repo_ref", "master", "set conf repo's ref and works with '--init'.")
-}
-
-func (i *initConfCmd) listen() (handled bool) {
-	if !i.init {
-		return false
+	cmd.Usage = func() {
+		fmt.Print("Usage: buildenv init [options]\n\n")
+		fmt.Println("options:")
+		cmd.PrintDefaults()
 	}
 
-	output, err := i.callbacks.OnInitBuildEnv(i.confRepoUrl, i.confRepoRef)
+	cmd.Parse(os.Args[2:])
+	if url == "" {
+		fmt.Println("Error: The --url parameter must be specified.")
+		cmd.Usage()
+		os.Exit(1)
+	}
+
+	output, err := callbacks.OnInitBuildEnv(url, branch)
 	if err != nil {
-		config.PrintError(err, "failed to init buildenv with %s.", i.confRepoUrl)
+		config.PrintError(err, "failed to init buildenv with %s/%s.", url, branch)
 		return
 	}
 
 	fmt.Println(output)
 	config.PrintSuccess("init buildenv successfully.")
-
-	return true
 }
