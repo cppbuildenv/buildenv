@@ -22,7 +22,7 @@ type initConfCmd struct {
 func (i *initConfCmd) register() {
 	flag.BoolVar(&i.init, "init", false, "init buildenv with config repo, works with '--conf_repo_url' and '--conf_repo_ref' to set repo url and ref.")
 	flag.StringVar(&i.confRepoUrl, "conf_repo_url", "", "set conf repo's url and wotks with '--init'.")
-	flag.StringVar(&i.confRepoRef, "conf_repo_ref", "", "set conf repo's ref and works with '--init'.")
+	flag.StringVar(&i.confRepoRef, "conf_repo_ref", "master", "set conf repo's ref and works with '--init'.")
 }
 
 func (i *initConfCmd) listen() (handled bool) {

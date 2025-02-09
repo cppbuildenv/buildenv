@@ -131,7 +131,7 @@ func (b buildenv) SyncRepo(repo, ref string) (string, error) {
 
 	// Execute clone command.
 	commandLine := strings.Join(commands, " && ")
-	output, err := b.execute(commandLine, confDir)
+	output, err := b.execute(commandLine, Dirs.WorkspaceDir)
 	if err != nil {
 		return "", err
 	}
