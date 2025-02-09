@@ -8,8 +8,8 @@ The generated `buildenv.json` would be like below:
 
 ```json
 {
-    "conf_repo_url": "ssh://git@192.168.12.34:8890/buildenv-conf.git",
-    "conf_repo_ref": "develop",
+    "conf_repo_url": "https://gitee.com/phil-zhang/buildenv_conf.git",
+    "conf_repo_ref": "master",
     "platform_name": "",
     "project_name": "",
     "job_num": 32,
@@ -21,14 +21,16 @@ The generated `buildenv.json` would be like below:
 ## 2. Init by cli argments.
 
 ```
-$ ./buildenv init -url=ssh://git@192.168.12.34:8890/buildenvconf.git -branch=master
+$ ./buildenv init -url=https://gitee.com/phil-zhang/buildenv_conf.git -branch=master
 HEAD is now at 5a024af update config
-Already on 'develop'
-Your branch is up to date with 'origin/develop'.
+Already on 'master'
+Your branch is up to date with 'master'.
 Already up to date.
 
 [✔] ======== init buildenv successfully. ========
 ```
+
+>Please note that `https://gitee.com/phil-zhang/buildenv_conf.git` is a test conf repo, you can use it to experience buildenv, and you can also create your own conf repo as a reference.
 
 ## 3. Init by cli menus.
 
@@ -57,7 +59,7 @@ Then select the first menu and press enter key:
 Initializing buildenv:
 
 Config repo url               
-ssh://git@192.168.12.34:8890/buildenv-conf.git                                                            
+https://gitee.com/phil-zhang/buildenv_conf.git                                                           
 
 Config repo ref               
 master               
