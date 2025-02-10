@@ -2,6 +2,7 @@ package menu
 
 import (
 	"buildenv/config"
+	"buildenv/pkg/fileio"
 	"fmt"
 	"os"
 	"strings"
@@ -14,25 +15,22 @@ func newProjectSelectModel(callbacks config.BuildEnvCallbacks) *projectSelectMod
 	const defaultWidth = 80
 	const defaultHeight = 10
 
-	// Create projects dir if not exists.
-	if err := os.MkdirAll(config.Dirs.ProjectsDir, 0755); err != nil {
-		fmt.Println("Error creating projects dir:", err)
-		os.Exit(1)
-	}
-
-	// List all entities in project dir.
-	entities, err := os.ReadDir(config.Dirs.ProjectsDir)
-	if err != nil {
-		fmt.Println("Error reading projects dir:", err)
-		os.Exit(1)
-	}
-
-	// Create list items with name of entities.
 	var items []list.Item
-	for _, entity := range entities {
-		if !entity.IsDir() && strings.HasSuffix(entity.Name(), ".json") {
-			projectName := strings.TrimSuffix(entity.Name(), ".json")
-			items = append(items, listItem(projectName))
+
+	if fileio.PathExists(config.Dirs.ProjectsDir) {
+		// List all entities in project dir.
+		entities, err := os.ReadDir(config.Dirs.ProjectsDir)
+		if err != nil {
+			fmt.Println("Error reading projects dir:", err)
+			os.Exit(1)
+		}
+
+		// Create list items with name of entities.
+		for _, entity := range entities {
+			if !entity.IsDir() && strings.HasSuffix(entity.Name(), ".json") {
+				projectName := strings.TrimSuffix(entity.Name(), ".json")
+				items = append(items, listItem(projectName))
+			}
 		}
 	}
 

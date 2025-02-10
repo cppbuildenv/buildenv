@@ -2,6 +2,7 @@ package menu
 
 import (
 	"buildenv/config"
+	"buildenv/pkg/fileio"
 	"fmt"
 	"os"
 	"strings"
@@ -14,25 +15,21 @@ func newPlatformSelectModel(callbacks config.BuildEnvCallbacks) *platformSelectM
 	const defaultWidth = 80
 	const defaultHeight = 15
 
-	// Create platform dir if not exists.
-	if err := os.MkdirAll(config.Dirs.PlatformsDir, 0755); err != nil {
-		fmt.Println("Error creating platform dir:", err)
-		os.Exit(1)
-	}
-
-	// List all entities in platform dir.
-	entities, err := os.ReadDir(config.Dirs.PlatformsDir)
-	if err != nil {
-		fmt.Println("Error reading platform dir:", err)
-		os.Exit(1)
-	}
-
-	// Create list items with name of entities.
 	var items []list.Item
-	for _, entity := range entities {
-		if !entity.IsDir() && strings.HasSuffix(entity.Name(), ".json") {
-			platformName := strings.TrimSuffix(entity.Name(), ".json")
-			items = append(items, listItem(platformName))
+	if fileio.PathExists(config.Dirs.PlatformsDir) {
+		// List all entities in platform dir.
+		entities, err := os.ReadDir(config.Dirs.PlatformsDir)
+		if err != nil {
+			fmt.Println("Error reading platform dir:", err)
+			os.Exit(1)
+		}
+
+		// Create list items with name of entities.
+		for _, entity := range entities {
+			if !entity.IsDir() && strings.HasSuffix(entity.Name(), ".json") {
+				platformName := strings.TrimSuffix(entity.Name(), ".json")
+				items = append(items, listItem(platformName))
+			}
 		}
 	}
 
