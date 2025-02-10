@@ -18,9 +18,6 @@ type makefiles struct {
 }
 
 func (m makefiles) Configure(buildType string) error {
-	// Prepare envs for configure.
-	m.setupDependencyPaths()
-
 	// Different Makefile projects set the build_type in inconsistent ways,
 	// Fortunately, it can be configured through CFLAGS and CXXFLAGS.
 	m.setBuildType(buildType)
@@ -166,40 +163,4 @@ func (m makefiles) Install() error {
 	}
 
 	return nil
-}
-
-func (m makefiles) setupDependencyPaths() {
-	// Some third-party libraries cannot find headers and libs with sysroot,
-	// so we need to set CFLAGS, CXXFLAGS, LDFLAGS to let these third-party libaries find them.
-	installedDir := m.BuildConfig.PortConfig.InstalledDir
-	cflags := os.Getenv("CFLAGS")
-	cxxflags := os.Getenv("CXXFLAGS")
-	ldflags := os.Getenv("LDFLAGS")
-
-	if strings.TrimSpace(cflags) == "" {
-		os.Setenv("CFLAGS", fmt.Sprintf("-I%s/include", installedDir))
-	} else {
-		os.Setenv("CFLAGS", fmt.Sprintf("-I%s/include", installedDir)+" "+cflags)
-	}
-	if strings.TrimSpace(cxxflags) == "" {
-		os.Setenv("CXXFLAGS", fmt.Sprintf("-I%s/include", installedDir))
-	} else {
-		os.Setenv("CXXFLAGS", fmt.Sprintf("-I%s/include", installedDir)+" "+cxxflags)
-	}
-	if strings.TrimSpace(ldflags) == "" {
-		os.Setenv("LDFLAGS", fmt.Sprintf("-L%s/lib", installedDir))
-	} else {
-		os.Setenv("LDFLAGS", fmt.Sprintf("-L%s/lib", installedDir)+" "+ldflags)
-	}
-
-	// Append $PKG_CONFIG_PATH with pkgconfig path that in installed dir.
-	pkgConfigPath := os.Getenv("PKG_CONFIG_PATH")
-	if strings.TrimSpace(pkgConfigPath) == "" {
-		os.Setenv("PKG_CONFIG_PATH", installedDir+"/lib/pkgconfig")
-	} else {
-		os.Setenv("PKG_CONFIG_PATH", installedDir+"/lib/pkgconfig"+string(os.PathListSeparator)+pkgConfigPath)
-	}
-
-	// We assume that pkg-config's sysroot is installedDir and change all pc file's prefix as "/".
-	os.Setenv("PKG_CONFIG_SYSROOT_DIR", installedDir)
 }

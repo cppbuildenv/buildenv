@@ -42,6 +42,7 @@ type BuildSystem interface {
 	removeBuildEnvs() error
 	fillPlaceHolders()
 	setBuildType(buildType string)
+	ensureDependencyPaths()
 	getLogPath(suffix string) string
 }
 
@@ -248,6 +249,9 @@ func (b *BuildConfig) Install(url, version, buildType string) error {
 		return err
 	}
 	defer b.buildSystem.removeBuildEnvs()
+
+	// Make sure depedencies libs can be found by current lib.
+	b.buildSystem.ensureDependencyPaths()
 
 	if err := b.buildSystem.Clone(url, version); err != nil {
 		return err
@@ -541,6 +545,43 @@ func (b BuildConfig) setBuildType(buildType string) {
 		os.Setenv("CFLAGS", strings.Join(cflags, " "))
 		os.Setenv("CXXFLAGS", strings.Join(cxxflags, " "))
 	}
+}
+
+// ensureDependencyPaths Sometimes libs not in sysroot cannot be found,
+// we need to set CFLAGS, CXXFLAGS, LDFLAGS to make sure these third-party
+// libaries that installed in installed dir can be found.
+func (b BuildConfig) ensureDependencyPaths() {
+	installedDir := b.PortConfig.InstalledDir
+	cflags := os.Getenv("CFLAGS")
+	cxxflags := os.Getenv("CXXFLAGS")
+	ldflags := os.Getenv("LDFLAGS")
+
+	if strings.TrimSpace(cflags) == "" {
+		os.Setenv("CFLAGS", fmt.Sprintf("-I%s/include", installedDir))
+	} else {
+		os.Setenv("CFLAGS", fmt.Sprintf("-I%s/include", installedDir)+" "+cflags)
+	}
+	if strings.TrimSpace(cxxflags) == "" {
+		os.Setenv("CXXFLAGS", fmt.Sprintf("-I%s/include", installedDir))
+	} else {
+		os.Setenv("CXXFLAGS", fmt.Sprintf("-I%s/include", installedDir)+" "+cxxflags)
+	}
+	if strings.TrimSpace(ldflags) == "" {
+		os.Setenv("LDFLAGS", fmt.Sprintf("-Wl,-rpath-link,%s/lib", installedDir))
+	} else {
+		os.Setenv("LDFLAGS", fmt.Sprintf("-Wl,-rpath-link,%s/lib", installedDir)+" "+ldflags)
+	}
+
+	// Append $PKG_CONFIG_PATH with pkgconfig path that in installed dir.
+	pkgConfigPath := os.Getenv("PKG_CONFIG_PATH")
+	if strings.TrimSpace(pkgConfigPath) == "" {
+		os.Setenv("PKG_CONFIG_PATH", installedDir+"/lib/pkgconfig")
+	} else {
+		os.Setenv("PKG_CONFIG_PATH", installedDir+"/lib/pkgconfig"+string(os.PathListSeparator)+pkgConfigPath)
+	}
+
+	// We assume that pkg-config's sysroot is installedDir and change all pc file's prefix as "/".
+	os.Setenv("PKG_CONFIG_SYSROOT_DIR", installedDir)
 }
 
 func (b BuildConfig) replaceHolders(content string) string {
