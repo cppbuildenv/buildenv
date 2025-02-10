@@ -10,7 +10,7 @@ toolchain里定义CC和CXX时候后面拼上 "--sysroot=xxx"  | ✔
 三方库如果编译后产生pkg-config文件，需要加入系统变量（ffmpeg在通过pkg-config寻找libx265）  | ✔
 path不存在，应该先尝试用下载后的文件解压，而不是直接重复下载，重新下载的前提是md5等校验没通过  | ✔
 每个installed的库添加platform目录，目的是为了支持不同平台的库共存  | ✔
-执行-setup打印所有已经准备好的tool和已经安装的port  | ✔
+执行setup打印所有已经准备好的tool和已经安装的port  | ✔
 环境变量用os.PathListSeparator拼接  | ✔
 将download的资源统一解压到内部的tools目录  | ✔
 拓展project，将packages的配置文件放到project目录下  | ✔

@@ -152,7 +152,7 @@ set(HOME_DIR "${CMAKE_CURRENT_LIST_DIR}/..")
 find_program(BUILDENV buildenv PATHS ${HOME_DIR})
 if(BUILDENV)
 	execute_process(
-		COMMAND ${BUILDENV} -setup -silent -build_type=${CMAKE_BUILD_TYPE}
+		COMMAND ${BUILDENV} setup -silent -build_type=${CMAKE_BUILD_TYPE}
 		WORKING_DIRECTORY ${HOME_DIR}
 	)
 endif()` + "\n")
