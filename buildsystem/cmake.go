@@ -141,7 +141,7 @@ func (c cmake) Configure(buildType string) error {
 
 	// Execute configure.
 	logPath := c.getLogPath("configure")
-	title := fmt.Sprintf("[configure %s]", c.PortConfig.LibName)
+	title := fmt.Sprintf("[configure %s@%s]", c.PortConfig.LibName, c.PortConfig.LibVersion)
 	executor := cmd.NewExecutor(title, command)
 	executor.SetLogPath(logPath)
 	if err := executor.Execute(); err != nil {
@@ -157,7 +157,7 @@ func (c cmake) Build() error {
 
 	// Execute build.
 	logPath := c.getLogPath("build")
-	title := fmt.Sprintf("[build %s]", c.PortConfig.LibName)
+	title := fmt.Sprintf("[build %s@%s]", c.PortConfig.LibName, c.PortConfig.LibVersion)
 	executor := cmd.NewExecutor(title, command)
 	executor.SetLogPath(logPath)
 	if err := executor.Execute(); err != nil {
@@ -173,7 +173,7 @@ func (c cmake) Install() error {
 
 	// Execute install.
 	logPath := c.getLogPath("install")
-	title := fmt.Sprintf("[install %s]", c.PortConfig.LibName)
+	title := fmt.Sprintf("[install %s@%s]", c.PortConfig.LibName, c.PortConfig.LibVersion)
 	executor := cmd.NewExecutor(title, command)
 	executor.SetLogPath(logPath)
 	if err := executor.Execute(); err != nil {

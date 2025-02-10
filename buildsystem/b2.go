@@ -48,7 +48,7 @@ func (b *b2) Configure(buildType string) error {
 
 	// Execute configure.
 	logPath := b.getLogPath("configure")
-	title := fmt.Sprintf("[configure %s]", b.PortConfig.LibName)
+	title := fmt.Sprintf("[configure %s@%s]", b.PortConfig.LibName, b.PortConfig.LibVersion)
 	executor := cmd.NewExecutor(title, configure)
 	executor.SetLogPath(logPath)
 	if err := executor.Execute(); err != nil {
@@ -106,7 +106,7 @@ func (b b2) Build() error {
 
 	// Execute build.
 	logPath := b.getLogPath("build")
-	title := fmt.Sprintf("[build %s]", b.PortConfig.LibName)
+	title := fmt.Sprintf("[build %s@%s]", b.PortConfig.LibName, b.PortConfig.LibVersion)
 	executor := cmd.NewExecutor(title, command)
 	executor.SetLogPath(logPath)
 	if err := executor.Execute(); err != nil {
@@ -125,7 +125,7 @@ func (b b2) Install() error {
 
 	// Execute install.
 	logPath := b.getLogPath("install")
-	title := fmt.Sprintf("[install %s]", b.PortConfig.LibName)
+	title := fmt.Sprintf("[install %s@%s]", b.PortConfig.LibName, b.PortConfig.LibVersion)
 	executor := cmd.NewExecutor(title, command)
 	executor.SetLogPath(logPath)
 	if err := executor.Execute(); err != nil {

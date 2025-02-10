@@ -87,7 +87,7 @@ func (m meson) Configure(buildType string) error {
 
 	// Execute configure.
 	logPath := m.getLogPath("configure")
-	title := fmt.Sprintf("[configure %s]", m.PortConfig.LibName)
+	title := fmt.Sprintf("[configure %s@%s]", m.PortConfig.LibName, m.PortConfig.LibVersion)
 	executor := cmd.NewExecutor(title, command)
 	executor.SetLogPath(logPath)
 	if err := executor.Execute(); err != nil {
@@ -103,7 +103,7 @@ func (m meson) Build() error {
 
 	// Execute build.
 	logPath := m.getLogPath("build")
-	title := fmt.Sprintf("[build %s]", m.PortConfig.LibName)
+	title := fmt.Sprintf("[build %s@%s]", m.PortConfig.LibName, m.PortConfig.LibVersion)
 	executor := cmd.NewExecutor(title, command)
 	executor.SetLogPath(logPath)
 	if err := executor.Execute(); err != nil {
@@ -119,7 +119,7 @@ func (m meson) Install() error {
 
 	// Execute install.
 	logPath := m.getLogPath("install")
-	title := fmt.Sprintf("[install %s]", m.PortConfig.LibName)
+	title := fmt.Sprintf("[install %s@%s]", m.PortConfig.LibName, m.PortConfig.LibVersion)
 	executor := cmd.NewExecutor(title, command)
 	executor.SetLogPath(logPath)
 	if err := executor.Execute(); err != nil {
