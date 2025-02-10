@@ -86,10 +86,10 @@ func (c cmake) Configure(buildType string) error {
 		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_SYSTEM_PROCESSOR=%s", c.PortConfig.CrossTools.SystemProcessor))
 		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_SYSTEM_NAME=%s", c.PortConfig.CrossTools.SystemName))
 
-		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_C_FLAGS_INIT=--sysroot=%s", c.PortConfig.CrossTools.RootFS))
-		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_CXX_FLAGS_INIT=--sysroot=%s", c.PortConfig.CrossTools.RootFS))
+		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_C_FLAGS=\"--sysroot=%s ${CMAKE_C_FLAGS}\"", c.PortConfig.CrossTools.RootFS))
+		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_CXX_FLAGS=\"--sysroot=%s ${CMAKE_CXX_FLAGS}\"", c.PortConfig.CrossTools.RootFS))
 
-		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH=%s", fmt.Sprintf("%s;%s",
+		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH=\"%s\"", fmt.Sprintf("%s;%s",
 			c.PortConfig.CrossTools.RootFS, c.PortConfig.InstalledDir)))
 		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=%s", "NEVER"))
 		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=%s", "ONLY"))
