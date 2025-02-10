@@ -37,16 +37,34 @@ func (e *executor) SetLogPath(logPath string) *executor {
 	return e
 }
 
+func (e *executor) ExecuteOutput() (string, error) {
+	var buffer bytes.Buffer
+	if err := e.doExecute(&buffer); err != nil {
+		return "", err
+	}
+
+	return buffer.String(), nil
+}
+
 func (e executor) Execute() error {
+	if err := e.doExecute(nil); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e executor) doExecute(buffer *bytes.Buffer) error {
 	fmt.Print(color.Sprintf(color.Blue, "\n%s: %s\n\n", e.title, e.command))
 
-	// Create command for windows and linux.
+	// Create command for windows and unix like.
 	var cmd *exec.Cmd
 	if runtime.GOOS == "windows" {
 		cmd = exec.Command("cmd", "/c", e.command)
 	} else {
 		cmd = exec.Command("bash", "-c", e.command)
 	}
+
 	cmd.Dir = e.workDir
 	cmd.Env = os.Environ()
 
@@ -73,6 +91,9 @@ func (e executor) Execute() error {
 
 		cmd.Stdout = io.MultiWriter(os.Stdout, logFile)
 		cmd.Stderr = io.MultiWriter(os.Stderr, logFile)
+	} else if buffer != nil {
+		cmd.Stdout = buffer
+		cmd.Stderr = buffer
 	} else {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stdout

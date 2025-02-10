@@ -1,14 +1,13 @@
 package config
 
 import (
+	"buildenv/pkg/cmd"
 	"buildenv/pkg/env"
 	"buildenv/pkg/fileio"
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -93,47 +92,59 @@ func (b *buildenv) Setup(args SetupArgs) error {
 }
 
 func (b buildenv) SyncRepo(repo, ref string) (string, error) {
-	if b.ConfRepoUrl == "" {
-		return "", fmt.Errorf("no conf repo has been provided for buildenv")
+	// Extracted clone function for reusability.
+	cloneFunc := func(commands []string, workDir string) (string, error) {
+		commands = append(commands, fmt.Sprintf("git clone --branch %s --single-branch %s %s", ref, repo, workDir))
+
+		// Execute clone command.
+		commandLine := strings.Join(commands, " && ")
+		executor := cmd.NewExecutor("[clone]", commandLine)
+		executor.SetWorkDir(Dirs.WorkspaceDir)
+
+		output, err := executor.ExecuteOutput()
+		if err != nil {
+			return "", err
+		}
+		return output, nil
 	}
 
-	if b.ConfRepoRef == "" {
-		return "", fmt.Errorf("no conf repo ref has been provided for buildenv")
-	}
+	// Extract sync function for reusability.
+	syncFunc := func(workDir string) (string, error) {
+		var commands []string
+		commands = append(commands, "git reset --hard && git clean -xfd")
+		commands = append(commands, fmt.Sprintf("git -C %s fetch", workDir))
+		commands = append(commands, fmt.Sprintf("git -C %s checkout %s", workDir, ref))
+		commands = append(commands, "git pull")
 
-	var commands []string
+		// Execute clone command.
+		commandLine := strings.Join(commands, " && ")
+		executor := cmd.NewExecutor("[sync]", commandLine)
+		executor.SetWorkDir(workDir)
+
+		output, err := executor.ExecuteOutput()
+		if err != nil {
+			return "", err
+		}
+
+		return output, nil
+	}
 
 	// Clone or git checkout repo.
 	confDir := filepath.Join(Dirs.WorkspaceDir, "conf")
 	if fileio.PathExists(confDir) {
-		// clean up and checkout to ref.
 		if fileio.PathExists(filepath.Join(confDir, ".git")) {
-			// cd `conf`` to execute git command.
-			if err := os.Chdir(confDir); err != nil {
-				return "", err
-			}
-
-			commands = append(commands, "git reset --hard && git clean -xfd")
-			commands = append(commands, fmt.Sprintf("git -C %s fetch", confDir))
-			commands = append(commands, fmt.Sprintf("git -C %s checkout %s", confDir, ref))
-			commands = append(commands, "git pull")
-		} else {
-			// clean up and clone.
+			return syncFunc(confDir)
+		} else if repo != "" && ref != "" {
+			var commands []string
 			commands = append(commands, fmt.Sprintf("rm -rf %s", confDir))
-			commands = append(commands, fmt.Sprintf("git clone --branch %s --single-branch %s %s", ref, repo, confDir))
+			return cloneFunc(commands, confDir)
+		} else {
+			return "", fmt.Errorf("conf repo url and ref are empty")
 		}
 	} else {
-		commands = append(commands, fmt.Sprintf("git clone --branch %s --single-branch %s %s", ref, repo, confDir))
+		var commands []string
+		return cloneFunc(commands, confDir)
 	}
-
-	// Execute clone command.
-	commandLine := strings.Join(commands, " && ")
-	output, err := b.execute(commandLine, Dirs.WorkspaceDir)
-	if err != nil {
-		return "", err
-	}
-
-	return output, nil
 }
 
 func (b buildenv) GenerateToolchainFile(scriptsDir string) (string, error) {
@@ -327,28 +338,6 @@ func (b buildenv) writeTools(toolchain, environment *strings.Builder) error {
 		environment.WriteString(fmt.Sprintf("export PATH=%s\n", env.Join(tool.cmakepath, "$PATH")))
 	}
 	return nil
-}
-
-func (b buildenv) execute(command, workDir string) (string, error) {
-	var cmd *exec.Cmd
-
-	if runtime.GOOS == "windows" {
-		cmd = exec.Command("cmd", "/c", command)
-	} else {
-		cmd = exec.Command("bash", "-c", command)
-	}
-
-	var buffer bytes.Buffer
-	cmd.Stdout = &buffer
-	cmd.Stderr = &buffer
-
-	cmd.Env = os.Environ()
-	cmd.Dir = workDir
-	if err := cmd.Run(); err != nil {
-		return "", err
-	}
-
-	return buffer.String(), nil
 }
 
 // ----------------------- Implementation of BuildEnvContext ----------------------- //

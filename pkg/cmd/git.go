@@ -10,20 +10,18 @@ import (
 )
 
 func SyncRepo(sourceDir, repoRef, libName string) error {
-	// Change to source dir to execute git command.
-	if err := os.Chdir(sourceDir); err != nil {
-		return err
-	}
-
 	var commands []string
+	commands = append(commands, "git reset --hard && git clean -xfd")
 	commands = append(commands, fmt.Sprintf("git -C %s fetch origin", sourceDir))
 	commands = append(commands, fmt.Sprintf("git -C %s checkout %s", sourceDir, repoRef))
 	commands = append(commands, fmt.Sprintf("git -C %s pull origin %s", sourceDir, repoRef))
 
 	// Execute clone command.
 	commandLine := strings.Join(commands, " && ")
-	title := fmt.Sprintf("[clone %s]", libName)
-	if err := NewExecutor(title, commandLine).Execute(); err != nil {
+	title := fmt.Sprintf("[sync %s]", libName)
+	executor := NewExecutor(title, commandLine)
+	executor.SetWorkDir(sourceDir)
+	if err := executor.Execute(); err != nil {
 		return err
 	}
 

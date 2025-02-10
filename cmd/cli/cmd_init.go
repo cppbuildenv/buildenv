@@ -24,15 +24,14 @@ func handleInitialize(callbacks config.BuildEnvCallbacks) {
 	}
 
 	cmd.Parse(os.Args[2:])
-	if url == "" {
-		fmt.Println("Error: The --url parameter must be specified.")
-		cmd.Usage()
-		os.Exit(1)
-	}
 
 	output, err := callbacks.OnInitBuildEnv(url, branch)
 	if err != nil {
-		config.PrintError(err, "failed to init buildenv with %s/%s.", url, branch)
+		if url == "" {
+			config.PrintError(err, "failed to init buildenv.")
+		} else {
+			config.PrintError(err, "failed to init buildenv with %s/%s.", url, branch)
+		}
 		return
 	}
 

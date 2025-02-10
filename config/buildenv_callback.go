@@ -18,6 +18,11 @@ type callbackImpl struct{}
 func (c callbackImpl) OnInitBuildEnv(confRepoUrl, confRepoRef string) (string, error) {
 	buildenv := NewBuildEnv()
 
+	// No repo url specifeid, maybe want to sync repo only.
+	if strings.TrimSpace(confRepoUrl) == "" {
+		return buildenv.SyncRepo(confRepoUrl, buildenv.ConfRepoRef)
+	}
+
 	// Create buildenv.json if not exist.
 	confPath := filepath.Join(Dirs.WorkspaceDir, "buildenv.json")
 	if !fileio.PathExists(confPath) {
