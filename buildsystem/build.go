@@ -62,9 +62,15 @@ type CrossTools struct {
 	NM              string
 	OBJDUMP         string
 	STRIP           string
+	Native          bool
 }
 
 func (c CrossTools) SetEnvs() {
+	if c.Native {
+		return
+	}
+
+	// Set env vars only for cross compiling.
 	rootfs := os.Getenv("SYSROOT")
 	os.Setenv("TOOLCHAIN_PREFIX", c.ToolchainPrefix)
 	os.Setenv("HOST", c.Host)
@@ -161,7 +167,7 @@ func (b BuildConfig) Clone(url, version string) error {
 			} else {
 				command = fmt.Sprintf("git clone --branch %s %s %s", version, url, b.PortConfig.SourceDir)
 			}
-			title := fmt.Sprintf("[clone %s]", b.PortConfig.LibName)
+			title := fmt.Sprintf("[clone %s@%s]", b.PortConfig.LibName, b.PortConfig.LibVersion)
 			if err := cmd.NewExecutor(title, command).Execute(); err != nil {
 				return err
 			}

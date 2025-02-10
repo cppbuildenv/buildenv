@@ -502,12 +502,13 @@ func (p Port) buildCrossTools() buildsystem.CrossTools {
 	crossTools := buildsystem.CrossTools{
 		SystemName:      p.ctx.SystemName(),
 		SystemProcessor: p.ctx.SystemProcessor(),
-		Host:            p.ctx.Host(),
-		RootFS:          p.ctx.RootFSPath(),
-		ToolchainPrefix: p.ctx.ToolchainPrefix(),
 	}
 
 	if p.ctx.Toolchain() != nil {
+		crossTools.Native = false
+		crossTools.Host = p.ctx.Toolchain().Host
+		crossTools.ToolchainPrefix = p.ctx.Toolchain().ToolchainPrefix
+		crossTools.RootFS = p.ctx.RootFS().fullpath
 		crossTools.CC = p.ctx.Toolchain().CC
 		crossTools.CXX = p.ctx.Toolchain().CXX
 		crossTools.FC = p.ctx.Toolchain().FC
@@ -517,6 +518,8 @@ func (p Port) buildCrossTools() buildsystem.CrossTools {
 		crossTools.NM = p.ctx.Toolchain().NM
 		crossTools.OBJDUMP = p.ctx.Toolchain().OBJDUMP
 		crossTools.STRIP = p.ctx.Toolchain().STRIP
+	} else {
+		crossTools.Native = true
 	}
 
 	return crossTools

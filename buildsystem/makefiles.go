@@ -67,6 +67,19 @@ func (m makefiles) Configure(buildType string) error {
 			m.Arguments = append(m.Arguments, "--disable-static")
 		}
 	}
+
+	// Remove common cross compile args for native build.
+	if m.PortConfig.CrossTools.Native || m.BuildConfig.AsDev {
+		m.Arguments = slices.DeleteFunc(m.Arguments, func(element string) bool {
+			return strings.Contains(element, "--host=") ||
+				strings.Contains(element, "--sysroot=") ||
+				strings.Contains(element, "--cross-prefix=") ||
+				strings.Contains(element, "--enable-cross-compile") ||
+				strings.Contains(element, "--arch=") ||
+				strings.Contains(element, "--target-os=")
+		})
+	}
+
 	joinedArgs := strings.Join(m.Arguments, " ")
 
 	// Find `configure` or `Configure`.
