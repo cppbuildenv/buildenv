@@ -229,10 +229,8 @@ func (b BuildConfig) Patch() error {
 			return fmt.Errorf("patch file %s not exists", patchPath)
 		}
 
-		// Apply patch.
-		command := fmt.Sprintf("git apply %s", patchPath)
-		title := fmt.Sprintf("[patch %s]", b.PortConfig.LibName)
-		if err := cmd.NewExecutor(title, command).Execute(); err != nil {
+		// Apply patch (linux patch or git patch).
+		if err := cmd.ApplyPatch(b.PortConfig.SourceDir, patchPath); err != nil {
 			return err
 		}
 	}
