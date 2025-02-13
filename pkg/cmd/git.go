@@ -89,6 +89,12 @@ func CleanRepo(repoDir string) error {
 }
 
 func ApplyPatch(repoDir, patchFile string) error {
+	// Check if patched already.
+	patchedFlagFile := filepath.Join(repoDir, ".patched")
+	if fileio.PathExists(patchedFlagFile) {
+		return nil
+	}
+
 	file, err := os.Open(patchFile)
 	if err != nil {
 		return err
@@ -123,6 +129,14 @@ func ApplyPatch(repoDir, patchFile string) error {
 	if err := executor.Execute(); err != nil {
 		return err
 	}
+
+	// Create a flag file to indicated that patch already applied.
+	flagFile, err := os.Create(patchedFlagFile)
+	if err != nil {
+		return fmt.Errorf("cannot create .patched: %w", err)
+	}
+	defer flagFile.Close()
+
 	return nil
 }
 

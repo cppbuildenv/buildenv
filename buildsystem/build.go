@@ -37,7 +37,8 @@ type BuildSystem interface {
 	Install() error
 	PackageFiles(packageDir, platformName, projectName, buildType string) ([]string, error)
 
-	prepareSteps() error
+	fixConfigure() error
+	fixBuild() error // Some thirdpartys need extra steps to fix build, for example: nspr.
 	appendBuildEnvs() error
 	removeBuildEnvs() error
 	fillPlaceHolders()
@@ -121,22 +122,23 @@ func (CrossTools) ClearEnvs() {
 	os.Unsetenv("STRIP")
 }
 
-type prepareSteps struct {
+type scriptWork struct {
 	Scripts []string `json:"scripts"`
 	WorkDir string   `json:"work_dir"`
 }
 
 type BuildConfig struct {
-	Pattern        string       `json:"pattern"`
-	BuildTool      string       `json:"build_tool"`
-	LibraryType    string       `json:"library_type"`
-	EnvVars        []string     `json:"env_vars"`
-	PrepareSteps   prepareSteps `json:"prepare_steps"`
-	Patches        []string     `json:"patches"`
-	Arguments      []string     `json:"arguments"`
-	Depedencies    []string     `json:"dependencies"`
-	DevDepedencies []string     `json:"dev_dependencies"`
-	CMakeConfig    string       `json:"cmake_config"`
+	Pattern        string     `json:"pattern"`
+	BuildTool      string     `json:"build_tool"`
+	LibraryType    string     `json:"library_type"`
+	EnvVars        []string   `json:"env_vars"`
+	FixConfigure   scriptWork `json:"fix_configure"`
+	FixBuild       scriptWork `json:"fix_build"`
+	Patches        []string   `json:"patches"`
+	Arguments      []string   `json:"arguments"`
+	Depedencies    []string   `json:"dependencies"`
+	DevDepedencies []string   `json:"dev_dependencies"`
+	CMakeConfig    string     `json:"cmake_config"`
 
 	// Internal fields
 	buildSystem BuildSystem `json:"-"`
@@ -211,11 +213,6 @@ func (b BuildConfig) Patch() error {
 		return err
 	}
 
-	// Clean repo.
-	if err := cmd.CleanRepo(b.PortConfig.SourceDir); err != nil {
-		return err
-	}
-
 	// Apply all patches.
 	for _, patch := range b.Patches {
 		patch = strings.TrimSpace(patch)
@@ -257,14 +254,27 @@ func (b *BuildConfig) Install(url, version, buildType string) error {
 	if err := b.buildSystem.Patch(); err != nil {
 		return err
 	}
-	if err := b.buildSystem.prepareSteps(); err != nil {
+	if err := b.buildSystem.fixConfigure(); err != nil {
 		return err
 	}
 	if err := b.buildSystem.Configure(buildType); err != nil {
 		return err
 	}
+
 	if err := b.buildSystem.Build(); err != nil {
-		return err
+		// Some third-party need extra steps to fix build.
+		// For example: nspr.
+		if len(b.FixBuild.Scripts) > 0 {
+			if err := b.buildSystem.fixBuild(); err != nil {
+				return err
+			}
+
+			if err := b.buildSystem.Build(); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
 	}
 	if err := b.buildSystem.Install(); err != nil {
 		return err
@@ -296,8 +306,8 @@ func (b *BuildConfig) Install(url, version, buildType string) error {
 
 func (b *BuildConfig) InitBuildSystem() error {
 	switch b.BuildTool {
-	case "freestyle":
-		b.buildSystem = NewCoreConf(*b)
+	case "gpy":
+		b.buildSystem = NewGpy(*b)
 	case "cmake":
 		b.buildSystem = NewCMake(*b, "")
 	case "ninja":
@@ -355,8 +365,8 @@ func (b BuildConfig) BuildSystem() BuildSystem {
 	return b.buildSystem
 }
 
-func (b BuildConfig) prepareSteps() error {
-	for _, script := range b.PrepareSteps.Scripts {
+func (b BuildConfig) fixConfigure() error {
+	for _, script := range b.FixConfigure.Scripts {
 		script = strings.TrimSpace(script)
 		if script == "" {
 			continue
@@ -364,9 +374,31 @@ func (b BuildConfig) prepareSteps() error {
 
 		// Replace placeholders with real value.
 		script = b.replaceHolders(script)
-		workDir := b.replaceHolders(b.PrepareSteps.WorkDir)
+		workDir := b.replaceHolders(b.FixConfigure.WorkDir)
 
-		title := fmt.Sprintf("[prepare %s]", b.PortConfig.LibName)
+		title := fmt.Sprintf("[before confiure %s]", b.PortConfig.LibName)
+		executor := cmd.NewExecutor(title, script)
+		executor.SetWorkDir(workDir)
+		if err := executor.Execute(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (b BuildConfig) fixBuild() error {
+	for _, script := range b.FixBuild.Scripts {
+		script = strings.TrimSpace(script)
+		if script == "" {
+			continue
+		}
+
+		// Replace placeholders with real value.
+		script = b.replaceHolders(script)
+		workDir := b.replaceHolders(b.FixBuild.WorkDir)
+
+		title := fmt.Sprintf("[fix build %s]", b.PortConfig.LibName)
 		executor := cmd.NewExecutor(title, script)
 		executor.SetWorkDir(workDir)
 		if err := executor.Execute(); err != nil {
@@ -590,6 +622,7 @@ func (b BuildConfig) replaceHolders(content string) string {
 	content = strings.ReplaceAll(content, "${CROSS_PREFIX}", b.PortConfig.CrossTools.ToolchainPrefix)
 	content = strings.ReplaceAll(content, "${INSTALLED_DIR}", b.PortConfig.InstalledDir)
 	content = strings.ReplaceAll(content, "${SOURCE_DIR}", b.PortConfig.SourceDir)
+	content = strings.ReplaceAll(content, "${BUILD_DIR}", b.PortConfig.BuildDir)
 	return content
 }
 
