@@ -2,6 +2,7 @@ package buildsystem
 
 import (
 	"buildenv/pkg/cmd"
+	"buildenv/pkg/fileio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -16,22 +17,32 @@ type gyp struct {
 	BuildConfig
 }
 
-func (c gyp) Configure(buildType string) error {
+func (g gyp) Configure(buildType string) error {
 	return nil
 }
 
-func (c gyp) Build() error {
-	// Some third-party's configure scripts is not exist in the source folder root.
-	c.PortConfig.SourceDir = filepath.Join(c.PortConfig.SourceDir, c.PortConfig.SourceFolder)
-	if err := os.Chdir(c.PortConfig.SourceDir); err != nil {
+func (g gyp) Build() error {
+	// Remove build dir and create it for configure process.
+	if err := os.RemoveAll(g.PortConfig.BuildDir); err != nil {
 		return err
 	}
 
-	joinedArgs := strings.Join(c.Arguments, " ")
+	// Create build dir if not exists.
+	if err := os.MkdirAll(g.PortConfig.BuildDir, os.ModeDir|os.ModePerm); err != nil {
+		return err
+	}
+
+	// Some third-party's configure scripts is not exist in the source folder root.
+	g.PortConfig.SourceDir = filepath.Join(g.PortConfig.SourceDir, g.PortConfig.SourceFolder)
+	if err := os.Chdir(g.PortConfig.SourceDir); err != nil {
+		return err
+	}
+
+	joinedArgs := strings.Join(g.Arguments, " ")
 
 	// Execute build.
-	logPath := c.getLogPath("build")
-	title := fmt.Sprintf("[build %s@%s]", c.PortConfig.LibName, c.PortConfig.LibVersion)
+	logPath := g.getLogPath("build")
+	title := fmt.Sprintf("[build %s@%s]", g.PortConfig.LibName, g.PortConfig.LibVersion)
 	executor := cmd.NewExecutor(title, "./build.sh "+joinedArgs)
 	executor.SetLogPath(logPath)
 	if err := executor.Execute(); err != nil {
@@ -41,6 +52,22 @@ func (c gyp) Build() error {
 	return nil
 }
 
-func (c gyp) Install() error {
+func (g gyp) Install() error {
+	headerDir := filepath.Join(g.PortConfig.SourceDir, "dist", "public")
+	libDir := filepath.Join(g.PortConfig.SourceDir, "dist", "Debug", "lib")
+	binDir := filepath.Join(g.PortConfig.SourceDir, "dist", "Debug", "bin")
+
+	if err := fileio.CopyDir(headerDir, filepath.Join(g.PortConfig.PackageDir, "include")); err != nil {
+		return fmt.Errorf("failed to install include of %w", err)
+	}
+
+	if err := fileio.CopyDir(libDir, filepath.Join(g.PortConfig.PackageDir, "lib")); err != nil {
+		return fmt.Errorf("failed to install lib of %w", err)
+	}
+
+	if err := fileio.CopyDir(binDir, filepath.Join(g.PortConfig.PackageDir, "bin")); err != nil {
+		return fmt.Errorf("failed to install bin of %w", err)
+	}
+
 	return nil
 }
