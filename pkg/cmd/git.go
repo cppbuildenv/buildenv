@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"bufio"
+	"buildenv/pkg/fileio"
 	"bytes"
 	"fmt"
 	"os"
@@ -73,15 +75,67 @@ func Rebase(title, sourceDir, repoRef string, rebaseRefs []string) error {
 }
 
 func CleanRepo(repoDir string) error {
-	if err := os.Chdir(repoDir); err != nil {
+	if fileio.PathExists(filepath.Join(repoDir, ".git")) {
+		title := fmt.Sprintf("[clean %s]", filepath.Base(repoDir))
+		commandLine := "git reset --hard && git clean -xfd"
+		executor := NewExecutor(title, commandLine)
+		executor.SetWorkDir(repoDir)
+		if err := executor.Execute(); err != nil {
+			return fmt.Errorf("failed to clean source: %v", err)
+		}
+	}
+
+	return nil
+}
+
+func ApplyPatch(repoDir, patchFile string) error {
+	// Check if patched already.
+	patchedFlagFile := filepath.Join(repoDir, ".patched")
+	if fileio.PathExists(patchedFlagFile) {
+		return nil
+	}
+
+	file, err := os.Open(patchFile)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Read the first few lines of the file to check for Git patch features.
+	scanner := bufio.NewScanner(file)
+	for i := 0; i < 20; i++ {
+		if !scanner.Scan() {
+			break
+		}
+		line := scanner.Text()
+
+		// If you find Git patch features such as "From " or "Subject: "
+		if strings.HasPrefix(line, "diff --git ") {
+			command := fmt.Sprintf("git apply %s", patchFile)
+			title := fmt.Sprintf("[patch %s]", filepath.Base(patchFile))
+			executor := NewExecutor(title, command)
+			executor.SetWorkDir(repoDir)
+			if err := executor.Execute(); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Others, assume it's a regular patch file.
+	command := fmt.Sprintf("patch -Np1 -i %s", patchFile)
+	title := fmt.Sprintf("[patch %s]", filepath.Base(patchFile))
+	executor := NewExecutor(title, command)
+	executor.SetWorkDir(repoDir)
+	if err := executor.Execute(); err != nil {
 		return err
 	}
 
-	title := fmt.Sprintf("[clean %s]", filepath.Base(repoDir))
-	commandLine := "git reset --hard && git clean -xfd"
-	if err := NewExecutor(title, commandLine).Execute(); err != nil {
-		return fmt.Errorf("failed to clean source: %v", err)
+	// Create a flag file to indicated that patch already applied.
+	flagFile, err := os.Create(patchedFlagFile)
+	if err != nil {
+		return fmt.Errorf("cannot create .patched: %w", err)
 	}
+	defer flagFile.Close()
 
 	return nil
 }
