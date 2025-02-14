@@ -11,6 +11,10 @@ import (
 	"strings"
 )
 
+var supportedArray = []string{"b2", "bazel", "cmake", "gyp", "makefiles", "meson", "ninja"}
+
+const supportedString = "b2, bazel, cmake, gyp, makefiles, meson, ninja"
+
 type PortConfig struct {
 	LibName    string // like: `ffmpeg`
 	LibVersion string // like: `4.4`
@@ -148,12 +152,11 @@ type BuildConfig struct {
 
 func (b BuildConfig) Validate() error {
 	if b.BuildTool == "" {
-		return fmt.Errorf("build_tool is empty, it should be one of cmake, ninja, makefiles, autotools, meson, b2, qmake")
+		return fmt.Errorf("build_tool is empty, it should be one of %s", supportedString)
 	}
 
-	if !slices.Contains([]string{"cmake", "ninja", "makefiles", "autotools", "meson", "b2", "qmake"}, b.BuildTool) {
-		return fmt.Errorf("unsupported build tool: %s, it should be one of cmake, ninja, makefiles, autotools, meson, b2, qmake",
-			b.BuildTool)
+	if !slices.Contains(supportedArray, b.BuildTool) {
+		return fmt.Errorf("unsupported build tool: %s, it should be one of %s", b.BuildTool, supportedString)
 	}
 
 	return nil
