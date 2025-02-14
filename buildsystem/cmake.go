@@ -60,17 +60,23 @@ func (c cmake) Configure(buildType string) error {
 	// Some third-party's configure scripts is not exist in the source folder root.
 	c.PortConfig.SourceDir = filepath.Join(c.PortConfig.SourceDir, c.PortConfig.SourceFolder)
 
+	// Override CMAKE_PREFIX_PATH and CMAKE_INSTALL_PREFIX.
+	c.Arguments = slices.DeleteFunc(c.Arguments, func(element string) bool {
+		return strings.Contains(element, "-DCMAKE_PREFIX_PATH=") ||
+			strings.Contains(element, "-DCMAKE_INSTALL_PREFIX=")
+	})
+	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_PREFIX_PATH=%s", c.PortConfig.InstalledDir))
+	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_INSTALL_PREFIX=%s", c.PortConfig.PackageDir))
+
 	// Append cross-compile arguments only for none-runtime library.
 	if !c.BuildConfig.AsDev {
 		// Remove arguments that we want to override.
 		c.Arguments = slices.DeleteFunc(c.Arguments, func(element string) bool {
-			return strings.Contains(element, "-DCMAKE_PREFIX_PATH=") ||
-				strings.Contains(element, "-DCMAKE_INSTALL_PREFIX=") ||
-				strings.Contains(element, "-DCMAKE_POSITION_INDEPENDENT_CODE=") ||
+			return strings.Contains(element, "-DCMAKE_POSITION_INDEPENDENT_CODE=") ||
 				strings.Contains(element, "-DCMAKE_SYSTEM_PROCESSOR=") ||
 				strings.Contains(element, "-DCMAKE_SYSTEM_NAME=") ||
-				strings.Contains(element, "-DCMAKE_C_FLAGS_INIT=") ||
-				strings.Contains(element, "-DCMAKE_CXX_FLAGS_INIT=") ||
+				strings.Contains(element, "-DCMAKE_C_FLAGS=") ||
+				strings.Contains(element, "-DCMAKE_CXX_FLAGS=") ||
 				strings.Contains(element, "-DCMAKE_FIND_ROOT_PATH=") ||
 				strings.Contains(element, "-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=") ||
 				strings.Contains(element, "-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=") ||
@@ -79,8 +85,6 @@ func (c cmake) Configure(buildType string) error {
 		})
 
 		// Append extra global args.
-		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_PREFIX_PATH=%s", c.PortConfig.InstalledDir))
-		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_INSTALL_PREFIX=%s", c.PortConfig.PackageDir))
 		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_POSITION_INDEPENDENT_CODE=%s", "ON"))
 
 		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_SYSTEM_PROCESSOR=%s", c.PortConfig.CrossTools.SystemProcessor))

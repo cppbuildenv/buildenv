@@ -8,19 +8,19 @@ import (
 	"strings"
 )
 
-func NewGpy(config BuildConfig) *gpy {
-	return &gpy{BuildConfig: config}
+func NewGyp(config BuildConfig) *gyp {
+	return &gyp{BuildConfig: config}
 }
 
-type gpy struct {
+type gyp struct {
 	BuildConfig
 }
 
-func (c gpy) Configure(buildType string) error {
+func (c gyp) Configure(buildType string) error {
 	return nil
 }
 
-func (c gpy) Build() error {
+func (c gyp) Build() error {
 	// Some third-party's configure scripts is not exist in the source folder root.
 	c.PortConfig.SourceDir = filepath.Join(c.PortConfig.SourceDir, c.PortConfig.SourceFolder)
 	if err := os.Chdir(c.PortConfig.SourceDir); err != nil {
@@ -41,6 +41,6 @@ func (c gpy) Build() error {
 	return nil
 }
 
-func (c gpy) Install() error {
+func (c gyp) Install() error {
 	return nil
 }

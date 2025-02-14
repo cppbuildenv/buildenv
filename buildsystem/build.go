@@ -306,8 +306,8 @@ func (b *BuildConfig) Install(url, version, buildType string) error {
 
 func (b *BuildConfig) InitBuildSystem() error {
 	switch b.BuildTool {
-	case "gpy":
-		b.buildSystem = NewGpy(*b)
+	case "gyp":
+		b.buildSystem = NewGyp(*b)
 	case "cmake":
 		b.buildSystem = NewCMake(*b, "")
 	case "ninja":
