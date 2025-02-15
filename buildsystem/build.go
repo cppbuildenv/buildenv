@@ -543,19 +543,11 @@ func (b *BuildConfig) fillPlaceHolders() {
 		}
 
 		if strings.Contains(argument, "${INSTALLED_DIR}") {
-			if b.AsDev {
-				b.Arguments = slices.Delete(b.Arguments, index, 1)
-			} else {
-				b.Arguments[index] = strings.ReplaceAll(argument, "${INSTALLED_DIR}", b.PortConfig.InstalledDir)
-			}
+			b.Arguments[index] = strings.ReplaceAll(argument, "${INSTALLED_DIR}", b.PortConfig.InstalledDir)
 		}
 
 		if strings.Contains(argument, "${SOURCE_DIR}") {
-			if b.AsDev {
-				b.Arguments = slices.Delete(b.Arguments, index, 1)
-			} else {
-				b.Arguments[index] = strings.ReplaceAll(argument, "${SOURCE_DIR}", b.PortConfig.SourceDir)
-			}
+			b.Arguments[index] = strings.ReplaceAll(argument, "${SOURCE_DIR}", b.PortConfig.SourceDir)
 		}
 	}
 }

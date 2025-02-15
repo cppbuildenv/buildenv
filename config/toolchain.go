@@ -38,9 +38,6 @@ func (t *Toolchain) Validate() error {
 	if t.Url == "" {
 		return fmt.Errorf("toolchain.url would be http url or local file url, but it's empty")
 	}
-	if err := fileio.CheckAvailable(t.Url); err != nil {
-		return fmt.Errorf("toolchain.url of %s is not accessible", t.Url)
-	}
 
 	switch {
 	// Web resource file would be extracted to specified path, so path can not be empty.

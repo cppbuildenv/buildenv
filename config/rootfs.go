@@ -26,9 +26,6 @@ func (r *RootFS) Validate() error {
 	if r.Url == "" {
 		return fmt.Errorf("rootfs.url is empty")
 	}
-	if err := fileio.CheckAvailable(r.Url); err != nil {
-		return fmt.Errorf("rootfs.url of %s is not accessible", r.Url)
-	}
 
 	// Validate rootfs path and convert to absolute path.
 	if r.Path == "" {

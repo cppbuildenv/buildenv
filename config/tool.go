@@ -46,9 +46,6 @@ func (t *Tool) Validate() error {
 	if t.Url == "" {
 		return fmt.Errorf("url of %s is empty", t.toolName)
 	}
-	if err := fileio.CheckAvailable(t.Url); err != nil {
-		return fmt.Errorf("tool.url of %s is not accessible", t.Url)
-	}
 
 	// Validate tool path and convert to absolute path.
 	if t.Path == "" {
