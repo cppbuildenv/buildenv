@@ -54,6 +54,7 @@ type BuildSystem interface {
 // CrossTools same with `Toolchain` in config/toolchain.go
 // redefine to avoid import cycle.
 type CrossTools struct {
+	FullPath        string
 	SystemName      string
 	SystemProcessor string
 	Host            string
@@ -239,6 +240,13 @@ func (b BuildConfig) Patch() error {
 }
 
 func (b *BuildConfig) Install(url, version, buildType string) error {
+	// Set cross tool in environment for cross compiling.
+	if b.AsDev {
+		b.PortConfig.CrossTools.ClearEnvs()
+	} else {
+		b.PortConfig.CrossTools.SetEnvs()
+	}
+
 	// Replace placeholders with real value, like ${HOST}, ${SYSROOT} etc.
 	b.buildSystem.fillPlaceHolders()
 
@@ -437,6 +445,9 @@ func (b BuildConfig) appendBuildEnvs() error {
 			} else {
 				os.Setenv(key, fmt.Sprintf("%s %s", current, value))
 			}
+
+		default:
+			os.Setenv(key, value)
 		}
 	}
 
@@ -479,6 +490,9 @@ func (b BuildConfig) removeBuildEnvs() error {
 			} else {
 				os.Setenv("PKG_CONFIG_PATH", strings.Join(parts, string(os.PathListSeparator)))
 			}
+
+		default:
+			os.Unsetenv(key)
 		}
 	}
 

@@ -505,6 +505,7 @@ func (p Port) buildCrossTools() buildsystem.CrossTools {
 	}
 
 	if p.ctx.Toolchain() != nil {
+		crossTools.FullPath = p.ctx.Toolchain().fullpath
 		crossTools.Native = false
 		crossTools.Host = p.ctx.Toolchain().Host
 		crossTools.ToolchainPrefix = p.ctx.Toolchain().ToolchainPrefix

@@ -22,13 +22,6 @@ func (m makefiles) Configure(buildType string) error {
 	// Fortunately, it can be configured through CFLAGS and CXXFLAGS.
 	m.setBuildType(buildType)
 
-	// Clear cross build envs when build as dev.
-	if m.BuildConfig.AsDev {
-		m.PortConfig.CrossTools.ClearEnvs()
-	} else {
-		m.PortConfig.CrossTools.SetEnvs()
-	}
-
 	// Remove build dir and create it for configure process.
 	if err := os.RemoveAll(m.PortConfig.BuildDir); err != nil {
 		return err
