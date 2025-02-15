@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 )
 
 // CheckAvailable checks if the given URL is accessible.
@@ -18,9 +17,7 @@ func CheckAvailable(filePath string) error {
 		return nil
 	}
 
-	client := http.Client{
-		Timeout: 2 * time.Second,
-	}
+	client := http.DefaultClient
 
 	// Check URL availability using HEAD request.
 	resp, err := client.Head(filePath)
@@ -39,10 +36,7 @@ func CheckAvailable(filePath string) error {
 
 // FileSize returns the size of the file at the given URL.
 func FileSize(url string) (int64, error) {
-	client := http.Client{
-		Timeout: 2 * time.Second,
-	}
-
+	client := http.DefaultClient
 	resp, err := client.Head(url)
 	if err != nil {
 		return 0, err
