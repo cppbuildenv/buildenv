@@ -47,8 +47,10 @@ func (r *RootFS) Validate() error {
 
 		pkgConfigLibdirs = append(pkgConfigLibdirs, libDirFullPath)
 	}
-	pkgConfigLibdirPaths := strings.Join(pkgConfigLibdirs, string(os.PathListSeparator))
-	os.Setenv("PKG_CONFIG_LIBDIR", pkgConfigLibdirPaths)
+	if len(pkgConfigLibdirs) > 0 {
+		pkgConfigLibdirPaths := strings.Join(pkgConfigLibdirs, string(os.PathListSeparator))
+		os.Setenv("PKG_CONFIG_LIBDIR", pkgConfigLibdirPaths)
+	}
 
 	return nil
 }
