@@ -29,9 +29,6 @@ func (m meson) Configure(buildType string) error {
 		return err
 	}
 
-	// Some third-party's configure scripts is not exist in the source folder root.
-	m.PortConfig.SourceDir = filepath.Join(m.PortConfig.SourceDir, m.PortConfig.SourceFolder)
-
 	// Override '--prefix' if exists.
 	m.Arguments = slices.DeleteFunc(m.Arguments, func(element string) bool {
 		return strings.Contains(element, "--prefix")

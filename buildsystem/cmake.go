@@ -4,7 +4,6 @@ import (
 	"buildenv/pkg/cmd"
 	"fmt"
 	"os"
-	"path/filepath"
 	"runtime"
 	"slices"
 	"strings"
@@ -56,9 +55,6 @@ func (c cmake) Configure(buildType string) error {
 	if err := os.MkdirAll(c.PortConfig.BuildDir, os.ModeDir|os.ModePerm); err != nil {
 		return err
 	}
-
-	// Some third-party's configure scripts is not exist in the source folder root.
-	c.PortConfig.SourceDir = filepath.Join(c.PortConfig.SourceDir, c.PortConfig.SourceFolder)
 
 	// Override CMAKE_PREFIX_PATH and CMAKE_INSTALL_PREFIX.
 	c.Arguments = slices.DeleteFunc(c.Arguments, func(element string) bool {

@@ -32,8 +32,6 @@ func (g gyp) Build() error {
 		return err
 	}
 
-	// Some third-party's configure scripts is not exist in the source folder root.
-	g.PortConfig.SourceDir = filepath.Join(g.PortConfig.SourceDir, g.PortConfig.SourceFolder)
 	if err := os.Chdir(g.PortConfig.SourceDir); err != nil {
 		return err
 	}

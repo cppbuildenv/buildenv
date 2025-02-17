@@ -2,6 +2,7 @@ package buildsystem
 
 import (
 	"buildenv/pkg/cmd"
+	"buildenv/pkg/fileio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -15,9 +16,12 @@ func NewMakefiles(config BuildConfig) *makefiles {
 
 type makefiles struct {
 	BuildConfig
+
+	// Some makefiles project may not support configure.
+	configured bool
 }
 
-func (m makefiles) Configure(buildType string) error {
+func (m *makefiles) Configure(buildType string) error {
 	// Different Makefile projects set the build_type in inconsistent ways,
 	// Fortunately, it can be configured through CFLAGS and CXXFLAGS.
 	m.setBuildType(buildType)
@@ -32,8 +36,12 @@ func (m makefiles) Configure(buildType string) error {
 		return err
 	}
 
-	// Some third-party's configure scripts is not exist in the source folder root.
-	m.PortConfig.SourceDir = filepath.Join(m.PortConfig.SourceDir, m.PortConfig.SourceFolder)
+	// Some libraries may not need to configure.
+	if !fileio.PathExists(m.PortConfig.SourceDir+"/configure") &&
+		!fileio.PathExists(m.PortConfig.SourceDir+"/Configure") &&
+		!fileio.PathExists(m.PortConfig.SourceDir+"/autogen.sh") {
+		return nil
+	}
 
 	// Append common variables for cross compiling.
 	m.Arguments = append(m.Arguments, fmt.Sprintf("--prefix=%s", m.PortConfig.PackageDir))
@@ -81,7 +89,7 @@ func (m makefiles) Configure(buildType string) error {
 		configureFile = "Configure"
 	}
 
-	// Execute autogen.
+	// Execute autogen if exist.
 	if configureFile == "" {
 		if _, err := os.Stat(m.PortConfig.SourceDir + "/autogen.sh"); err == nil {
 			if err := os.Chdir(m.PortConfig.SourceDir); err != nil {
@@ -100,11 +108,6 @@ func (m makefiles) Configure(buildType string) error {
 		}
 	}
 
-	// Make sure create build cache in build dir.
-	if err := os.Chdir(m.PortConfig.BuildDir); err != nil {
-		return err
-	}
-
 	// Find `configure` or `Configure`.
 	if _, err := os.Stat(m.PortConfig.SourceDir + "/configure"); err == nil {
 		configureFile = "configure"
@@ -119,10 +122,12 @@ func (m makefiles) Configure(buildType string) error {
 	title := fmt.Sprintf("[configure %s@%s]", m.PortConfig.LibName, m.PortConfig.LibVersion)
 	executor := cmd.NewExecutor(title, configure)
 	executor.SetLogPath(logPath)
+	executor.SetWorkDir(m.PortConfig.BuildDir)
 	if err := executor.Execute(); err != nil {
 		return err
 	}
 
+	m.configured = true
 	return nil
 }
 
@@ -135,6 +140,13 @@ func (m makefiles) Build() error {
 	title := fmt.Sprintf("[build %s@%s]", m.PortConfig.LibName, m.PortConfig.LibVersion)
 	executor := cmd.NewExecutor(title, command)
 	executor.SetLogPath(logPath)
+
+	if m.configured {
+		executor.SetWorkDir(m.PortConfig.BuildDir)
+	} else {
+		executor.SetWorkDir(m.PortConfig.SourceDir)
+	}
+
 	if err := executor.Execute(); err != nil {
 		return err
 	}
@@ -144,13 +156,27 @@ func (m makefiles) Build() error {
 
 func (m makefiles) Install() error {
 	// Assemble command.
-	command := "make install"
+	var command string
+	if m.configured {
+		command = "make install"
+	} else {
+		m.Arguments = append(m.Arguments, "prefix="+m.PortConfig.PackageDir)
+		joinedArgs := strings.Join(m.Arguments, " ")
+		command = fmt.Sprintf("make -C %s %s install", m.PortConfig.SourceDir, joinedArgs)
+	}
 
 	// Execute install.
 	logPath := m.getLogPath("install")
 	title := fmt.Sprintf("[install %s@%s]", m.PortConfig.LibName, m.PortConfig.LibVersion)
 	executor := cmd.NewExecutor(title, command)
 	executor.SetLogPath(logPath)
+
+	if m.configured {
+		executor.SetWorkDir(m.PortConfig.BuildDir)
+	} else {
+		executor.SetWorkDir(m.PortConfig.SourceDir)
+	}
+
 	if err := executor.Execute(); err != nil {
 		return err
 	}

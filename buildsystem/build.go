@@ -259,6 +259,9 @@ func (b *BuildConfig) Install(url, version, buildType string) error {
 	// Make sure depedencies libs can be found by current lib.
 	b.buildSystem.ensureDependencyPaths()
 
+	// Some libraries' configure or CMakeLists.txt may not in root folder.
+	b.PortConfig.SourceDir = filepath.Join(b.PortConfig.SourceDir, b.PortConfig.SourceFolder)
+
 	if err := b.buildSystem.Clone(url, version); err != nil {
 		return err
 	}

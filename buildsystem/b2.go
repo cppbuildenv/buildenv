@@ -20,8 +20,6 @@ type b2 struct {
 }
 
 func (b *b2) Configure(buildType string) error {
-	// Some third-party's configure scripts is not exist in the source folder root.
-	b.PortConfig.SourceDir = filepath.Join(b.PortConfig.SourceDir, b.PortConfig.SourceFolder)
 	if err := os.Chdir(b.PortConfig.SourceDir); err != nil {
 		return err
 	}
