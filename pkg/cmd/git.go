@@ -102,6 +102,7 @@ func ApplyPatch(repoDir, patchFile string) error {
 	defer file.Close()
 
 	// Read the first few lines of the file to check for Git patch features.
+	var gitBatch bool
 	scanner := bufio.NewScanner(file)
 	for i := 0; i < 20; i++ {
 		if !scanner.Scan() {
@@ -111,23 +112,28 @@ func ApplyPatch(repoDir, patchFile string) error {
 
 		// If you find Git patch features such as "From " or "Subject: "
 		if strings.HasPrefix(line, "diff --git ") {
-			command := fmt.Sprintf("git apply %s", patchFile)
-			title := fmt.Sprintf("[patch %s]", filepath.Base(patchFile))
-			executor := NewExecutor(title, command)
-			executor.SetWorkDir(repoDir)
-			if err := executor.Execute(); err != nil {
-				return err
-			}
+			gitBatch = true
+			break
 		}
 	}
 
-	// Others, assume it's a regular patch file.
-	command := fmt.Sprintf("patch -Np1 -i %s", patchFile)
-	title := fmt.Sprintf("[patch %s]", filepath.Base(patchFile))
-	executor := NewExecutor(title, command)
-	executor.SetWorkDir(repoDir)
-	if err := executor.Execute(); err != nil {
-		return err
+	if gitBatch {
+		command := fmt.Sprintf("git apply %s", patchFile)
+		title := fmt.Sprintf("[patch %s]", filepath.Base(patchFile))
+		executor := NewExecutor(title, command)
+		executor.SetWorkDir(repoDir)
+		if err := executor.Execute(); err != nil {
+			return err
+		}
+	} else {
+		// Others, assume it's a regular patch file.
+		command := fmt.Sprintf("patch -Np1 -i %s", patchFile)
+		title := fmt.Sprintf("[patch %s]", filepath.Base(patchFile))
+		executor := NewExecutor(title, command)
+		executor.SetWorkDir(repoDir)
+		if err := executor.Execute(); err != nil {
+			return err
+		}
 	}
 
 	// Create a flag file to indicated that patch already applied.
