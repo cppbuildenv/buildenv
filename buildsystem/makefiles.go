@@ -36,33 +36,27 @@ func (m *makefiles) Configure(buildType string) error {
 		return err
 	}
 
-	// Make clean if possible.
-	m.makeClean()
+	// Clean repo if possible.
+	if err := cmd.CleanRepo(m.PortConfig.SourceDir); err != nil {
+		return fmt.Errorf("clean repo failed: %s", err)
+	}
 
 	// Some libraries may not need to configure.
 	if !fileio.PathExists(m.PortConfig.SourceDir+"/configure") &&
 		!fileio.PathExists(m.PortConfig.SourceDir+"/Configure") &&
 		!fileio.PathExists(m.PortConfig.SourceDir+"/autogen.sh") {
-		// Makefiles project without configure always build in source, so we need to clean it.
-		if err := cmd.CleanRepo(m.PortConfig.SourceDir); err != nil {
-			return fmt.Errorf("clean repo failed: %s", err)
-		}
-
 		return nil
 	}
 
 	// Execute autogen if exist.
 	if fileio.PathExists(m.PortConfig.SourceDir + "/autogen.sh") {
-		if err := os.Chdir(m.PortConfig.SourceDir); err != nil {
-			return err
-		}
-
 		parentDir := filepath.Dir(m.PortConfig.BuildDir)
 		fileName := filepath.Base(m.PortConfig.BuildDir) + "-autogen.log"
 		logPath := filepath.Join(parentDir, fileName)
 		title := fmt.Sprintf("[autogen %s]", m.PortConfig.LibName)
 		executor := cmd.NewExecutor(title, "./autogen.sh")
 		executor.SetLogPath(logPath)
+		executor.SetWorkDir(m.PortConfig.SourceDir)
 		if err := executor.Execute(); err != nil {
 			return err
 		}
