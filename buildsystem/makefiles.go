@@ -36,6 +36,9 @@ func (m *makefiles) Configure(buildType string) error {
 		return err
 	}
 
+	// Make clean if possible.
+	m.makeClean()
+
 	// Some libraries may not need to configure.
 	if !fileio.PathExists(m.PortConfig.SourceDir+"/configure") &&
 		!fileio.PathExists(m.PortConfig.SourceDir+"/Configure") &&
@@ -46,6 +49,23 @@ func (m *makefiles) Configure(buildType string) error {
 		}
 
 		return nil
+	}
+
+	// Execute autogen if exist.
+	if fileio.PathExists(m.PortConfig.SourceDir + "/autogen.sh") {
+		if err := os.Chdir(m.PortConfig.SourceDir); err != nil {
+			return err
+		}
+
+		parentDir := filepath.Dir(m.PortConfig.BuildDir)
+		fileName := filepath.Base(m.PortConfig.BuildDir) + "-autogen.log"
+		logPath := filepath.Join(parentDir, fileName)
+		title := fmt.Sprintf("[autogen %s]", m.PortConfig.LibName)
+		executor := cmd.NewExecutor(title, "./autogen.sh")
+		executor.SetLogPath(logPath)
+		if err := executor.Execute(); err != nil {
+			return err
+		}
 	}
 
 	// Append common variables for cross compiling.
@@ -87,33 +107,6 @@ func (m *makefiles) Configure(buildType string) error {
 
 	// Find `configure` or `Configure`.
 	var configureFile string
-	if _, err := os.Stat(m.PortConfig.SourceDir + "/configure"); err == nil {
-		configureFile = "configure"
-	}
-	if _, err := os.Stat(m.PortConfig.SourceDir + "/Configure"); err == nil {
-		configureFile = "Configure"
-	}
-
-	// Execute autogen if exist.
-	if configureFile == "" {
-		if _, err := os.Stat(m.PortConfig.SourceDir + "/autogen.sh"); err == nil {
-			if err := os.Chdir(m.PortConfig.SourceDir); err != nil {
-				return err
-			}
-
-			parentDir := filepath.Dir(m.PortConfig.BuildDir)
-			fileName := filepath.Base(m.PortConfig.BuildDir) + "-autogen.log"
-			logPath := filepath.Join(parentDir, fileName)
-			title := fmt.Sprintf("[autogen %s]", m.PortConfig.LibName)
-			executor := cmd.NewExecutor(title, "./autogen.sh")
-			executor.SetLogPath(logPath)
-			if err := executor.Execute(); err != nil {
-				return err
-			}
-		}
-	}
-
-	// Find `configure` or `Configure`.
 	if _, err := os.Stat(m.PortConfig.SourceDir + "/configure"); err == nil {
 		configureFile = "configure"
 	}
@@ -188,4 +181,12 @@ func (m makefiles) Install() error {
 	}
 
 	return nil
+}
+
+func (m makefiles) makeClean() {
+	title := fmt.Sprintf("[make clean %s@%s]", m.PortConfig.LibName, m.PortConfig.LibVersion)
+	commandLine := "make clean"
+	executor := cmd.NewExecutor(title, commandLine)
+	executor.SetWorkDir(m.PortConfig.SourceDir)
+	executor.Execute()
 }

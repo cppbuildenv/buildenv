@@ -635,6 +635,7 @@ func (b BuildConfig) replaceHolders(content string) string {
 	content = strings.ReplaceAll(content, "${INSTALLED_DIR}", b.PortConfig.InstalledDir)
 	content = strings.ReplaceAll(content, "${SOURCE_DIR}", b.PortConfig.SourceDir)
 	content = strings.ReplaceAll(content, "${BUILD_DIR}", b.PortConfig.BuildDir)
+	content = strings.ReplaceAll(content, "${DEV_DIR}", filepath.Join(filepath.Dir(b.PortConfig.InstalledDir), "dev"))
 	return content
 }
 
