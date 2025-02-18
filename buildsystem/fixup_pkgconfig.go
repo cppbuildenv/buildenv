@@ -89,8 +89,8 @@ func doFixupPkgConfig(pkgPath string) error {
 		line := scanner.Text()
 		switch {
 		case strings.HasPrefix(line, "prefix="):
-			if line != "prefix=/" {
-				buffer.WriteString("prefix=/" + "\n")
+			if line != "prefix=" {
+				buffer.WriteString("prefix=" + "\n")
 			} else {
 				buffer.WriteString(line + "\n")
 			}

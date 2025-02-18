@@ -40,6 +40,11 @@ func (m *makefiles) Configure(buildType string) error {
 	if !fileio.PathExists(m.PortConfig.SourceDir+"/configure") &&
 		!fileio.PathExists(m.PortConfig.SourceDir+"/Configure") &&
 		!fileio.PathExists(m.PortConfig.SourceDir+"/autogen.sh") {
+		// Makefiles project without configure always build in source, so we need to clean it.
+		if err := cmd.CleanRepo(m.PortConfig.SourceDir); err != nil {
+			return fmt.Errorf("clean repo failed: %s", err)
+		}
+
 		return nil
 	}
 
@@ -141,6 +146,7 @@ func (m makefiles) Build() error {
 	executor := cmd.NewExecutor(title, command)
 	executor.SetLogPath(logPath)
 
+	// Project that cannot configure always build in source.
 	if m.configured {
 		executor.SetWorkDir(m.PortConfig.BuildDir)
 	} else {
@@ -162,7 +168,7 @@ func (m makefiles) Install() error {
 	} else {
 		m.Arguments = append(m.Arguments, "prefix="+m.PortConfig.PackageDir)
 		joinedArgs := strings.Join(m.Arguments, " ")
-		command = fmt.Sprintf("make -C %s %s install", m.PortConfig.SourceDir, joinedArgs)
+		command = fmt.Sprintf("make install -C %s %s", m.PortConfig.SourceDir, joinedArgs)
 	}
 
 	// Execute install.
