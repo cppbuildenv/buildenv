@@ -6,14 +6,23 @@ import (
 	"buildenv/pkg/fileio"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 )
 
-var supportedArray = []string{"b2", "bazel", "cmake", "gyp", "makefiles", "meson", "ninja"}
-
 const supportedString = "b2, bazel, cmake, gyp, makefiles, meson, ninja"
+
+var (
+	supportedArray = []string{"b2", "bazel", "cmake", "gyp", "makefiles", "meson", "ninja"}
+	toolMapping    = map[string]string{
+		"autoconf":   "autoconf",
+		"automake":   "automake",
+		"libtoolize": "libtool",
+	}
+)
 
 type PortConfig struct {
 	LibName    string // like: `ffmpeg`
@@ -28,7 +37,6 @@ type PortConfig struct {
 	BuildDir      string     // for example: ${buildenv}/buildtrees/ffmpeg/x86_64-linux-20.04-Release
 	PackageDir    string     // for example: ${buildenv}/packages/ffmpeg-3.4.13-x86_64-linux-20.04-Release
 	InstalledDir  string     // for example: ${buildenv}/installed/x86_64-linux-20.04-Release
-	WithSubmodule bool       // if true, clone submodule when clone repository
 	JobNum        int        // number of jobs to run in parallel
 	TmpDir        string     // for example: ${buildenv}/downloaded/tmp
 }
@@ -51,82 +59,6 @@ type BuildSystem interface {
 	getLogPath(suffix string) string
 }
 
-// CrossTools same with `Toolchain` in config/toolchain.go
-// redefine to avoid import cycle.
-type CrossTools struct {
-	FullPath        string
-	SystemName      string
-	SystemProcessor string
-	Host            string
-	RootFS          string
-	ToolchainPrefix string
-	CC              string
-	CXX             string
-	FC              string
-	RANLIB          string
-	AR              string
-	LD              string
-	NM              string
-	OBJDUMP         string
-	STRIP           string
-	Native          bool
-}
-
-func (c CrossTools) SetEnvs() {
-	if c.Native {
-		return
-	}
-
-	// Set env vars only for cross compiling.
-	rootfs := os.Getenv("SYSROOT")
-	os.Setenv("TOOLCHAIN_PREFIX", c.ToolchainPrefix)
-	os.Setenv("HOST", c.Host)
-	os.Setenv("CC", fmt.Sprintf("%s --sysroot=%s", c.CC, rootfs))
-	os.Setenv("CXX", fmt.Sprintf("%s --sysroot=%s", c.CXX, rootfs))
-
-	if c.FC != "" {
-		os.Setenv("FC", c.FC)
-	}
-
-	if c.RANLIB != "" {
-		os.Setenv("RANLIB", c.RANLIB)
-	}
-
-	if c.AR != "" {
-		os.Setenv("AR", c.AR)
-	}
-
-	if c.LD != "" {
-		os.Setenv("LD", fmt.Sprintf("%s --sysroot=%s", c.LD, rootfs))
-	}
-
-	if c.NM != "" {
-		os.Setenv("NM", c.NM)
-	}
-
-	if c.OBJDUMP != "" {
-		os.Setenv("OBJDUMP", c.OBJDUMP)
-	}
-
-	if c.STRIP != "" {
-		os.Setenv("STRIP", c.STRIP)
-	}
-}
-
-func (CrossTools) ClearEnvs() {
-	os.Unsetenv("TOOLCHAIN_PREFIX")
-	os.Unsetenv("HOST")
-	os.Unsetenv("CC")
-	os.Unsetenv("CXX")
-	os.Unsetenv("FC")
-	os.Unsetenv("RANLIB")
-	os.Unsetenv("AR")
-	os.Unsetenv("LD")
-	os.Unsetenv("NM")
-	os.Unsetenv("OBJDUMP")
-	os.Unsetenv("STRIP")
-}
-
 type scriptWork struct {
 	Scripts []string `json:"scripts"`
 	WorkDir string   `json:"work_dir"`
@@ -135,6 +67,7 @@ type scriptWork struct {
 type BuildConfig struct {
 	Pattern        string     `json:"pattern"`
 	BuildTool      string     `json:"build_tool"`
+	SystemTools    []string   `json:"system_tools"`
 	LibraryType    string     `json:"library_type"`
 	EnvVars        []string   `json:"env_vars"`
 	FixConfigure   scriptWork `json:"fix_configure"`
@@ -168,12 +101,7 @@ func (b BuildConfig) Clone(url, version string) error {
 	if !fileio.PathExists(b.PortConfig.SourceDir) {
 		if strings.HasSuffix(url, ".git") {
 			// Clone repo.
-			var command string
-			if b.PortConfig.WithSubmodule {
-				command = fmt.Sprintf("git clone --branch --recursive %s %s %s", version, url, b.PortConfig.SourceDir)
-			} else {
-				command = fmt.Sprintf("git clone --branch %s %s %s", version, url, b.PortConfig.SourceDir)
-			}
+			command := fmt.Sprintf("git clone --branch %s %s %s --recursive", version, url, b.PortConfig.SourceDir)
 			title := fmt.Sprintf("[clone %s@%s]", b.PortConfig.LibName, b.PortConfig.LibVersion)
 			if err := cmd.NewExecutor(title, command).Execute(); err != nil {
 				return err
@@ -212,11 +140,6 @@ func (b BuildConfig) Patch() error {
 		return nil
 	}
 
-	// Change to source dir.
-	if err := os.Chdir(b.PortConfig.SourceDir); err != nil {
-		return err
-	}
-
 	// Apply all patches.
 	for _, patch := range b.Patches {
 		patch = strings.TrimSpace(patch)
@@ -227,7 +150,7 @@ func (b BuildConfig) Patch() error {
 		// Check if patch file exists.
 		patchPath := filepath.Join(b.PortConfig.PortsDir, b.PortConfig.LibName, patch)
 		if !fileio.PathExists(patchPath) {
-			return fmt.Errorf("patch file %s not exists", patchPath)
+			return fmt.Errorf("patch file %s doesn't exists", patchPath)
 		}
 
 		// Apply patch (linux patch or git patch).
@@ -240,6 +163,16 @@ func (b BuildConfig) Patch() error {
 }
 
 func (b *BuildConfig) Install(url, version, buildType string) error {
+	// Check if system tool is already installed.
+	if err := b.checkSystemTools(); err != nil {
+		return err
+	}
+
+	// Clean repo if possible.
+	if err := cmd.CleanRepo(b.PortConfig.SourceDir); err != nil {
+		return fmt.Errorf("clean repo failed: %s", err)
+	}
+
 	// Set cross tool in environment for cross compiling.
 	if b.AsDev {
 		b.PortConfig.CrossTools.ClearEnvs()
@@ -377,6 +310,51 @@ func (b BuildConfig) PackageFiles(packageDir, platformName, projectName, buildTy
 
 func (b BuildConfig) BuildSystem() BuildSystem {
 	return b.buildSystem
+}
+
+func (b BuildConfig) checkSystemTools() error {
+	var missing []string
+	for _, tool := range b.SystemTools {
+		tool = strings.TrimSpace(tool)
+		if tool == "" {
+			continue
+		}
+
+		// Replace tool's bin name with tool name.
+		_, err := exec.LookPath(tool)
+		if err != nil {
+			for key, value := range toolMapping {
+				if key == tool {
+					tool = value
+					break
+				}
+			}
+
+			missing = append(missing, tool)
+		}
+	}
+
+	if len(missing) > 0 {
+		var summary string
+		if len(missing) == 1 {
+			summary = fmt.Sprintf("The system tool for `%s` is not installed", missing[0])
+		} else if len(missing) == 2 {
+			summary = fmt.Sprintf("The system tool for `%s` and `%s` are not installed", missing[0], missing[1])
+		} else {
+			summary = "The system tool for `" + strings.Join(missing[:len(missing)-1], "`, `") + " and `" + missing[len(missing)-1] + "` are not installed"
+		}
+
+		joined := strings.Join(missing, " ")
+		if runtime.GOOS == "linux" {
+			return fmt.Errorf("%s,\n    Please install it with `sudo apt install %s`", summary, joined)
+		} else if runtime.GOOS == "windows" {
+			return fmt.Errorf("%s,\n    Please install it with `pacman -S %s` in MSYS2", joined, joined)
+		} else if runtime.GOOS == "darwin" {
+			return fmt.Errorf("%s,\n    Please install it with `brew install %s`", joined, joined)
+		}
+	}
+
+	return nil
 }
 
 func (b BuildConfig) fixConfigure() error {

@@ -36,11 +36,6 @@ func (m *makefiles) Configure(buildType string) error {
 		return err
 	}
 
-	// Clean repo if possible.
-	if err := cmd.CleanRepo(m.PortConfig.SourceDir); err != nil {
-		return fmt.Errorf("clean repo failed: %s", err)
-	}
-
 	// Some libraries may not need to configure.
 	if !fileio.PathExists(m.PortConfig.SourceDir+"/configure") &&
 		!fileio.PathExists(m.PortConfig.SourceDir+"/Configure") &&
@@ -175,12 +170,4 @@ func (m makefiles) Install() error {
 	}
 
 	return nil
-}
-
-func (m makefiles) makeClean() {
-	title := fmt.Sprintf("[make clean %s@%s]", m.PortConfig.LibName, m.PortConfig.LibVersion)
-	commandLine := "make clean"
-	executor := cmd.NewExecutor(title, commandLine)
-	executor.SetWorkDir(m.PortConfig.SourceDir)
-	executor.Execute()
 }

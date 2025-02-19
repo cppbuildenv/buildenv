@@ -12,12 +12,11 @@ import (
 )
 
 type Port struct {
-	Url           string                    `json:"url"`
-	Name          string                    `json:"name"`
-	Version       string                    `json:"version"`
-	WithSubmodule bool                      `json:"with_submodule"`
-	SourceFolder  string                    `json:"source_folder,omitempty"`
-	BuildConfigs  []buildsystem.BuildConfig `json:"build_configs"`
+	Url          string                    `json:"url"`
+	Name         string                    `json:"name"`
+	Version      string                    `json:"version"`
+	SourceFolder string                    `json:"source_folder,omitempty"`
+	BuildConfigs []buildsystem.BuildConfig `json:"build_configs"`
 
 	// Internal fields.
 	ctx       Context `json:"-"`
@@ -97,7 +96,6 @@ func (p *Port) Init(ctx Context, portPath string) error {
 		BuildDir:      filepath.Join(Dirs.WorkspaceDir, "buildtrees", buildFolder),
 		PackageDir:    filepath.Join(Dirs.WorkspaceDir, "packages", packageFolder),
 		InstalledDir:  filepath.Join(Dirs.InstalledDir, installedFolder),
-		WithSubmodule: p.WithSubmodule,
 		TmpDir:        filepath.Join(Dirs.DownloadedDir, "tmp"),
 	}
 
@@ -416,7 +414,7 @@ func (p Port) installFromPackage(matchedConfig *buildsystem.BuildConfig) error {
 			return fmt.Errorf("port.dependencies contains circular dependency: %s", nameVersion)
 		}
 
-		packageDir := filepath.Join(Dirs.WorkspaceDir, "packages", nameVersion+"-"+platformProject)
+		packageDir := filepath.Join(Dirs.WorkspaceDir, "packages", nameVersion+"^"+platformProject)
 		packageFiles, err := matchedConfig.BuildSystem().PackageFiles(
 			packageDir,
 			p.ctx.Platform().Name,
