@@ -92,6 +92,16 @@ func (m *makefiles) Configure(buildType string) error {
 		})
 	}
 
+	// Fix --cache-file's path.
+	cacheFileIndex := slices.IndexFunc(m.Arguments, func(element string) bool {
+		return strings.HasPrefix(element, "--cache-file=")
+	})
+	if cacheFileIndex >= 0 {
+		fileName := strings.Split(m.Arguments[cacheFileIndex], "=")[1]
+		portDir := filepath.Join(m.PortConfig.PortsDir, m.PortConfig.LibName, fileName)
+		m.Arguments[cacheFileIndex] = "--cache-file=" + portDir
+	}
+
 	joinedArgs := strings.Join(m.Arguments, " ")
 
 	// Find `configure` or `Configure`.
