@@ -152,19 +152,6 @@ func doFixupPkgConfig(pkgPath string) error {
 			}
 			buffer.WriteString(lineOrigin + "\n")
 
-		case strings.HasPrefix(line, "Cflags:"):
-			lineOrigin := strings.ReplaceAll(line, "  ", " ")
-			line = strings.TrimPrefix(line, "Cflags:")
-
-			parts := strings.Split(line, " ")
-			for _, part := range parts {
-				part = strings.TrimSpace(part)
-				if strings.HasPrefix(part, "-I") && part != "-I${includedir}" {
-					lineOrigin = strings.ReplaceAll(lineOrigin, part, "-I${includedir}")
-				}
-			}
-			buffer.WriteString(lineOrigin + "\n")
-
 		default:
 			buffer.WriteString(line + "\n")
 		}
