@@ -25,13 +25,15 @@ func handleInstall(callbacks config.BuildEnvCallbacks) {
 		fmt.Print("Usage: buildenv install <name@version|name>\n\n")
 	}
 
-	cmd.Parse(os.Args[3:])
-	nameValue := os.Args[2]
-	if nameValue == "" {
+	// Check if the <name@value|name> is specified.
+	if len(os.Args) < 3 {
 		fmt.Println("Error: The <name@value|name> must be specified.")
 		cmd.Usage()
 		os.Exit(1)
 	}
+
+	cmd.Parse(os.Args[3:])
+	nameValue := os.Args[2]
 
 	// Make sure toolchain, rootfs and tools are prepared.
 	args := config.NewSetupArgs(false, true, false).SetBuildType(buildType)

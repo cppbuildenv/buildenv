@@ -23,12 +23,14 @@ func handleSelect(callbacks config.BuildEnvCallbacks) {
 		cmd.PrintDefaults()
 	}
 
-	cmd.Parse(os.Args[2:])
-	if platform == "" && project == "" {
+	// Check if the --platform or --project is specified.
+	if len(os.Args) < 3 {
 		fmt.Println("Error: --platform or --project must be specified.")
 		cmd.Usage()
 		os.Exit(1)
 	}
+
+	cmd.Parse(os.Args[2:])
 
 	if platform != "" {
 		selectPlatform(platform, callbacks)

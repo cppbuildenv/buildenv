@@ -29,12 +29,14 @@ func handleCreate(callbacks config.BuildEnvCallbacks) {
 		cmd.PrintDefaults()
 	}
 
-	cmd.Parse(os.Args[2:])
-	if platform == "" && project == "" && tool == "" && port == "" {
+	// Check if the create target is specified.
+	if len(os.Args) < 2 {
 		fmt.Println("Error: one of --platform, --project, --tool and --port must be specified.")
 		cmd.Usage()
 		os.Exit(1)
 	}
+
+	cmd.Parse(os.Args[2:])
 
 	if platform != "" {
 		createPlatform(platform)

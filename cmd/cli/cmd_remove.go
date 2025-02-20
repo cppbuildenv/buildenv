@@ -33,13 +33,15 @@ func handleRemove(callbacks config.BuildEnvCallbacks) {
 		cmd.PrintDefaults()
 	}
 
-	cmd.Parse(os.Args[3:])
-	nameVersion := os.Args[2]
-	if nameVersion == "" {
+	// Check if the <name@value|name> is specified.
+	if len(os.Args) < 3 {
 		fmt.Println("Error: The <name@value|name> must be specified.")
 		cmd.Usage()
 		os.Exit(1)
 	}
+
+	cmd.Parse(os.Args[3:])
+	nameVersion := os.Args[2]
 
 	args := config.NewSetupArgs(false, false, false).SetBuildType(buildType)
 	buildenv := config.NewBuildEnv().SetBuildType(buildType)
