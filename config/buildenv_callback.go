@@ -56,7 +56,6 @@ func (c callbackImpl) OnInitBuildEnv(confRepoUrl, confRepoRef string) (string, e
 	if confRepoUrl != "" && confRepoRef != "" {
 		buildenv.ConfRepoUrl = confRepoUrl
 		buildenv.ConfRepoRef = confRepoRef
-
 		if err := os.WriteFile(confPath, []byte(bytes), os.ModePerm); err != nil {
 			return "", err
 		}

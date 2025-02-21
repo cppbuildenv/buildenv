@@ -22,14 +22,12 @@ func newInitModel(callbacks config.BuildEnvCallbacks) *initModel {
 	inputs[repo_url].CharLimit = 100
 	inputs[repo_url].Width = 100
 	inputs[repo_url].Prompt = ""
-	// inputs[repor_url].Validate = ccnValidator
 
 	inputs[repo_ref] = textinput.New()
 	inputs[repo_ref].Placeholder = "master"
 	inputs[repo_ref].CharLimit = 20
 	inputs[repo_ref].Width = 20
 	inputs[repo_ref].Prompt = ""
-	// inputs[repo_ref].Validate = expValidator
 
 	return &initModel{
 		textInputs: inputs,
@@ -65,6 +63,9 @@ func (i initModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if i.focused == len(i.textInputs)-1 {
 				repoUrl := i.textInputs[repo_url].Value()
 				repoRef := i.textInputs[repo_ref].Value()
+				if repoRef == "" {
+					repoRef = "master"
+				}
 				output, err := i.callbacks.OnInitBuildEnv(repoUrl, repoRef)
 				if err != nil {
 					i.err = err
@@ -73,7 +74,6 @@ func (i initModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				} else {
 					i.finished = true
 				}
-
 				return i, tea.Quit
 			}
 			i.nextInput()

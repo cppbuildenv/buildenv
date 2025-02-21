@@ -420,9 +420,15 @@ func (b BuildConfig) appendBuildEnvs() error {
 			os.Setenv(key, value)
 
 		case "CFLAGS", "CXXFLAGS":
+			// buildenv can wrap CFLAGS and CXXFLAGS, so we need to remove them.
+			value = strings.ReplaceAll(value, "${CFLAGS}", "")
+			value = strings.ReplaceAll(value, "${CXXFLAGS}", "")
+			value = strings.ReplaceAll(value, "${cflags}", "")
+			value = strings.ReplaceAll(value, "${cxxflags}", "")
+
 			current := os.Getenv(key)
 			if strings.TrimSpace(current) == "" {
-				os.Setenv(key, value)
+				os.Setenv(key, strings.TrimSpace(value))
 			} else {
 				os.Setenv(key, fmt.Sprintf("%s %s", current, value))
 			}
@@ -448,11 +454,18 @@ func (b BuildConfig) removeBuildEnvs() error {
 
 		switch key {
 		case "CFLAGS", "CXXFLAGS":
+			// buildenv can wrap CFLAGS and CXXFLAGS, so we need to remove them.
+			value = strings.ReplaceAll(value, "${CFLAGS}", "")
+			value = strings.ReplaceAll(value, "${CXXFLAGS}", "")
+			value = strings.ReplaceAll(value, "${cflags}", "")
+			value = strings.ReplaceAll(value, "${cxxflags}", "")
+
 			flagsValue := strings.ReplaceAll(os.Getenv(key), value, "")
+			flagsValue = strings.ReplaceAll(flagsValue, "  ", " ")
 			if strings.TrimSpace(flagsValue) == "" {
 				os.Unsetenv(key)
 			} else {
-				os.Setenv(key, flagsValue)
+				os.Setenv(key, strings.TrimSpace(flagsValue))
 			}
 
 		case "PKG_CONFIG_PATH", "PATH":
