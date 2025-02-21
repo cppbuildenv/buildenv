@@ -59,24 +59,24 @@ type BuildSystem interface {
 	getLogPath(suffix string) string
 }
 
-type scriptWork struct {
+type FixWork struct {
 	Scripts []string `json:"scripts"`
 	WorkDir string   `json:"work_dir"`
 }
 
 type BuildConfig struct {
-	Pattern        string     `json:"pattern"`
-	BuildTool      string     `json:"build_tool"`
-	SystemTools    []string   `json:"system_tools"`
-	LibraryType    string     `json:"library_type"`
-	EnvVars        []string   `json:"env_vars"`
-	FixConfigure   scriptWork `json:"fix_configure"`
-	FixBuild       scriptWork `json:"fix_build"`
-	Patches        []string   `json:"patches"`
-	Arguments      []string   `json:"arguments"`
-	Depedencies    []string   `json:"dependencies"`
-	DevDepedencies []string   `json:"dev_dependencies"`
-	CMakeConfig    string     `json:"cmake_config"`
+	Pattern        string   `json:"pattern"`
+	BuildTool      string   `json:"build_tool"`
+	SystemTools    []string `json:"system_tools"`
+	LibraryType    string   `json:"library_type"`
+	EnvVars        []string `json:"env_vars"`
+	FixConfigure   FixWork  `json:"fix_configure"`
+	FixBuild       FixWork  `json:"fix_build"`
+	Patches        []string `json:"patches"`
+	Arguments      []string `json:"arguments"`
+	Depedencies    []string `json:"dependencies"`
+	DevDepedencies []string `json:"dev_dependencies"`
+	CMakeConfig    string   `json:"cmake_config"`
 
 	// Internal fields
 	buildSystem BuildSystem `json:"-"`

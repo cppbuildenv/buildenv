@@ -158,7 +158,41 @@ func (p Port) Installed() bool {
 }
 
 func (p Port) Write(portPath string) error {
+	p.Url = "// [http url | https url | ftp url | git url]"
+	p.Name = "// [library name]"
+	p.Version = "// [repo branch or tag]"
+	p.SourceFolder = "// [folder that contains CMakeLists.txt or configure or autoconf.sh]"
 	p.BuildConfigs = []buildsystem.BuildConfig{}
+	p.BuildConfigs = append(p.BuildConfigs, buildsystem.BuildConfig{
+		Pattern:   "// [*linux*|aarch64-linux*|*windows*|x86_64-windows]",
+		BuildTool: "// [b2|bazel|cmake|gyp|meson|ninja]",
+		SystemTools: []string{
+			"// [autoconf|libtool|...]",
+		},
+		LibraryType: "// [shared|static]",
+		EnvVars: []string{
+			"// [CFLAGS|CPPFLAGS|LDFLAGS]",
+		},
+		FixConfigure: buildsystem.FixWork{
+			Scripts: []string{},
+		},
+		FixBuild: buildsystem.FixWork{
+			Scripts: []string{},
+		},
+		Patches: []string{
+			"// [patch file name]",
+		},
+		Arguments: []string{
+			"// [--enable-shared|--enable-static]",
+		},
+		Depedencies: []string{
+			"// [abc@v1.2.0]",
+		},
+		DevDepedencies: []string{
+			"// [xxx@v1.2.3]",
+		},
+		CMakeConfig: "// [linux-shared|linux-static|windows-shared|windows-static]",
+	})
 	bytes, err := json.MarshalIndent(p, "", "    ")
 	if err != nil {
 		return err

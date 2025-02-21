@@ -11,7 +11,7 @@ import (
 
 func newPortCreateModel(callbacks config.BuildEnvCallbacks) *portCreateModel {
 	textInput := textinput.New()
-	textInput.Placeholder = "your port's name..."
+	textInput.Placeholder = "for example: sqlite3@3.39.5"
 	textInput.Focus()
 	textInput.CharLimit = 100
 	textInput.Width = 100
