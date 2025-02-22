@@ -59,6 +59,7 @@ func (m *makefiles) Configure(buildType string) error {
 
 	// Append common variables for cross compiling.
 	m.Arguments = append(m.Arguments, fmt.Sprintf("--prefix=%s", m.PortConfig.PackageDir))
+	m.Arguments = append(m.Arguments, fmt.Sprintf("--with-sysroot=%s", m.PortConfig.CrossTools.RootFS))
 
 	// Override library type if specified.
 	if m.BuildConfig.LibraryType != "" {

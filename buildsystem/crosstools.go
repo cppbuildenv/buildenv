@@ -1,7 +1,6 @@
 package buildsystem
 
 import (
-	"fmt"
 	"os"
 )
 
@@ -32,11 +31,10 @@ func (c CrossTools) SetEnvs() {
 	}
 
 	// Set env vars only for cross compiling.
-	rootfs := os.Getenv("SYSROOT")
 	os.Setenv("TOOLCHAIN_PREFIX", c.ToolchainPrefix)
 	os.Setenv("HOST", c.Host)
-	os.Setenv("CC", fmt.Sprintf("%s --sysroot=%s", c.CC, rootfs))
-	os.Setenv("CXX", fmt.Sprintf("%s --sysroot=%s", c.CXX, rootfs))
+	os.Setenv("CC", c.CC)
+	os.Setenv("CXX", c.CXX)
 
 	if c.FC != "" {
 		os.Setenv("FC", c.FC)
@@ -51,7 +49,7 @@ func (c CrossTools) SetEnvs() {
 	}
 
 	if c.LD != "" {
-		os.Setenv("LD", fmt.Sprintf("%s --sysroot=%s", c.LD, rootfs))
+		os.Setenv("LD", c.LD)
 	}
 
 	if c.NM != "" {

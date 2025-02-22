@@ -77,7 +77,7 @@ func (m meson) Configure(buildType string) error {
 	} else {
 		crossFile, err := m.generateCrossFile()
 		if err != nil {
-			return fmt.Errorf("failed to generate cross_file.txt for meson: %v", err)
+			return fmt.Errorf("failed to generate cross_file.ini for meson: %v", err)
 		}
 		command = fmt.Sprintf("meson setup %s %s --cross-file %s", m.PortConfig.BuildDir, joinedArgs, crossFile)
 	}
@@ -165,7 +165,7 @@ func (m meson) generateCrossFile() (string, error) {
 	bytes.WriteString(fmt.Sprintf("sys_root = '%s'\n", m.PortConfig.CrossTools.RootFS))
 	bytes.WriteString(fmt.Sprintf("pkg_config_libdir = '%s'\n", os.Getenv("PKG_CONFIG_LIBDIR")))
 
-	crossFilePath := filepath.Join(m.PortConfig.BuildDir, "cross_file.txt")
+	crossFilePath := filepath.Join(m.PortConfig.BuildDir, "cross_file.init")
 	if err := os.WriteFile(crossFilePath, bytes.Bytes(), os.ModePerm); err != nil {
 		return "", err
 	}
