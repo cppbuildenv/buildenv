@@ -47,7 +47,6 @@ type BuildSystem interface {
 	Configure(buildType string) error
 	Build() error
 	Install() error
-	PackageFiles(packageDir, platformName, projectName, buildType string) ([]string, error)
 
 	fixConfigure() error
 	fixBuild() error // Some thirdpartys need extra steps to fix build, for example: nspr.
@@ -272,40 +271,6 @@ func (b *BuildConfig) InitBuildSystem() error {
 	}
 
 	return nil
-}
-
-func (b BuildConfig) PackageFiles(packageDir, platformName, projectName, buildType string) ([]string, error) {
-	if !fileio.PathExists(packageDir) {
-		return nil, nil
-	}
-
-	var files []string
-	if err := filepath.WalkDir(packageDir, func(path string, d os.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if d.IsDir() {
-			return nil
-		}
-
-		relativePath, err := filepath.Rel(packageDir, path)
-		if err != nil {
-			return err
-		}
-
-		if b.AsDev {
-			files = append(files, filepath.Join("dev", relativePath))
-		} else {
-			platformProject := fmt.Sprintf("%s^%s^%s", platformName, projectName, buildType)
-			files = append(files, filepath.Join(platformProject, relativePath))
-		}
-		return nil
-	}); err != nil {
-		return nil, err
-	}
-
-	return files, nil
 }
 
 func (b BuildConfig) BuildSystem() BuildSystem {

@@ -19,10 +19,12 @@ type Port struct {
 	BuildConfigs []buildsystem.BuildConfig `json:"build_configs"`
 
 	// Internal fields.
-	ctx       Context `json:"-"`
-	stateFile string  `json:"-"` // Used to record installed state
-	AsSubDep  bool    `json:"-"`
-	AsDev     bool    `json:"-"`
+	ctx          Context `json:"-"`
+	packageDir   string  `json:"-"`
+	installedDir string  `json:"-"`
+	stateFile    string  `json:"-"` // Used to record installed state
+	AsSubDep     bool    `json:"-"`
+	AsDev        bool    `json:"-"`
 }
 
 func (p Port) NameVersion() string {
@@ -83,6 +85,8 @@ func (p *Port) Init(ctx Context, portPath string) error {
 		buildFolder = filepath.Join(nameVersion, fmt.Sprintf("%s^%s^%s", ctx.Platform().Name, ctx.Project().Name, ctx.BuildType()))
 		p.stateFile = filepath.Join(Dirs.InstalledDir, "buildenv", "info", nameVersion+"^"+platformProject+".list")
 	}
+	p.packageDir = filepath.Join(Dirs.WorkspaceDir, "packages", packageFolder)
+	p.installedDir = filepath.Join(Dirs.InstalledDir, installedFolder)
 
 	portConfig := buildsystem.PortConfig{
 		CrossTools:    p.buildCrossTools(),
@@ -94,8 +98,8 @@ func (p *Port) Init(ctx Context, portPath string) error {
 		DownloadedDir: Dirs.DownloadedDir,
 		SourceDir:     filepath.Join(Dirs.WorkspaceDir, "buildtrees", nameVersion, "src"),
 		BuildDir:      filepath.Join(Dirs.WorkspaceDir, "buildtrees", buildFolder),
-		PackageDir:    filepath.Join(Dirs.WorkspaceDir, "packages", packageFolder),
-		InstalledDir:  filepath.Join(Dirs.InstalledDir, installedFolder),
+		PackageDir:    p.packageDir,
+		InstalledDir:  p.installedDir,
 		TmpDir:        filepath.Join(Dirs.DownloadedDir, "tmp"),
 	}
 
@@ -226,77 +230,83 @@ func (p Port) Install(silentMode bool) error {
 		return nil
 	}
 
-	// No config found, download and deploy it.
-	if len(p.BuildConfigs) == 0 {
-		downloadedDir := filepath.Join(Dirs.WorkspaceDir, "downloads")
-		if err := p.downloadAndDeploy(p.Url, installedDir, downloadedDir); err != nil {
-			return err
-		}
-	}
-
-	// Find matched config and init build system.
-	var matchedConfig *buildsystem.BuildConfig
-	for _, config := range p.BuildConfigs {
-		if p.MatchPattern(config.Pattern) {
-			if err := config.InitBuildSystem(); err != nil {
-				return err
-			}
-			matchedConfig = &config
-			break
-		}
-	}
-	if matchedConfig == nil {
-		return fmt.Errorf("no matching build_config found to build for %s", p.NameVersion())
-	}
-
 	var installedFrom string
 
-	// Install from package dir.
-	if fileio.PathExists(matchedConfig.PortConfig.PackageDir) {
-		if err := p.installFromPackage(matchedConfig); err != nil {
+	// No config found, download and deploy it.
+	if len(p.BuildConfigs) == 0 {
+		if err := p.downloadAndDeploy(p.Url); err != nil {
 			return err
-		}
-		installedFrom = "package"
-	} else {
-		// Try to install from cache.
-		installed, fromDir, err := p.installFromCache(matchedConfig)
-		if err != nil {
-			return err
-		}
-
-		if installed {
-			installedFrom = fmt.Sprintf("cache [%s]", fromDir)
-		} else {
-			// Remove build cache from buildtrees.
-			platformProject := fmt.Sprintf("%s^%s^%s", p.ctx.Platform().Name, p.ctx.Project().Name, p.ctx.BuildType())
-			logPathPrefix := filepath.Join(p.NameVersion(), platformProject)
-			p.tryRemoveBuildCache(logPathPrefix)
-
-			// Install from source when cache not found.
-			if err := p.installFromSource(silentMode, matchedConfig); err != nil {
-				return err
-			}
-
-			// Write package to cache dirs so that others can share installed libraries,
-			// but only for none-dev lib.
-			if !p.AsDev {
-				for _, cacheDir := range p.ctx.CacheDirs() {
-					if !cacheDir.Writable {
-						continue
-					}
-
-					if err := cacheDir.Write(matchedConfig.PortConfig.PackageDir); err != nil {
-						return err
-					}
-				}
-			}
-
-			installedFrom = "source"
 		}
 
 		// This will copy all install files into installed dir.
-		if err := p.installFromPackage(matchedConfig); err != nil {
+		if err := p.installFromPackage(nil); err != nil {
 			return err
+		}
+
+		installedFrom = "archive"
+	} else {
+		// Find matched config and init build system.
+		var matchedConfig *buildsystem.BuildConfig
+		for _, config := range p.BuildConfigs {
+			if p.MatchPattern(config.Pattern) {
+				if err := config.InitBuildSystem(); err != nil {
+					return err
+				}
+				matchedConfig = &config
+				break
+			}
+		}
+		if matchedConfig == nil {
+			return fmt.Errorf("no matching build_config found to build for %s", p.NameVersion())
+		}
+
+		// Install from package dir.
+		if fileio.PathExists(matchedConfig.PortConfig.PackageDir) {
+			if err := p.installFromPackage(matchedConfig.Depedencies); err != nil {
+				return err
+			}
+			installedFrom = "package"
+		} else {
+			// Try to install from cache.
+			installed, fromDir, err := p.installFromCache(matchedConfig)
+			if err != nil {
+				return err
+			}
+
+			if installed {
+				installedFrom = fmt.Sprintf("cache [%s]", fromDir)
+			} else {
+				// Remove build cache from buildtrees.
+				platformProject := fmt.Sprintf("%s^%s^%s", p.ctx.Platform().Name, p.ctx.Project().Name, p.ctx.BuildType())
+				logPathPrefix := filepath.Join(p.NameVersion(), platformProject)
+				p.tryRemoveBuildCache(logPathPrefix)
+
+				// Install from source when cache not found.
+				if err := p.installFromSource(silentMode, matchedConfig); err != nil {
+					return err
+				}
+
+				// Write package to cache dirs so that others can share installed libraries,
+				// but only for none-dev lib.
+				if !p.AsDev {
+					for _, cacheDir := range p.ctx.CacheDirs() {
+						if !cacheDir.Writable {
+							continue
+						}
+
+						if err := cacheDir.Write(matchedConfig.PortConfig.PackageDir); err != nil {
+							return err
+						}
+					}
+				}
+
+				installedFrom = "source"
+			}
+
+			// This will copy all install files into installed dir.
+			if err := p.installFromPackage(matchedConfig.Depedencies); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -304,8 +314,8 @@ func (p Port) Install(silentMode bool) error {
 	if err := os.MkdirAll(filepath.Dir(p.stateFile), os.ModePerm); err != nil {
 		return err
 	}
-	packageFiles, err := matchedConfig.BuildSystem().PackageFiles(
-		matchedConfig.PortConfig.PackageDir,
+	packageFiles, err := p.PackageFiles(
+		p.packageDir,
 		p.ctx.Platform().Name,
 		p.ctx.Project().Name,
 		p.ctx.BuildType(),
@@ -348,6 +358,40 @@ func (p Port) MatchPattern(pattern string) bool {
 	}
 
 	return platformName == pattern
+}
+
+func (p Port) PackageFiles(packageDir, platformName, projectName, buildType string) ([]string, error) {
+	if !fileio.PathExists(packageDir) {
+		return nil, nil
+	}
+
+	var files []string
+	if err := filepath.WalkDir(packageDir, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if d.IsDir() {
+			return nil
+		}
+
+		relativePath, err := filepath.Rel(packageDir, path)
+		if err != nil {
+			return err
+		}
+
+		if p.AsDev {
+			files = append(files, filepath.Join("dev", relativePath))
+		} else {
+			platformProject := fmt.Sprintf("%s^%s^%s", platformName, projectName, buildType)
+			files = append(files, filepath.Join(platformProject, relativePath))
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return files, nil
 }
 
 func (p *Port) mergeBuildConfig(portBuildConfig *buildsystem.BuildConfig, overrides map[string]buildsystem.BuildConfig) {
@@ -439,17 +483,17 @@ func (p Port) installFromSource(silentMode bool, buildConfig *buildsystem.BuildC
 	return nil
 }
 
-func (p Port) installFromPackage(matchedConfig *buildsystem.BuildConfig) error {
+func (p Port) installFromPackage(depedencies []string) error {
 	platformProject := fmt.Sprintf("%s^%s^%s", p.ctx.Platform().Name, p.ctx.Project().Name, p.ctx.BuildType())
 
 	// First, we must check and repair dependency ports.
-	for _, nameVersion := range matchedConfig.Depedencies {
+	for _, nameVersion := range depedencies {
 		if strings.HasPrefix(nameVersion, p.Name) {
 			return fmt.Errorf("port.dependencies contains circular dependency: %s", nameVersion)
 		}
 
 		packageDir := filepath.Join(Dirs.WorkspaceDir, "packages", nameVersion+"^"+platformProject)
-		packageFiles, err := matchedConfig.BuildSystem().PackageFiles(
+		packageFiles, err := p.PackageFiles(
 			packageDir,
 			p.ctx.Platform().Name,
 			p.ctx.Project().Name,
@@ -462,7 +506,7 @@ func (p Port) installFromPackage(matchedConfig *buildsystem.BuildConfig) error {
 		for _, file := range packageFiles {
 			file = strings.TrimPrefix(file, platformProject+"/")
 			src := filepath.Join(packageDir, file)
-			dest := filepath.Join(matchedConfig.PortConfig.InstalledDir, file)
+			dest := filepath.Join(p.installedDir, file)
 
 			if err := os.MkdirAll(filepath.Dir(dest), os.ModePerm); err != nil {
 				return err
@@ -474,8 +518,8 @@ func (p Port) installFromPackage(matchedConfig *buildsystem.BuildConfig) error {
 	}
 
 	// Check and repair current port.
-	packageFiles, err := matchedConfig.BuildSystem().PackageFiles(
-		matchedConfig.PortConfig.PackageDir,
+	packageFiles, err := p.PackageFiles(
+		p.packageDir,
 		p.ctx.Platform().Name,
 		p.ctx.Project().Name,
 		p.ctx.BuildType(),
@@ -497,8 +541,8 @@ func (p Port) installFromPackage(matchedConfig *buildsystem.BuildConfig) error {
 			file = strings.TrimPrefix(file, platformProject+"/")
 		}
 
-		src := filepath.Join(matchedConfig.PortConfig.PackageDir, file)
-		dest := filepath.Join(matchedConfig.PortConfig.InstalledDir, file)
+		src := filepath.Join(p.packageDir, file)
+		dest := filepath.Join(p.installedDir, file)
 
 		if err := os.MkdirAll(filepath.Dir(dest), os.ModePerm); err != nil {
 			return err
@@ -511,20 +555,27 @@ func (p Port) installFromPackage(matchedConfig *buildsystem.BuildConfig) error {
 	return nil
 }
 
-func (p Port) downloadAndDeploy(url, installedDir, downloadedDir string) error {
-	// Download to fixed dir.
-	downloadRequest := fileio.NewDownloadRequest(url, downloadedDir)
-	downloaded, err := downloadRequest.Download()
-	if err != nil {
-		return fmt.Errorf("%s: download port failed: %w", url, err)
+func (p Port) downloadAndDeploy(url string) error {
+	tmpDir := filepath.Join(Dirs.DownloadedDir, "tmp")
+	repair := fileio.NewDownloadRepair(url, filepath.Base(url), ".", tmpDir, Dirs.DownloadedDir)
+	if err := repair.CheckAndRepair(); err != nil {
+		return err
 	}
 
-	// Extract archive file.
-	archiveName := filepath.Base(url)
-	folderName := strings.TrimSuffix(archiveName, ".tar.gz")
-	extractPath := filepath.Join(installedDir, folderName)
-	if err := fileio.Extract(downloaded, extractPath); err != nil {
-		return fmt.Errorf("%s: extract %s failed: %w", archiveName, downloaded, err)
+	// Move extracted files to source dir.
+	entities, err := os.ReadDir(tmpDir)
+	if err != nil || len(entities) == 0 {
+		return fmt.Errorf("cannot find extracted files under tmp dir: %w", err)
+	}
+	if len(entities) == 1 {
+		sourceDir := filepath.Join(tmpDir, entities[0].Name())
+		if err := fileio.RenameDir(sourceDir, p.packageDir); err != nil {
+			return err
+		}
+	} else if len(entities) > 1 {
+		if err := fileio.RenameDir(tmpDir, p.packageDir); err != nil {
+			return err
+		}
 	}
 
 	return nil

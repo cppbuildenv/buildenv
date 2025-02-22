@@ -100,21 +100,20 @@ func removePort(ctx config.Context, nameVersion string, asDev, purge, recurse bo
 		return err
 	}
 
-	// No config found, download and deploy it.
-	if len(port.BuildConfigs) == 0 {
-		return nil
-	}
-
-	// Find matched config.
 	var matchedConfig *buildsystem.BuildConfig
-	for _, config := range port.BuildConfigs {
-		if port.MatchPattern(config.Pattern) {
-			matchedConfig = &config
-			break
+
+	// No config found, download and deploy it.
+	if len(port.BuildConfigs) > 0 {
+		// Find matched config.
+		for _, config := range port.BuildConfigs {
+			if port.MatchPattern(config.Pattern) {
+				matchedConfig = &config
+				break
+			}
 		}
-	}
-	if matchedConfig == nil {
-		return fmt.Errorf("no matching build_config found to build for %s", port.NameVersion())
+		if matchedConfig == nil {
+			return fmt.Errorf("no matching build_config found to build for %s", port.NameVersion())
+		}
 	}
 
 	// Try to remove dependencies firstly.
@@ -144,14 +143,16 @@ func removePort(ctx config.Context, nameVersion string, asDev, purge, recurse bo
 			return nil
 		}
 
-		for _, nameVersion := range matchedConfig.Depedencies {
-			if err := remove(nameVersion, false); err != nil {
-				return err
+		if matchedConfig != nil {
+			for _, nameVersion := range matchedConfig.Depedencies {
+				if err := remove(nameVersion, false); err != nil {
+					return err
+				}
 			}
-		}
-		for _, nameVersion := range matchedConfig.DevDepedencies {
-			if err := remove(nameVersion, true); err != nil {
-				return err
+			for _, nameVersion := range matchedConfig.DevDepedencies {
+				if err := remove(nameVersion, true); err != nil {
+					return err
+				}
 			}
 		}
 	}
