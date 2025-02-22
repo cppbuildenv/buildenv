@@ -114,7 +114,7 @@ func removePort(ctx config.Context, nameVersion string, asDev, purge, recurse bo
 		}
 	}
 	if matchedConfig == nil {
-		return fmt.Errorf("no matching build_config found to build")
+		return fmt.Errorf("no matching build_config found to build for %s", port.NameVersion())
 	}
 
 	// Try to remove dependencies firstly.

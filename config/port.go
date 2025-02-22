@@ -246,7 +246,7 @@ func (p Port) Install(silentMode bool) error {
 		}
 	}
 	if matchedConfig == nil {
-		return fmt.Errorf("no matching build_config found to build")
+		return fmt.Errorf("no matching build_config found to build for %s", p.NameVersion())
 	}
 
 	var installedFrom string

@@ -171,7 +171,7 @@ func (p *Project) trackingPortDepedencies(port Port) error {
 		}
 	}
 	if matchedConfig == nil {
-		return fmt.Errorf("no matching build_config found to build")
+		return fmt.Errorf("no matching build_config found to build for %s", port.NameVersion())
 	}
 
 	// Tracking port depedencies infos.
