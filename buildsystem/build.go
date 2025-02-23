@@ -403,6 +403,21 @@ func (b BuildConfig) appendBuildEnvs() error {
 		}
 	}
 
+	// Append "--sysroot=" for cross compile.
+	if !b.AsDev {
+		if os.Getenv("CFLAGS") != "" {
+			os.Setenv("CFLAGS", fmt.Sprintf("--sysroot=%s %s", b.PortConfig.CrossTools.RootFS, os.Getenv("CFLAGS")))
+		} else {
+			os.Setenv("CFLAGS", fmt.Sprintf("--sysroot=%s", b.PortConfig.CrossTools.RootFS))
+		}
+
+		if os.Getenv("CXXFLAGS") != "" {
+			os.Setenv("CXXFLAGS", fmt.Sprintf("--sysroot=%s %s", b.PortConfig.CrossTools.RootFS, os.Getenv("CXXFLAGS")))
+		} else {
+			os.Setenv("CXXFLAGS", fmt.Sprintf("--sysroot=%s", b.PortConfig.CrossTools.RootFS))
+		}
+	}
+
 	return nil
 }
 
@@ -453,6 +468,21 @@ func (b BuildConfig) removeBuildEnvs() error {
 		default:
 			os.Unsetenv(key)
 		}
+	}
+
+	// Remove "--sysroot=" from CFLAGS and CXXFLAGS.
+	if !b.AsDev {
+		cflags := strings.Split(os.Getenv("CFLAGS"), " ")
+		cflags = slices.DeleteFunc(cflags, func(element string) bool {
+			return strings.Contains(element, "--sysroot=")
+		})
+		os.Setenv("CFLAGS", strings.Join(cflags, " "))
+
+		cxxflags := strings.Split(os.Getenv("CXXFLAGS"), " ")
+		cxxflags = slices.DeleteFunc(cxxflags, func(element string) bool {
+			return strings.Contains(element, "--sysroot=")
+		})
+		os.Setenv("CXXFLAGS", strings.Join(cxxflags, " "))
 	}
 
 	return nil
