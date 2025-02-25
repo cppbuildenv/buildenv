@@ -440,8 +440,9 @@ func (p Port) installFromCache(matchedConfig *buildsystem.BuildConfig) (installe
 func (p Port) installFromSource(silentMode bool, buildConfig *buildsystem.BuildConfig) error {
 	// 1. check and repair dev_dependencies.
 	for _, item := range buildConfig.DevDepedencies {
-		if strings.HasPrefix(item, p.Name) {
-			return fmt.Errorf("%s's dev_dependencies contains circular dependency: %s", p.NameVersion(), item)
+		// Skip self.
+		if p.AsDev && p.NameVersion() == item {
+			continue
 		}
 
 		// Check and repair dependency.

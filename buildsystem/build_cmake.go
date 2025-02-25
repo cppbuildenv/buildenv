@@ -4,6 +4,7 @@ import (
 	"buildenv/pkg/cmd"
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 	"slices"
 	"strings"
@@ -46,6 +47,9 @@ type cmake struct {
 }
 
 func (c cmake) Configure(buildType string) error {
+	// Some libraries' configure or CMakeLists.txt may not in root folder.
+	c.PortConfig.SourceDir = filepath.Join(c.PortConfig.SourceDir, c.PortConfig.SourceFolder)
+
 	// Remove build dir and create it for configure.
 	if err := os.RemoveAll(c.PortConfig.BuildDir); err != nil {
 		return err

@@ -20,9 +20,8 @@ type b2 struct {
 }
 
 func (b *b2) Configure(buildType string) error {
-	if err := os.Chdir(b.PortConfig.SourceDir); err != nil {
-		return err
-	}
+	// Some libraries' configure or CMakeLists.txt may not in root folder.
+	b.PortConfig.SourceDir = filepath.Join(b.PortConfig.SourceDir, b.PortConfig.SourceFolder)
 
 	b.setBuildType(buildType)
 
@@ -31,12 +30,13 @@ func (b *b2) Configure(buildType string) error {
 
 	// Join options into a string.
 	joinedArgs := strings.Join(b.Options, " ")
-	configure := fmt.Sprintf("./bootstrap.sh %s", joinedArgs)
+	configure := fmt.Sprintf("%s/bootstrap.sh %s", b.PortConfig.SourceDir, joinedArgs)
 
 	// Execute configure.
 	logPath := b.getLogPath("configure")
 	title := fmt.Sprintf("[configure %s@%s]", b.PortConfig.LibName, b.PortConfig.LibVersion)
 	executor := cmd.NewExecutor(title, configure)
+	executor.SetWorkDir(b.PortConfig.SourceDir)
 	executor.SetLogPath(logPath)
 	if err := executor.Execute(); err != nil {
 		return err
@@ -107,12 +107,13 @@ func (b b2) Install() error {
 
 	// Assemble command.
 	joinedOptions := strings.Join(b.Options, " ")
-	command := fmt.Sprintf("./b2 install %s", joinedOptions)
+	command := fmt.Sprintf("%s/b2 install %s", b.PortConfig.SourceDir, joinedOptions)
 
 	// Execute install.
 	logPath := b.getLogPath("install")
 	title := fmt.Sprintf("[install %s@%s]", b.PortConfig.LibName, b.PortConfig.LibVersion)
 	executor := cmd.NewExecutor(title, command)
+	executor.SetWorkDir(b.PortConfig.SourceDir)
 	executor.SetLogPath(logPath)
 	if err := executor.Execute(); err != nil {
 		return err

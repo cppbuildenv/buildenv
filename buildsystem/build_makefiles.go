@@ -22,6 +22,9 @@ type makefiles struct {
 }
 
 func (m *makefiles) Configure(buildType string) error {
+	// Some libraries' configure or CMakeLists.txt may not in root folder.
+	m.PortConfig.SourceDir = filepath.Join(m.PortConfig.SourceDir, m.PortConfig.SourceFolder)
+
 	// Different Makefile projects set the build_type in inconsistent ways,
 	// Fortunately, it can be configured through CFLAGS and CXXFLAGS.
 	m.setBuildType(buildType)
@@ -88,11 +91,10 @@ func (m *makefiles) Configure(buildType string) error {
 				strings.Contains(element, "--cross-prefix=") ||
 				strings.Contains(element, "--enable-cross-compile") ||
 				strings.Contains(element, "--arch=") ||
-				strings.Contains(element, "--target-os=")
+				strings.Contains(element, "--target-os=") ||
+				strings.Contains(element, "--with-cross-build=")
 		})
 	}
-
-	joinedOptions := strings.Join(m.Options, " ")
 
 	// Find `configure` or `Configure`.
 	var configureFile string
@@ -102,6 +104,12 @@ func (m *makefiles) Configure(buildType string) error {
 	if _, err := os.Stat(m.PortConfig.SourceDir + "/Configure"); err == nil {
 		configureFile = "Configure"
 	}
+
+	// Replace placeholders.
+	for index, value := range m.Options {
+		m.Options[index] = m.replaceHolders(value)
+	}
+	joinedOptions := strings.Join(m.Options, " ")
 
 	// Execute configure.
 	configure := fmt.Sprintf("%s/%s %s", m.PortConfig.SourceDir, configureFile, joinedOptions)

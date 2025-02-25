@@ -19,6 +19,9 @@ type meson struct {
 }
 
 func (m meson) Configure(buildType string) error {
+	// Some libraries' configure or CMakeLists.txt may not in root folder.
+	m.PortConfig.SourceDir = filepath.Join(m.PortConfig.SourceDir, m.PortConfig.SourceFolder)
+
 	// Remove build dir and create it for configure.
 	if err := os.RemoveAll(m.PortConfig.BuildDir); err != nil {
 		return err
