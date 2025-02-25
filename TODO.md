@@ -49,18 +49,23 @@ cmake_config的配置独立于version文件之外  | ✔
 支持编译三方库作为dev | ✔
 用-purge代替-uninstall -purge | ✔
 完善cmd描述，并告知候选参数是什么 | ✔
-运行tools需要将内部lib路径加入到LD_LIBRARY_PATH  | ✘
+支持在project里覆盖默认port的配置  | ✔
+支持tgz解压 | ✔
 支持 buildenv -upgrade 升级  | ✘
 动态生成的cmake config文件（windows还没测试）| ✘
 支持windows下工作  | ✘
 下载的库暂不支持生成cmake config文件  | ✘
 在创建的新tool和port里添加注释  | ✘
-支持ccache  | ✘
-支持fork到私有仓库  | ✘
-支持在project里覆盖默认port的配置  | ✘
 如果发现资源包size跟最新不匹配，即便已经解压了也要重新下载 | ✘
-支持export功能 | ✘
+支持export导出所有编译资源功能 | ✘
 支持在project里定义CMAKE_CXX_FLAGS和CMAKE_C_FLAGS，以及LDFLAGS | ✘
 检测代码如果跟目标不匹配, 什么都不做，同时提供sync命令用于强行同步代码 | ✘
 校验是否真的installed还需要判断文件是否存在 | ✘
 支持offline模式 | ✘
+支持download缓存，目录区别与库 | ✘
+下载过程中的文件名不能直接是目标名，先作为临时文件，下载完成后再重命名 | ✘
+支持dev库缓存，根据当前操作系统区分存储 | ✘
+增加sync功能，可以指定glog@1.2.3, 如果不指定则sync所有仓库 | ✘
+binary库添加-L和-Wl,-rpath-link | ✘
+package名字里的build type统一小写 | ✘
+arguments改为options | ✘
