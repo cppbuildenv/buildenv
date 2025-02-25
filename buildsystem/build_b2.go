@@ -24,17 +24,6 @@ func (b *b2) Configure(buildType string) error {
 		return err
 	}
 
-	// Clean build cache files.
-	for _, path := range []string{
-		"b2",
-		"b2.exe",
-		"bin.v2",
-		"project-config.jam",
-		"tools/build/src/engine/b2",
-	} {
-		os.RemoveAll(path)
-	}
-
 	b.setBuildType(buildType)
 
 	// Append common variables for cross compiling.
@@ -85,13 +74,11 @@ func (b *b2) Configure(buildType string) error {
 }
 
 func (b b2) Build() error {
-	if err := os.Chdir(b.PortConfig.SourceDir); err != nil {
-		return err
-	}
-
-	rootfs := b.PortConfig.CrossTools.RootFS
+	b.Arguments = append(b.Arguments, fmt.Sprintf("--build-dir=%s", b.PortConfig.BuildDir))
 	b.Arguments = append(b.Arguments, "toolset=gcc")
+
 	if !b.AsDev {
+		rootfs := b.PortConfig.CrossTools.RootFS
 		b.Arguments = append(b.Arguments, "cxxflags=--sysroot=%s", rootfs)
 		b.Arguments = append(b.Arguments, "linkflags=--sysroot=%s", rootfs)
 	}
@@ -100,12 +87,13 @@ func (b b2) Build() error {
 
 	// Assemble command.
 	joinedArgs := strings.Join(b.Arguments, " ")
-	command := fmt.Sprintf("./b2 %s -j %d", joinedArgs, b.PortConfig.JobNum)
+	command := fmt.Sprintf("%s/b2 %s -j %d", b.PortConfig.SourceDir, joinedArgs, b.PortConfig.JobNum)
 
 	// Execute build.
 	logPath := b.getLogPath("build")
 	title := fmt.Sprintf("[build %s@%s]", b.PortConfig.LibName, b.PortConfig.LibVersion)
 	executor := cmd.NewExecutor(title, command)
+	executor.SetWorkDir(b.PortConfig.SourceDir)
 	executor.SetLogPath(logPath)
 	if err := executor.Execute(); err != nil {
 		return err

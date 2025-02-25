@@ -24,7 +24,7 @@ func Extract(archiveFile, destDir string) error {
 	var command string
 
 	switch {
-	case strings.HasSuffix(archiveFile, ".tar.gz"):
+	case strings.HasSuffix(archiveFile, ".tar.gz"), strings.HasSuffix(archiveFile, ".tgz"):
 		command = fmt.Sprintf("tar -zxvf %s -C %s", archiveFile, destDir)
 
 	case strings.HasSuffix(archiveFile, ".tar.xz"):
