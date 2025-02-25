@@ -129,12 +129,14 @@ func (m meson) Install() error {
 func (m meson) generateCrossFile() (string, error) {
 	var bytes bytes.Buffer
 	bytes.WriteString("[host_machine]\n")
-	bytes.WriteString(fmt.Sprintf("system = '%s'\n", m.PortConfig.CrossTools.SystemName))
+	bytes.WriteString(fmt.Sprintf("system = '%s'\n", strings.ToLower(m.PortConfig.CrossTools.SystemName)))
 	bytes.WriteString(fmt.Sprintf("cpu_family = '%s'\n", m.PortConfig.CrossTools.SystemProcessor))
 	bytes.WriteString(fmt.Sprintf("cpu = '%s'\n", m.PortConfig.CrossTools.SystemProcessor))
 	bytes.WriteString("endian = 'little'\n")
 
 	bytes.WriteString("\n[binaries]\n")
+	bytes.WriteString("pkg-config = 'pkg-config'\n")
+	bytes.WriteString("cmake = 'cmake'\n")
 	bytes.WriteString(fmt.Sprintf("c = '%s'\n", m.PortConfig.CrossTools.CC))
 	bytes.WriteString(fmt.Sprintf("cpp = '%s'\n", m.PortConfig.CrossTools.CXX))
 
@@ -162,8 +164,13 @@ func (m meson) generateCrossFile() (string, error) {
 
 	bytes.WriteString("\n[properties]\n")
 	bytes.WriteString("cross_file = 'true'\n")
-	bytes.WriteString(fmt.Sprintf("sys_root = '%s'\n", m.PortConfig.CrossTools.RootFS))
+
+	// We assume that pkg-config's sysroot is installed dir and change all pc file's prefix as "".
+	bytes.WriteString(fmt.Sprintf("sys_root = '%s'\n", m.PortConfig.InstalledDir))
+	bytes.WriteString(fmt.Sprintf("pkg_config_path = '%s'\n", os.Getenv("PKG_CONFIG_PATH")))
 	bytes.WriteString(fmt.Sprintf("pkg_config_libdir = '%s'\n", os.Getenv("PKG_CONFIG_LIBDIR")))
+	bytes.WriteString(fmt.Sprintf("c_args = ['--sysroot=%s']\n", m.PortConfig.CrossTools.RootFS))
+	bytes.WriteString(fmt.Sprintf("c_link_args = ['--sysroot=%s']\n", m.PortConfig.CrossTools.RootFS))
 
 	crossFilePath := filepath.Join(m.PortConfig.BuildDir, "cross_file.init")
 	if err := os.WriteFile(crossFilePath, bytes.Bytes(), os.ModePerm); err != nil {

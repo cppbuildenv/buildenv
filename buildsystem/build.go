@@ -608,7 +608,7 @@ func (b BuildConfig) ensureDependencyPaths() {
 		os.Setenv("PKG_CONFIG_PATH", installedDir+"/lib/pkgconfig"+string(os.PathListSeparator)+pkgConfigPath)
 	}
 
-	// We assume that pkg-config's sysroot is installedDir and change all pc file's prefix as "/".
+	// We assume that pkg-config's sysroot is installed dir and change all pc file's prefix as "".
 	os.Setenv("PKG_CONFIG_SYSROOT_DIR", installedDir)
 }
 
