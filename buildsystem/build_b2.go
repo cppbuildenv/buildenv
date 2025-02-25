@@ -26,11 +26,11 @@ func (b *b2) Configure(buildType string) error {
 
 	b.setBuildType(buildType)
 
-	// Append common variables for cross compiling.
-	b.Arguments = append(b.Arguments, fmt.Sprintf("--prefix=%s", b.PortConfig.PackageDir))
+	// Append common options for cross compiling.
+	b.Options = append(b.Options, fmt.Sprintf("--prefix=%s", b.PortConfig.PackageDir))
 
-	// Join args into a string.
-	joinedArgs := strings.Join(b.Arguments, " ")
+	// Join options into a string.
+	joinedArgs := strings.Join(b.Options, " ")
 	configure := fmt.Sprintf("./bootstrap.sh %s", joinedArgs)
 
 	// Execute configure.
@@ -74,19 +74,19 @@ func (b *b2) Configure(buildType string) error {
 }
 
 func (b b2) Build() error {
-	b.Arguments = append(b.Arguments, fmt.Sprintf("--build-dir=%s", b.PortConfig.BuildDir))
-	b.Arguments = append(b.Arguments, "toolset=gcc")
+	b.Options = append(b.Options, fmt.Sprintf("--build-dir=%s", b.PortConfig.BuildDir))
+	b.Options = append(b.Options, "toolset=gcc")
 
 	if !b.AsDev {
 		rootfs := b.PortConfig.CrossTools.RootFS
-		b.Arguments = append(b.Arguments, "cxxflags=--sysroot=%s", rootfs)
-		b.Arguments = append(b.Arguments, "linkflags=--sysroot=%s", rootfs)
+		b.Options = append(b.Options, "cxxflags=--sysroot=%s", rootfs)
+		b.Options = append(b.Options, "linkflags=--sysroot=%s", rootfs)
 	}
 
 	b.prepareBuildInstall()
 
 	// Assemble command.
-	joinedArgs := strings.Join(b.Arguments, " ")
+	joinedArgs := strings.Join(b.Options, " ")
 	command := fmt.Sprintf("%s/b2 %s -j %d", b.PortConfig.SourceDir, joinedArgs, b.PortConfig.JobNum)
 
 	// Execute build.
@@ -106,8 +106,8 @@ func (b b2) Install() error {
 	b.prepareBuildInstall()
 
 	// Assemble command.
-	joinedArgs := strings.Join(b.Arguments, " ")
-	command := fmt.Sprintf("./b2 install %s", joinedArgs)
+	joinedOptions := strings.Join(b.Options, " ")
+	command := fmt.Sprintf("./b2 install %s", joinedOptions)
 
 	// Execute install.
 	logPath := b.getLogPath("install")
@@ -123,26 +123,26 @@ func (b b2) Install() error {
 
 func (b b2) prepareBuildInstall() {
 	// "--with-libraries" and "--without-libraries" should be removed during build and install.
-	b.Arguments = slices.DeleteFunc(b.Arguments, func(element string) bool {
+	b.Options = slices.DeleteFunc(b.Options, func(element string) bool {
 		return strings.HasPrefix(element, "--with-libraries") ||
 			strings.HasPrefix(element, "--without-libraries")
 	})
 
 	// Override library type if specified.
 	if b.BuildConfig.LibraryType != "" {
-		b.Arguments = slices.DeleteFunc(b.Arguments, func(element string) bool {
+		b.Options = slices.DeleteFunc(b.Options, func(element string) bool {
 			return strings.HasPrefix(element, "link=") ||
 				strings.HasPrefix(element, "runtime-link=")
 		})
 
 		switch b.BuildConfig.LibraryType {
 		case "static":
-			b.Arguments = append(b.Arguments, "link=static")
-			b.Arguments = append(b.Arguments, "runtime-link=static")
+			b.Options = append(b.Options, "link=static")
+			b.Options = append(b.Options, "runtime-link=static")
 
 		case "shared":
-			b.Arguments = append(b.Arguments, "link=shared")
-			b.Arguments = append(b.Arguments, "runtime-link=shared")
+			b.Options = append(b.Options, "link=shared")
+			b.Options = append(b.Options, "runtime-link=shared")
 		}
 	}
 }

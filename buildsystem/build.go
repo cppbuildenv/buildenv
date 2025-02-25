@@ -72,7 +72,7 @@ type BuildConfig struct {
 	FixConfigure   FixWork  `json:"fix_configure"`
 	FixBuild       FixWork  `json:"fix_build"`
 	Patches        []string `json:"patches"`
-	Arguments      []string `json:"arguments"`
+	Options        []string `json:"options"`
 	Depedencies    []string `json:"dependencies"`
 	DevDepedencies []string `json:"dev_dependencies"`
 	CMakeConfig    string   `json:"cmake_config"`
@@ -490,53 +490,53 @@ func (b BuildConfig) removeBuildEnvs() error {
 
 // fillPlaceHolders Replace placeholders with real paths and values.
 func (b *BuildConfig) fillPlaceHolders() {
-	for index, argument := range b.Arguments {
+	for index, argument := range b.Options {
 		if strings.Contains(argument, "${HOST}") {
 			if b.AsDev {
-				b.Arguments = slices.Delete(b.Arguments, index, 1)
+				b.Options = slices.Delete(b.Options, index, 1)
 			} else {
-				b.Arguments[index] = strings.ReplaceAll(argument, "${HOST}", b.PortConfig.CrossTools.Host)
+				b.Options[index] = strings.ReplaceAll(argument, "${HOST}", b.PortConfig.CrossTools.Host)
 			}
 		}
 
 		if strings.Contains(argument, "${SYSTEM_NAME}") {
 			if b.AsDev {
-				b.Arguments = slices.Delete(b.Arguments, index, 1)
+				b.Options = slices.Delete(b.Options, index, 1)
 			} else {
-				b.Arguments[index] = strings.ReplaceAll(argument, "${SYSTEM_NAME}", strings.ToLower(b.PortConfig.CrossTools.SystemName))
+				b.Options[index] = strings.ReplaceAll(argument, "${SYSTEM_NAME}", strings.ToLower(b.PortConfig.CrossTools.SystemName))
 			}
 		}
 
 		if strings.Contains(argument, "${SYSTEM_PROCESSOR}") {
 			if b.AsDev {
-				b.Arguments = slices.Delete(b.Arguments, index, 1)
+				b.Options = slices.Delete(b.Options, index, 1)
 			} else {
-				b.Arguments[index] = strings.ReplaceAll(argument, "${SYSTEM_PROCESSOR}", b.PortConfig.CrossTools.SystemProcessor)
+				b.Options[index] = strings.ReplaceAll(argument, "${SYSTEM_PROCESSOR}", b.PortConfig.CrossTools.SystemProcessor)
 			}
 		}
 
 		if strings.Contains(argument, "${SYSROOT}") {
 			if b.AsDev {
-				b.Arguments = slices.Delete(b.Arguments, index, 1)
+				b.Options = slices.Delete(b.Options, index, 1)
 			} else {
-				b.Arguments[index] = strings.ReplaceAll(argument, "${SYSROOT}", b.PortConfig.CrossTools.RootFS)
+				b.Options[index] = strings.ReplaceAll(argument, "${SYSROOT}", b.PortConfig.CrossTools.RootFS)
 			}
 		}
 
 		if strings.Contains(argument, "${CROSS_PREFIX}") {
 			if b.AsDev {
-				b.Arguments = slices.Delete(b.Arguments, index, 1)
+				b.Options = slices.Delete(b.Options, index, 1)
 			} else {
-				b.Arguments[index] = strings.ReplaceAll(argument, "${CROSS_PREFIX}", b.PortConfig.CrossTools.ToolchainPrefix)
+				b.Options[index] = strings.ReplaceAll(argument, "${CROSS_PREFIX}", b.PortConfig.CrossTools.ToolchainPrefix)
 			}
 		}
 
 		if strings.Contains(argument, "${INSTALLED_DIR}") {
-			b.Arguments[index] = strings.ReplaceAll(argument, "${INSTALLED_DIR}", b.PortConfig.InstalledDir)
+			b.Options[index] = strings.ReplaceAll(argument, "${INSTALLED_DIR}", b.PortConfig.InstalledDir)
 		}
 
 		if strings.Contains(argument, "${SOURCE_DIR}") {
-			b.Arguments[index] = strings.ReplaceAll(argument, "${SOURCE_DIR}", b.PortConfig.SourceDir)
+			b.Options[index] = strings.ReplaceAll(argument, "${SOURCE_DIR}", b.PortConfig.SourceDir)
 		}
 	}
 }

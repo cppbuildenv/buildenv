@@ -36,12 +36,12 @@ func (g gyp) Build() error {
 		return err
 	}
 
-	joinedArgs := strings.Join(g.Arguments, " ")
+	joinedOptions := strings.Join(g.Options, " ")
 
 	// Execute build.
 	logPath := g.getLogPath("build")
 	title := fmt.Sprintf("[build %s@%s]", g.PortConfig.LibName, g.PortConfig.LibVersion)
-	executor := cmd.NewExecutor(title, "./build.sh "+joinedArgs)
+	executor := cmd.NewExecutor(title, "./build.sh "+joinedOptions)
 	executor.SetLogPath(logPath)
 	if err := executor.Execute(); err != nil {
 		return err

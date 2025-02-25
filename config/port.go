@@ -186,7 +186,7 @@ func (p Port) Write(portPath string) error {
 		Patches: []string{
 			"// [patch file name]",
 		},
-		Arguments: []string{
+		Options: []string{
 			"// [--enable-shared|--enable-static]",
 		},
 		Depedencies: []string{
@@ -405,8 +405,8 @@ func (p *Port) mergeBuildConfig(portBuildConfig *buildsystem.BuildConfig, overri
 		if config.Patches != nil {
 			portBuildConfig.Patches = config.Patches
 		}
-		if len(config.Arguments) > 0 {
-			portBuildConfig.Arguments = config.Arguments
+		if len(config.Options) > 0 {
+			portBuildConfig.Options = config.Options
 		}
 		portBuildConfig.Depedencies = config.Depedencies
 		portBuildConfig.DevDepedencies = config.DevDepedencies

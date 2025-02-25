@@ -57,12 +57,12 @@ func (m *makefiles) Configure(buildType string) error {
 		}
 	}
 
-	// Append common variables for cross compiling.
-	m.Arguments = append(m.Arguments, fmt.Sprintf("--prefix=%s", m.PortConfig.PackageDir))
+	// Append common options for cross compiling.
+	m.Options = append(m.Options, fmt.Sprintf("--prefix=%s", m.PortConfig.PackageDir))
 
 	// Override library type if specified.
 	if m.BuildConfig.LibraryType != "" {
-		m.Arguments = slices.DeleteFunc(m.Arguments, func(element string) bool {
+		m.Options = slices.DeleteFunc(m.Options, func(element string) bool {
 			return strings.Contains(element, "--enable-shared") ||
 				strings.Contains(element, "--disable-shared") ||
 				strings.Contains(element, "--enable-static") ||
@@ -71,18 +71,18 @@ func (m *makefiles) Configure(buildType string) error {
 
 		switch m.BuildConfig.LibraryType {
 		case "static":
-			m.Arguments = append(m.Arguments, "--enable-static")
-			m.Arguments = append(m.Arguments, "--disable-shared")
+			m.Options = append(m.Options, "--enable-static")
+			m.Options = append(m.Options, "--disable-shared")
 
 		case "shared":
-			m.Arguments = append(m.Arguments, "--enable-shared")
-			m.Arguments = append(m.Arguments, "--disable-static")
+			m.Options = append(m.Options, "--enable-shared")
+			m.Options = append(m.Options, "--disable-static")
 		}
 	}
 
 	// Remove common cross compile args for native build.
 	if m.PortConfig.CrossTools.Native || m.BuildConfig.AsDev {
-		m.Arguments = slices.DeleteFunc(m.Arguments, func(element string) bool {
+		m.Options = slices.DeleteFunc(m.Options, func(element string) bool {
 			return strings.Contains(element, "--host=") ||
 				strings.Contains(element, "--sysroot=") ||
 				strings.Contains(element, "--cross-prefix=") ||
@@ -92,7 +92,7 @@ func (m *makefiles) Configure(buildType string) error {
 		})
 	}
 
-	joinedArgs := strings.Join(m.Arguments, " ")
+	joinedOptions := strings.Join(m.Options, " ")
 
 	// Find `configure` or `Configure`.
 	var configureFile string
@@ -104,7 +104,7 @@ func (m *makefiles) Configure(buildType string) error {
 	}
 
 	// Execute configure.
-	configure := fmt.Sprintf("%s/%s %s", m.PortConfig.SourceDir, configureFile, joinedArgs)
+	configure := fmt.Sprintf("%s/%s %s", m.PortConfig.SourceDir, configureFile, joinedOptions)
 	logPath := m.getLogPath("configure")
 	title := fmt.Sprintf("[configure %s@%s]", m.PortConfig.LibName, m.PortConfig.LibVersion)
 	executor := cmd.NewExecutor(title, configure)
@@ -148,8 +148,8 @@ func (m makefiles) Install() error {
 	if m.configured {
 		command = "make install"
 	} else {
-		m.Arguments = append(m.Arguments, "prefix="+m.PortConfig.PackageDir)
-		joinedArgs := strings.Join(m.Arguments, " ")
+		m.Options = append(m.Options, "prefix="+m.PortConfig.PackageDir)
+		joinedArgs := strings.Join(m.Options, " ")
 		command = fmt.Sprintf("make install -C %s %s", m.PortConfig.SourceDir, joinedArgs)
 	}
 

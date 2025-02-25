@@ -57,17 +57,17 @@ func (c cmake) Configure(buildType string) error {
 	}
 
 	// Override CMAKE_PREFIX_PATH and CMAKE_INSTALL_PREFIX.
-	c.Arguments = slices.DeleteFunc(c.Arguments, func(element string) bool {
+	c.Options = slices.DeleteFunc(c.Options, func(element string) bool {
 		return strings.Contains(element, "-DCMAKE_PREFIX_PATH=") ||
 			strings.Contains(element, "-DCMAKE_INSTALL_PREFIX=")
 	})
-	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_PREFIX_PATH=%s", c.PortConfig.InstalledDir))
-	c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_INSTALL_PREFIX=%s", c.PortConfig.PackageDir))
+	c.Options = append(c.Options, fmt.Sprintf("-DCMAKE_PREFIX_PATH=%s", c.PortConfig.InstalledDir))
+	c.Options = append(c.Options, fmt.Sprintf("-DCMAKE_INSTALL_PREFIX=%s", c.PortConfig.PackageDir))
 
-	// Append cross-compile arguments only for none-runtime library.
+	// Append cross-compile options only for none-runtime library.
 	if !c.BuildConfig.AsDev {
-		// Remove arguments that we want to override.
-		c.Arguments = slices.DeleteFunc(c.Arguments, func(element string) bool {
+		// Remove options that we want to override.
+		c.Options = slices.DeleteFunc(c.Options, func(element string) bool {
 			return strings.Contains(element, "-DCMAKE_POSITION_INDEPENDENT_CODE=") ||
 				strings.Contains(element, "-DCMAKE_SYSTEM_PROCESSOR=") ||
 				strings.Contains(element, "-DCMAKE_SYSTEM_NAME=") ||
@@ -81,57 +81,57 @@ func (c cmake) Configure(buildType string) error {
 		})
 
 		// Append extra global args.
-		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_POSITION_INDEPENDENT_CODE=%s", "ON"))
+		c.Options = append(c.Options, fmt.Sprintf("-DCMAKE_POSITION_INDEPENDENT_CODE=%s", "ON"))
 
-		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_SYSTEM_PROCESSOR=%s", c.PortConfig.CrossTools.SystemProcessor))
-		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_SYSTEM_NAME=%s", c.PortConfig.CrossTools.SystemName))
+		c.Options = append(c.Options, fmt.Sprintf("-DCMAKE_SYSTEM_PROCESSOR=%s", c.PortConfig.CrossTools.SystemProcessor))
+		c.Options = append(c.Options, fmt.Sprintf("-DCMAKE_SYSTEM_NAME=%s", c.PortConfig.CrossTools.SystemName))
 
-		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_C_FLAGS=\"--sysroot=%s ${CMAKE_C_FLAGS}\"", c.PortConfig.CrossTools.RootFS))
-		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_CXX_FLAGS=\"--sysroot=%s ${CMAKE_CXX_FLAGS}\"", c.PortConfig.CrossTools.RootFS))
+		c.Options = append(c.Options, fmt.Sprintf("-DCMAKE_C_FLAGS=\"--sysroot=%s ${CMAKE_C_FLAGS}\"", c.PortConfig.CrossTools.RootFS))
+		c.Options = append(c.Options, fmt.Sprintf("-DCMAKE_CXX_FLAGS=\"--sysroot=%s ${CMAKE_CXX_FLAGS}\"", c.PortConfig.CrossTools.RootFS))
 
-		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH=\"%s\"", fmt.Sprintf("%s;%s",
+		c.Options = append(c.Options, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH=\"%s\"", fmt.Sprintf("%s;%s",
 			c.PortConfig.CrossTools.RootFS, c.PortConfig.InstalledDir)))
-		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=%s", "NEVER"))
-		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=%s", "ONLY"))
-		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=%s", "ONLY"))
-		c.Arguments = append(c.Arguments, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=%s", "ONLY"))
+		c.Options = append(c.Options, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=%s", "NEVER"))
+		c.Options = append(c.Options, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=%s", "ONLY"))
+		c.Options = append(c.Options, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=%s", "ONLY"))
+		c.Options = append(c.Options, fmt.Sprintf("-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=%s", "ONLY"))
 	}
 
 	// Append 'CMAKE_BUILD_TYPE' if not contains it.
 	if c.AsDev {
-		c.Arguments = slices.DeleteFunc(c.Arguments, func(element string) bool {
+		c.Options = slices.DeleteFunc(c.Options, func(element string) bool {
 			return strings.Contains(element, "CMAKE_BUILD_TYPE")
 		})
-		c.Arguments = append(c.Arguments, "-DCMAKE_BUILD_TYPE=Release")
+		c.Options = append(c.Options, "-DCMAKE_BUILD_TYPE=Release")
 	} else {
-		if !slices.ContainsFunc(c.Arguments, func(arg string) bool {
+		if !slices.ContainsFunc(c.Options, func(arg string) bool {
 			return strings.Contains(arg, "CMAKE_BUILD_TYPE")
 		}) {
 			buildType = c.formatBuildType(buildType)
-			c.Arguments = append(c.Arguments, "-DCMAKE_BUILD_TYPE="+buildType)
+			c.Options = append(c.Options, "-DCMAKE_BUILD_TYPE="+buildType)
 		}
 	}
 
 	// Override library type if specified.
 	if c.BuildConfig.LibraryType != "" {
-		c.Arguments = slices.DeleteFunc(c.Arguments, func(element string) bool {
+		c.Options = slices.DeleteFunc(c.Options, func(element string) bool {
 			return strings.Contains(element, "BUILD_SHARED_LIBS") ||
 				strings.Contains(element, "BUILD_STATIC_LIBS")
 		})
 
 		switch c.BuildConfig.LibraryType {
 		case "static":
-			c.Arguments = append(c.Arguments, "-DBUILD_STATIC_LIBS=ON")
-			c.Arguments = append(c.Arguments, "-DBUILD_SHARED_LIBS=OFF")
+			c.Options = append(c.Options, "-DBUILD_STATIC_LIBS=ON")
+			c.Options = append(c.Options, "-DBUILD_SHARED_LIBS=OFF")
 
 		case "shared":
-			c.Arguments = append(c.Arguments, "-DBUILD_SHARED_LIBS=ON")
-			c.Arguments = append(c.Arguments, "-DBUILD_STATIC_LIBS=OFF")
+			c.Options = append(c.Options, "-DBUILD_SHARED_LIBS=ON")
+			c.Options = append(c.Options, "-DBUILD_STATIC_LIBS=OFF")
 		}
 	}
 
 	// Assemble args into a single command string.
-	joinedArgs := strings.Join(c.Arguments, " ")
+	joinedArgs := strings.Join(c.Options, " ")
 	var command string
 	if c.generator == "" {
 		command = fmt.Sprintf("cmake -S %s -B %s %s", c.PortConfig.SourceDir, c.PortConfig.BuildDir, joinedArgs)

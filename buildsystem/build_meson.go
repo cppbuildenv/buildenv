@@ -30,38 +30,38 @@ func (m meson) Configure(buildType string) error {
 	}
 
 	// Override '--prefix' if exists.
-	m.Arguments = slices.DeleteFunc(m.Arguments, func(element string) bool {
+	m.Options = slices.DeleteFunc(m.Options, func(element string) bool {
 		return strings.Contains(element, "--prefix")
 	})
-	m.Arguments = append(m.Arguments, "--prefix="+m.PortConfig.PackageDir)
+	m.Options = append(m.Options, "--prefix="+m.PortConfig.PackageDir)
 
 	// Append 'CMAKE_BUILD_TYPE' if not contains it.
 	if m.AsDev {
-		m.Arguments = slices.DeleteFunc(m.Arguments, func(element string) bool {
+		m.Options = slices.DeleteFunc(m.Options, func(element string) bool {
 			return strings.Contains(element, "--buildtype")
 		})
-		m.Arguments = append(m.Arguments, "--buildtype=release")
+		m.Options = append(m.Options, "--buildtype=release")
 	} else {
-		if !slices.ContainsFunc(m.Arguments, func(arg string) bool {
+		if !slices.ContainsFunc(m.Options, func(arg string) bool {
 			return strings.Contains(arg, "--buildtype")
 		}) {
 			buildType = strings.ToLower(buildType)
-			m.Arguments = append(m.Arguments, "--buildtype="+buildType)
+			m.Options = append(m.Options, "--buildtype="+buildType)
 		}
 	}
 
 	// Override library type if specified.
 	if m.BuildConfig.LibraryType != "" {
-		m.Arguments = slices.DeleteFunc(m.Arguments, func(element string) bool {
+		m.Options = slices.DeleteFunc(m.Options, func(element string) bool {
 			return strings.Contains(element, "--default-library")
 		})
 
 		switch m.BuildConfig.LibraryType {
 		case "static":
-			m.Arguments = append(m.Arguments, "--default-library=static")
+			m.Options = append(m.Options, "--default-library=static")
 
 		case "shared":
-			m.Arguments = append(m.Arguments, "--default-library=shared")
+			m.Options = append(m.Options, "--default-library=shared")
 		}
 	}
 
@@ -71,7 +71,7 @@ func (m meson) Configure(buildType string) error {
 
 	// Assemble command.
 	var command string
-	joinedArgs := strings.Join(m.Arguments, " ")
+	joinedArgs := strings.Join(m.Options, " ")
 	if m.BuildConfig.AsDev {
 		command = fmt.Sprintf("meson setup %s %s", m.PortConfig.BuildDir, joinedArgs)
 	} else {
