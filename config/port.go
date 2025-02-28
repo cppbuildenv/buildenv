@@ -466,6 +466,7 @@ func (p Port) installFromSource(silentMode bool, buildConfig *buildsystem.BuildC
 
 		// Check and repair dependency.
 		var port Port
+		port.AsDev = p.AsDev
 		port.AsSubDep = true
 		portPath := filepath.Join(Dirs.PortsDir, item+".json")
 		if err := port.Init(p.ctx, portPath); err != nil {

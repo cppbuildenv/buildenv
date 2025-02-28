@@ -21,6 +21,7 @@ var (
 		"autoconf":   "autoconf",
 		"automake":   "automake",
 		"libtoolize": "libtool",
+		"graphviz":   "dot",
 	}
 )
 
@@ -377,7 +378,7 @@ func (b BuildConfig) appendBuildEnvs() error {
 		value = b.replaceHolders(value)
 
 		switch key {
-		case "PKG_CONFIG_PATH", "PATH":
+		case "PKG_CONFIG_PATH", "PATH", "CPATH":
 			value = fmt.Sprintf("%s%s%s", value, string(os.PathListSeparator), os.Getenv(key))
 			os.Setenv(key, value)
 
@@ -403,15 +404,19 @@ func (b BuildConfig) appendBuildEnvs() error {
 	// Append "--sysroot=" for cross compile.
 	if !b.AsDev {
 		if os.Getenv("CFLAGS") != "" {
-			os.Setenv("CFLAGS", fmt.Sprintf("--sysroot=%s %s", b.PortConfig.CrossTools.RootFS, os.Getenv("CFLAGS")))
+			os.Setenv("CFLAGS", fmt.Sprintf("--sysroot=%s -I%s/include %s",
+				b.PortConfig.CrossTools.RootFS, b.PortConfig.InstalledDir, os.Getenv("CFLAGS")))
 		} else {
-			os.Setenv("CFLAGS", fmt.Sprintf("--sysroot=%s", b.PortConfig.CrossTools.RootFS))
+			os.Setenv("CFLAGS", fmt.Sprintf("--sysroot=%s -Wl,-rpath-link=%s/lib",
+				b.PortConfig.CrossTools.RootFS, b.PortConfig.InstalledDir))
 		}
 
 		if os.Getenv("CXXFLAGS") != "" {
-			os.Setenv("CXXFLAGS", fmt.Sprintf("--sysroot=%s %s", b.PortConfig.CrossTools.RootFS, os.Getenv("CXXFLAGS")))
+			os.Setenv("CXXFLAGS", fmt.Sprintf("--sysroot=%s -I%s/include %s",
+				b.PortConfig.CrossTools.RootFS, b.PortConfig.InstalledDir, os.Getenv("CXXFLAGS")))
 		} else {
-			os.Setenv("CXXFLAGS", fmt.Sprintf("--sysroot=%s", b.PortConfig.CrossTools.RootFS))
+			os.Setenv("CXXFLAGS", fmt.Sprintf("--sysroot=%s -Wl,-rpath-link=%s/lib",
+				b.PortConfig.CrossTools.RootFS, b.PortConfig.InstalledDir))
 		}
 	}
 
@@ -445,7 +450,7 @@ func (b BuildConfig) removeBuildEnvs() error {
 				os.Setenv(key, strings.TrimSpace(flagsValue))
 			}
 
-		case "PKG_CONFIG_PATH", "PATH":
+		case "PKG_CONFIG_PATH", "PATH", "CPATH":
 			parts := strings.Split(os.Getenv("PKG_CONFIG_PATH"), string(os.PathListSeparator))
 			// Remove the value from the slice.
 			for i, part := range parts {
@@ -618,6 +623,7 @@ func (b BuildConfig) replaceHolders(content string) string {
 	content = strings.ReplaceAll(content, "${INSTALLED_DIR}", b.PortConfig.InstalledDir)
 	content = strings.ReplaceAll(content, "${SOURCE_DIR}", b.PortConfig.SourceDir)
 	content = strings.ReplaceAll(content, "${BUILD_DIR}", b.PortConfig.BuildDir)
+	content = strings.ReplaceAll(content, "${PACKAGE_DIR}", b.PortConfig.PackageDir)
 	content = strings.ReplaceAll(content, "${DEV_DIR}", filepath.Join(filepath.Dir(b.PortConfig.InstalledDir), "dev"))
 	return content
 }

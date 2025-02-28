@@ -172,8 +172,10 @@ func (m meson) generateCrossFile() (string, error) {
 	bytes.WriteString(fmt.Sprintf("sys_root = '%s'\n", m.PortConfig.InstalledDir))
 	bytes.WriteString(fmt.Sprintf("pkg_config_path = '%s'\n", os.Getenv("PKG_CONFIG_PATH")))
 	bytes.WriteString(fmt.Sprintf("pkg_config_libdir = '%s'\n", os.Getenv("PKG_CONFIG_LIBDIR")))
-	bytes.WriteString(fmt.Sprintf("c_args = ['--sysroot=%s']\n", m.PortConfig.CrossTools.RootFS))
-	bytes.WriteString(fmt.Sprintf("c_link_args = ['--sysroot=%s']\n", m.PortConfig.CrossTools.RootFS))
+	bytes.WriteString(fmt.Sprintf("c_args = ['--sysroot=%s', '-I%s/include']\n",
+		m.PortConfig.CrossTools.RootFS, m.PortConfig.InstalledDir))
+	bytes.WriteString(fmt.Sprintf("c_link_args = ['--sysroot=%s', '-I%s/include']\n",
+		m.PortConfig.CrossTools.RootFS, m.PortConfig.InstalledDir))
 
 	crossFilePath := filepath.Join(m.PortConfig.BuildDir, "cross_file.init")
 	if err := os.WriteFile(crossFilePath, bytes.Bytes(), os.ModePerm); err != nil {

@@ -69,3 +69,4 @@ cmake_config的配置独立于version文件之外  | ✔
 binary库添加-L和-Wl,-rpath-link | ✘
 package名字里的build type统一小写 | ✘
 arguments改为options | ✘
+固定终端第一行显示当前在进行的工作事项 | ✘
