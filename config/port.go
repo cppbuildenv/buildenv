@@ -210,7 +210,7 @@ func (p Port) Write(portPath string) error {
 
 	// Make sure the parent directory exists.
 	parentDir := filepath.Dir(portPath)
-	if err := os.MkdirAll(parentDir, 0755); err != nil {
+	if err := os.MkdirAll(parentDir, os.ModeDir|os.ModePerm); err != nil {
 		return err
 	}
 	return os.WriteFile(portPath, bytes, os.ModePerm)
@@ -511,7 +511,7 @@ func (p Port) installFromPackage(depedencies []string) error {
 			src := filepath.Join(packageDir, file)
 			dest := filepath.Join(p.installedDir, file)
 
-			if err := os.MkdirAll(filepath.Dir(dest), os.ModePerm); err != nil {
+			if err := os.MkdirAll(filepath.Dir(dest), os.ModeDir|os.ModePerm); err != nil {
 				return err
 			}
 			if err := fileio.CopyFile(src, dest); err != nil {
@@ -547,7 +547,7 @@ func (p Port) installFromPackage(depedencies []string) error {
 		src := filepath.Join(p.packageDir, file)
 		dest := filepath.Join(p.installedDir, file)
 
-		if err := os.MkdirAll(filepath.Dir(dest), os.ModePerm); err != nil {
+		if err := os.MkdirAll(filepath.Dir(dest), os.ModeDir|os.ModePerm); err != nil {
 			return err
 		}
 		if err := fileio.CopyFile(src, dest); err != nil {

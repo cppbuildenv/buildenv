@@ -31,12 +31,12 @@ func (g *configVersion) generate(installedDir string) error {
 
 	// Make dirs for writing file.
 	filePath := filepath.Join(installedDir, "lib", "cmake", g.cmakeConfig.Libname, g.cmakeConfig.Libname+"ConfigVersion.cmake")
-	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filePath), os.ModeDir|os.ModePerm); err != nil {
 		return err
 	}
 
 	// Do write file.
-	if err := os.WriteFile(filePath, []byte(content), os.ModePerm); err != nil {
+	if err := os.WriteFile(filePath, []byte(content), os.ModeDir|os.ModePerm); err != nil {
 		return err
 	}
 

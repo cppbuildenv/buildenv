@@ -26,7 +26,7 @@ func (c callbackImpl) OnInitBuildEnv(confRepoUrl, confRepoRef string) (string, e
 	// Create buildenv.json if not exist.
 	confPath := filepath.Join(Dirs.WorkspaceDir, "buildenv.json")
 	if !fileio.PathExists(confPath) {
-		if err := os.MkdirAll(filepath.Dir(confPath), os.ModePerm); err != nil {
+		if err := os.MkdirAll(filepath.Dir(confPath), os.ModeDir|os.ModePerm); err != nil {
 			return "", err
 		}
 
@@ -238,7 +238,7 @@ func (c callbackImpl) OnCreatePort(portNameVersion string) error {
 	}
 
 	parentDir := filepath.Join(Dirs.PortsDir, parts[0])
-	if err := os.MkdirAll(parentDir, os.ModePerm); err != nil {
+	if err := os.MkdirAll(parentDir, os.ModeDir|os.ModePerm); err != nil {
 		return err
 	}
 	portPath := filepath.Join(parentDir, parts[1]+".json")

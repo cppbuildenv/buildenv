@@ -117,7 +117,7 @@ func (t Tool) Write(toolPath string) error {
 
 	// Make sure the parent directory exists.
 	parentDir := filepath.Dir(toolPath)
-	if err := os.MkdirAll(parentDir, 0755); err != nil {
+	if err := os.MkdirAll(parentDir, os.ModeDir|os.ModePerm); err != nil {
 		return err
 	}
 	return os.WriteFile(toolPath, bytes, os.ModePerm)

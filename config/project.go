@@ -75,7 +75,7 @@ func (p Project) Write(platformPath string) error {
 
 	// Make sure the parent directory exists.
 	parentDir := filepath.Dir(platformPath)
-	if err := os.MkdirAll(parentDir, 0755); err != nil {
+	if err := os.MkdirAll(parentDir, os.ModeDir|os.ModePerm); err != nil {
 		return err
 	}
 

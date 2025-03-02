@@ -79,7 +79,7 @@ func (g *modulesBuildType) generate(installedDir string) error {
 	// Make dirs for writing file.
 	fileName := fmt.Sprintf("%sModules-%s.cmake", g.cmakeConfig.Libname, strings.ToLower(g.cmakeConfig.BuildType))
 	filePath := filepath.Join(installedDir, "lib", "cmake", g.cmakeConfig.Libname, fileName)
-	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filePath), os.ModeDir|os.ModePerm); err != nil {
 		return err
 	}
 
