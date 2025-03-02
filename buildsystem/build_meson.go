@@ -168,14 +168,19 @@ func (m meson) generateCrossFile() (string, error) {
 	bytes.WriteString("\n[properties]\n")
 	bytes.WriteString("cross_file = 'true'\n")
 
-	// We assume that pkg-config's sysroot is installed dir and change all pc file's prefix as "".
-	bytes.WriteString(fmt.Sprintf("sys_root = '%s'\n", m.PortConfig.InstalledDir))
-	bytes.WriteString(fmt.Sprintf("pkg_config_path = '%s'\n", os.Getenv("PKG_CONFIG_PATH")))
-	bytes.WriteString(fmt.Sprintf("pkg_config_libdir = '%s'\n", os.Getenv("PKG_CONFIG_LIBDIR")))
-	bytes.WriteString(fmt.Sprintf("c_args = ['--sysroot=%s', '-I%s/include']\n",
-		m.PortConfig.CrossTools.RootFS, m.PortConfig.InstalledDir))
-	bytes.WriteString(fmt.Sprintf("c_link_args = ['--sysroot=%s', '-I%s/include']\n",
-		m.PortConfig.CrossTools.RootFS, m.PortConfig.InstalledDir))
+	if m.PortConfig.CrossTools.RootFS != "" {
+		bytes.WriteString(fmt.Sprintf("sys_root = '%s'\n", m.PortConfig.CrossTools.RootFS))
+	}
+
+	pkgConfigPath := os.Getenv("PKG_CONFIG_PATH")
+	if pkgConfigPath != "" {
+		bytes.WriteString(fmt.Sprintf("pkg_config_path = '%s'\n", pkgConfigPath))
+	}
+
+	pkgConfigLibdir := os.Getenv("PKG_CONFIG_LIBDIR")
+	if pkgConfigLibdir != "" {
+		bytes.WriteString(fmt.Sprintf("pkg_config_libdir = '%s'\n", pkgConfigLibdir))
+	}
 
 	crossFilePath := filepath.Join(m.PortConfig.BuildDir, "cross_file.init")
 	if err := os.WriteFile(crossFilePath, bytes.Bytes(), os.ModePerm); err != nil {

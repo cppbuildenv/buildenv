@@ -74,7 +74,7 @@ func (p *Port) Init(ctx Context, portPath string) error {
 		buildFolder     string
 	)
 	if p.AsDev {
-		packageFolder = nameVersion
+		packageFolder = nameVersion + "^dev"
 		installedFolder = "dev"
 		buildFolder = filepath.Join(nameVersion, "dev")
 		p.stateFile = filepath.Join(Dirs.InstalledDir, "buildenv", "info", nameVersion+"^dev.list")
@@ -89,18 +89,19 @@ func (p *Port) Init(ctx Context, portPath string) error {
 	p.installedDir = filepath.Join(Dirs.InstalledDir, installedFolder)
 
 	portConfig := buildsystem.PortConfig{
-		CrossTools:    p.buildCrossTools(),
-		JobNum:        ctx.JobNum(),
-		LibName:       p.Name,
-		LibVersion:    p.Version,
-		SourceFolder:  p.SourceFolder,
-		PortsDir:      Dirs.PortsDir,
-		DownloadedDir: Dirs.DownloadedDir,
-		SourceDir:     filepath.Join(Dirs.WorkspaceDir, "buildtrees", nameVersion, "src"),
-		BuildDir:      filepath.Join(Dirs.WorkspaceDir, "buildtrees", buildFolder),
-		PackageDir:    p.packageDir,
-		InstalledDir:  p.installedDir,
-		TmpDir:        filepath.Join(Dirs.DownloadedDir, "tmp"),
+		CrossTools:      p.buildCrossTools(),
+		JobNum:          ctx.JobNum(),
+		LibName:         p.Name,
+		LibVersion:      p.Version,
+		SourceFolder:    p.SourceFolder,
+		PortsDir:        Dirs.PortsDir,
+		DownloadedDir:   Dirs.DownloadedDir,
+		SourceDir:       filepath.Join(Dirs.WorkspaceDir, "buildtrees", nameVersion, "src"),
+		BuildDir:        filepath.Join(Dirs.WorkspaceDir, "buildtrees", buildFolder),
+		PackageDir:      p.packageDir,
+		InstalledDir:    p.installedDir,
+		InstalledFolder: installedFolder,
+		TmpDir:          filepath.Join(Dirs.DownloadedDir, "tmp"),
 	}
 
 	if len(p.BuildConfigs) > 0 {
@@ -381,7 +382,7 @@ func (p Port) PackageFiles(packageDir, platformName, projectName, buildType stri
 		}
 
 		if p.AsDev {
-			files = append(files, filepath.Join("dev", relativePath))
+			files = append(files, relativePath)
 		} else {
 			platformProject := fmt.Sprintf("%s^%s^%s", platformName, projectName, buildType)
 			files = append(files, filepath.Join(platformProject, relativePath))

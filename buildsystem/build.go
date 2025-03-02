@@ -30,16 +30,17 @@ type PortConfig struct {
 	LibVersion string // like: `4.4`
 
 	// Internal fields
-	CrossTools    CrossTools // cross tools like CC, CXX, FC, RANLIB, AR, LD, NM, OBJDUMP, STRIP
-	PortsDir      string     // ${buildenv}/ports
-	DownloadedDir string     // ${buildenv}/downloads
-	SourceDir     string     // for example: ${buildenv}/buildtrees/ffmpeg/src
-	SourceFolder  string     // Some thirdpartys' source code is not in the root folder, so we need to specify it.
-	BuildDir      string     // for example: ${buildenv}/buildtrees/ffmpeg/x86_64-linux-20.04-Release
-	PackageDir    string     // for example: ${buildenv}/packages/ffmpeg-3.4.13-x86_64-linux-20.04-Release
-	InstalledDir  string     // for example: ${buildenv}/installed/x86_64-linux-20.04-Release
-	JobNum        int        // number of jobs to run in parallel
-	TmpDir        string     // for example: ${buildenv}/downloaded/tmp
+	CrossTools      CrossTools // cross tools like CC, CXX, FC, RANLIB, AR, LD, NM, OBJDUMP, STRIP
+	PortsDir        string     // ${buildenv}/ports
+	DownloadedDir   string     // ${buildenv}/downloads
+	SourceDir       string     // for example: ${buildenv}/buildtrees/ffmpeg/src
+	SourceFolder    string     // Some thirdpartys' source code is not in the root folder, so we need to specify it.
+	BuildDir        string     // for example: ${buildenv}/buildtrees/ffmpeg/x86_64-linux-20.04-Release
+	PackageDir      string     // for example: ${buildenv}/packages/ffmpeg-3.4.13-x86_64-linux-20.04-Release
+	InstalledDir    string     // for example: ${buildenv}/installed/x86_64-linux-20.04-Release
+	InstalledFolder string     // for example: aarch64-linux-gnu-gcc-9.2^project_01_standard^Release
+	JobNum          int        // number of jobs to run in parallel
+	TmpDir          string     // for example: ${buildenv}/downloaded/tmp
 }
 
 type BuildSystem interface {
@@ -55,7 +56,7 @@ type BuildSystem interface {
 	removeBuildEnvs() error
 	fillPlaceHolders()
 	setBuildType(buildType string)
-	ensureDependencyPaths()
+	consolidate()
 	getLogPath(suffix string) string
 }
 
@@ -190,7 +191,7 @@ func (b *BuildConfig) Install(url, version, buildType string) error {
 	defer b.buildSystem.removeBuildEnvs()
 
 	// Make sure depedencies libs can be found by current lib.
-	b.buildSystem.ensureDependencyPaths()
+	b.buildSystem.consolidate()
 
 	if err := b.buildSystem.Clone(url, version); err != nil {
 		return err
@@ -224,9 +225,13 @@ func (b *BuildConfig) Install(url, version, buildType string) error {
 		return err
 	}
 
-	// Some pkg-config file may have absolute path,
-	// so we need to replace them with relative path.
-	if err := fixupPkgConfig(b.PortConfig.PackageDir); err != nil {
+	// Change pc file's prefix as the installed directory.
+	workspaceDir, err := os.Getwd()
+	if err != nil {
+		panic(fmt.Sprintf("get workspace dir failed: %s", err.Error()))
+	}
+	prefix := strings.TrimPrefix(b.PortConfig.InstalledDir, workspaceDir)
+	if err := fixupPkgConfig(b.PortConfig.PackageDir, prefix); err != nil {
 		return fmt.Errorf("fixup pkg-config failed: %w", err)
 	}
 
@@ -245,7 +250,13 @@ func (b *BuildConfig) Install(url, version, buildType string) error {
 			return err
 		}
 	}
-	return nil
+
+	// Create a symblink in the sysroot that points to the installed directory,
+	// then the pc file would be found by other libraries.
+	src := filepath.Dir(b.PortConfig.InstalledDir)
+	dest := filepath.Join(b.PortConfig.CrossTools.RootFS, "installed")
+
+	return b.checkInstalledSymblink(src, dest)
 }
 
 func (b *BuildConfig) InitBuildSystem() error {
@@ -273,6 +284,56 @@ func (b *BuildConfig) InitBuildSystem() error {
 
 func (b BuildConfig) BuildSystem() BuildSystem {
 	return b.buildSystem
+}
+
+// checkInstalledSymblink We create a symblink in the sysroot that points to the installed directory,
+// then the pc file would be found by other libraries.
+func (b BuildConfig) checkInstalledSymblink(src, dest string) error {
+	// Convenient function to create a relative symblink.
+	createSymblink := func(src, dest string) error {
+		relPath, err := filepath.Rel(filepath.Dir(dest), src)
+		if err != nil {
+			return fmt.Errorf("failed to compute relative path: %w", err)
+		}
+		if err := os.Symlink(relPath, dest); err != nil {
+			return fmt.Errorf("failed to create symlink: %v", err)
+		}
+		return nil
+	}
+
+	// Check if the symblink exists.
+	info, err := os.Lstat(dest)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return createSymblink(src, dest)
+		}
+		return fmt.Errorf("failed to checking symlink: %v", err)
+	}
+
+	// Check the symblink target.
+	if info.Mode()&os.ModeSymlink != 0 {
+		// Read the target of the symlink.
+		realTarget, err := os.Readlink(dest)
+		if err != nil {
+			return fmt.Errorf("failed to read symlink target: %v", err)
+		}
+
+		// If symlink is broken or points to the wrong target, remove it and recreate.
+		if realTarget != src {
+			if err := os.Remove(dest); err != nil {
+				return fmt.Errorf("failed to remove broken symlink: %v", err)
+			}
+			return createSymblink(src, dest)
+		}
+
+		return nil
+	}
+
+	// Removeit if it's not a symlink.
+	if err = os.Remove(dest); err != nil {
+		return fmt.Errorf("failed to remove non-symlink: %v", err)
+	}
+	return createSymblink(src, dest)
 }
 
 func (b BuildConfig) checkSystemTools() error {
@@ -379,8 +440,12 @@ func (b BuildConfig) appendBuildEnvs() error {
 
 		switch key {
 		case "PKG_CONFIG_PATH", "PATH", "CPATH":
-			value = fmt.Sprintf("%s%s%s", value, string(os.PathListSeparator), os.Getenv(key))
-			os.Setenv(key, value)
+			current := os.Getenv(key)
+			if strings.TrimSpace(current) == "" {
+				os.Setenv(key, value)
+			} else {
+				os.Setenv(key, fmt.Sprintf("%s%s%s", value, string(os.PathListSeparator), current))
+			}
 
 		case "CFLAGS", "CXXFLAGS":
 			// buildenv can wrap CFLAGS and CXXFLAGS, so we need to remove them.
@@ -400,6 +465,10 @@ func (b BuildConfig) appendBuildEnvs() error {
 			os.Setenv(key, value)
 		}
 	}
+
+	// Make sure installed libaries can be found via pkg-config during compiling.
+	os.Setenv("PKG_CONFIG_SYSROOT_DIR", b.PortConfig.CrossTools.RootFS)
+	os.Setenv("PKG_CONFIG_PATH", fmt.Sprintf("%s/lib/pkgconfig", b.PortConfig.InstalledDir))
 
 	// Append "--sysroot=" for cross compile.
 	if !b.AsDev {
@@ -451,26 +520,32 @@ func (b BuildConfig) removeBuildEnvs() error {
 			}
 
 		case "PKG_CONFIG_PATH", "PATH", "CPATH":
-			parts := strings.Split(os.Getenv("PKG_CONFIG_PATH"), string(os.PathListSeparator))
-			// Remove the value from the slice.
-			for i, part := range parts {
-				if part == value {
-					parts = append(parts[:i], parts[i+1:]...)
-					break
+			if !b.AsDev {
+				parts := strings.Split(os.Getenv("PKG_CONFIG_PATH"), string(os.PathListSeparator))
+				// Remove the value from the slice.
+				for i, part := range parts {
+					if part == value {
+						parts = append(parts[:i], parts[i+1:]...)
+						break
+					}
 				}
-			}
 
-			// Reconstruct the PKG_CONFIG_PATH string.
-			if len(parts) == 0 {
-				os.Unsetenv("PKG_CONFIG_PATH")
-			} else {
-				os.Setenv("PKG_CONFIG_PATH", strings.Join(parts, string(os.PathListSeparator)))
+				// Reconstruct the PKG_CONFIG_PATH string.
+				if len(parts) == 0 {
+					os.Unsetenv("PKG_CONFIG_PATH")
+				} else {
+					os.Setenv("PKG_CONFIG_PATH", strings.Join(parts, string(os.PathListSeparator)))
+				}
 			}
 
 		default:
 			os.Unsetenv(key)
 		}
 	}
+
+	// Clear pkg-config related env vars.
+	os.Unsetenv("PKG_CONFIG_SYSROOT_DIR")
+	os.Unsetenv("PKG_CONFIG_PATH")
 
 	// Remove "--sysroot=" from CFLAGS and CXXFLAGS.
 	if !b.AsDev {
@@ -577,10 +652,10 @@ func (b BuildConfig) setBuildType(buildType string) {
 	}
 }
 
-// ensureDependencyPaths Sometimes libs not in sysroot cannot be found,
+// consolidate Sometimes libs not in sysroot cannot be found,
 // we need to set CFLAGS, CXXFLAGS, LDFLAGS to make sure these third-party
 // libaries that installed in installed dir can be found.
-func (b BuildConfig) ensureDependencyPaths() {
+func (b BuildConfig) consolidate() {
 	installedDir := b.PortConfig.InstalledDir
 	cflags := os.Getenv("CFLAGS")
 	cxxflags := os.Getenv("CXXFLAGS")
@@ -589,29 +664,27 @@ func (b BuildConfig) ensureDependencyPaths() {
 	if strings.TrimSpace(cflags) == "" {
 		os.Setenv("CFLAGS", fmt.Sprintf("-I%s/include", installedDir))
 	} else {
-		os.Setenv("CFLAGS", fmt.Sprintf("-I%s/include", installedDir)+" "+cflags)
+		part := fmt.Sprintf("-I%s/include", installedDir)
+		if !strings.Contains(cflags, part) {
+			os.Setenv("CFLAGS", fmt.Sprintf("-I%s/include", installedDir)+" "+cflags)
+		}
 	}
 	if strings.TrimSpace(cxxflags) == "" {
 		os.Setenv("CXXFLAGS", fmt.Sprintf("-I%s/include", installedDir))
 	} else {
-		os.Setenv("CXXFLAGS", fmt.Sprintf("-I%s/include", installedDir)+" "+cxxflags)
+		part := fmt.Sprintf("-I%s/include", installedDir)
+		if !strings.Contains(cxxflags, part) {
+			os.Setenv("CXXFLAGS", fmt.Sprintf("-I%s/include", installedDir)+" "+cxxflags)
+		}
 	}
 	if strings.TrimSpace(ldflags) == "" {
 		os.Setenv("LDFLAGS", fmt.Sprintf("-Wl,-rpath-link,%s/lib", installedDir))
 	} else {
-		os.Setenv("LDFLAGS", fmt.Sprintf("-Wl,-rpath-link,%s/lib", installedDir)+" "+ldflags)
+		part := fmt.Sprintf("-Wl,-rpath-link,%s/lib", installedDir)
+		if !strings.Contains(ldflags, part) {
+			os.Setenv("LDFLAGS", fmt.Sprintf("-Wl,-rpath-link,%s/lib", installedDir)+" "+ldflags)
+		}
 	}
-
-	// Append $PKG_CONFIG_PATH with pkgconfig path that in installed dir.
-	pkgConfigPath := os.Getenv("PKG_CONFIG_PATH")
-	if strings.TrimSpace(pkgConfigPath) == "" {
-		os.Setenv("PKG_CONFIG_PATH", installedDir+"/lib/pkgconfig")
-	} else {
-		os.Setenv("PKG_CONFIG_PATH", installedDir+"/lib/pkgconfig"+string(os.PathListSeparator)+pkgConfigPath)
-	}
-
-	// We assume that pkg-config's sysroot is installed dir and change all pc file's prefix as "".
-	os.Setenv("PKG_CONFIG_SYSROOT_DIR", installedDir)
 }
 
 func (b BuildConfig) replaceHolders(content string) string {

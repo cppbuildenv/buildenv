@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func fixupPkgConfig(packageDir string) error {
+func fixupPkgConfig(packageDir, prefix string) error {
 	pkgConfigShareDir := filepath.Join(packageDir, "share", "pkgconfig")
 	pkgConfigLibDir := filepath.Join(packageDir, "lib", "pkgconfig")
 	pkgConfigLib64Dir := filepath.Join(packageDir, "lib64", "pkgconfig")
@@ -50,14 +50,15 @@ func fixupPkgConfig(packageDir string) error {
 		for _, entity := range entities {
 			if strings.HasSuffix(entity.Name(), ".pc") {
 				pkgPath := filepath.Join(pkgConfigLibDir, entity.Name())
-				if err := doFixupPkgConfig(pkgPath); err != nil {
+				if err := doFixupPkgConfig(pkgPath, prefix); err != nil {
 					return err
 				}
 			}
 		}
 	}
 
-	// Fixup pkg-config files in `lib64` if exists.
+	// Fixup pkg-config files in `lib64` if exists,
+	// but we always try to install libraries into `lib` instead of `lib64`.
 	if fileio.PathExists(pkgConfigLib64Dir) {
 		entities, err := os.ReadDir(pkgConfigLib64Dir)
 		if err != nil {
@@ -66,7 +67,7 @@ func fixupPkgConfig(packageDir string) error {
 		for _, entity := range entities {
 			if strings.HasSuffix(entity.Name(), ".pc") {
 				pkgPath := filepath.Join(pkgConfigLib64Dir, entity.Name())
-				if err := doFixupPkgConfig(pkgPath); err != nil {
+				if err := doFixupPkgConfig(pkgPath, prefix); err != nil {
 					return err
 				}
 			}
@@ -76,7 +77,7 @@ func fixupPkgConfig(packageDir string) error {
 	return nil
 }
 
-func doFixupPkgConfig(pkgPath string) error {
+func doFixupPkgConfig(pkgPath, prefix string) error {
 	pkgFile, err := os.OpenFile(pkgPath, os.O_RDWR, os.ModePerm)
 	if err != nil {
 		return err
@@ -87,10 +88,18 @@ func doFixupPkgConfig(pkgPath string) error {
 	scanner := bufio.NewScanner(pkgFile)
 	for scanner.Scan() {
 		line := scanner.Text()
+
+		// Remove space before `=`
+		line = strings.ReplaceAll(line, "prefix =", "prefix=")
+		line = strings.ReplaceAll(line, "exec_prefix =", "exec_prefix=")
+		line = strings.ReplaceAll(line, "libdir =", "libdir=")
+		line = strings.ReplaceAll(line, "sharedlibdir =", "sharedlibdir=")
+		line = strings.ReplaceAll(line, "includedir =", "includedir=")
+
 		switch {
 		case strings.HasPrefix(line, "prefix="):
 			if line != "prefix=" {
-				buffer.WriteString("prefix=" + "\n")
+				buffer.WriteString("prefix=" + prefix + "\n")
 			} else {
 				buffer.WriteString(line + "\n")
 			}
