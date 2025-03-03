@@ -11,10 +11,10 @@ import (
 )
 
 type RootFS struct {
-	Url             string   `json:"url"`                    // Download url.
-	ArchiveName     string   `json:"archive_name,omitempty"` // Archive name can be changed to avoid conflict.
-	Path            string   `json:"path"`                   // Runtime path of tool, it's relative path  and would be converted to absolute path later.
-	PkgConfigLibdir []string `json:"pkg_config_libdir"`
+	Url           string   `json:"url"`                    // Download url.
+	ArchiveName   string   `json:"archive_name,omitempty"` // Archive name can be changed to avoid conflict.
+	Path          string   `json:"path"`                   // Runtime path of tool, it's relative path  and would be converted to absolute path later.
+	PkgConfigPath []string `json:"pkg_config_path"`
 
 	// Internal fields.
 	fullpath  string `json:"-"`
@@ -38,18 +38,18 @@ func (r *RootFS) Validate() error {
 	os.Setenv("SYSROOT", r.fullpath)
 
 	// Add pkg-config libdir in rootfs to environment.
-	var pkgConfigLibdirs []string
-	for _, libdir := range r.PkgConfigLibdir {
+	var pkgConfigPaths []string
+	for _, libdir := range r.PkgConfigPath {
 		libDirFullPath := filepath.Join(r.fullpath, libdir)
 		if !fileio.PathExists(libDirFullPath) {
 			continue
 		}
 
-		pkgConfigLibdirs = append(pkgConfigLibdirs, libDirFullPath)
+		pkgConfigPaths = append(pkgConfigPaths, libDirFullPath)
 	}
-	if len(pkgConfigLibdirs) > 0 {
-		pkgConfigLibdirPaths := strings.Join(pkgConfigLibdirs, string(os.PathListSeparator))
-		os.Setenv("PKG_CONFIG_LIBDIR", pkgConfigLibdirPaths)
+	if len(pkgConfigPaths) > 0 {
+		pkgConfigPaths := strings.Join(pkgConfigPaths, string(os.PathListSeparator))
+		os.Setenv("PKG_CONFIG_PATH", pkgConfigPaths)
 	}
 
 	return nil
@@ -117,14 +117,14 @@ func (r RootFS) generate(toolchain, environment *strings.Builder) error {
 
 	// Add pkg-config libdir in rootfs to environment.
 	var pkgConfigLibdirs []string
-	for _, libdir := range r.PkgConfigLibdir {
+	for _, libdir := range r.PkgConfigPath {
 		if fileio.PathExists(filepath.Join(r.fullpath, libdir)) {
 			pkgConfigLibdirs = append(pkgConfigLibdirs, filepath.Join(r.cmakepath, libdir))
 		}
 	}
 	if len(pkgConfigLibdirs) > 0 {
-		pkgConfigLibdirPaths := strings.Join(pkgConfigLibdirs, string(os.PathListSeparator))
-		toolchain.WriteString(fmt.Sprintf("set(ENV{PKG_CONFIG_LIBDIR} \"%s\")\n", pkgConfigLibdirPaths))
+		pkgConfigPaths := strings.Join(pkgConfigLibdirs, string(os.PathListSeparator))
+		toolchain.WriteString(fmt.Sprintf("set(ENV{PKG_CONFIG_PATH} \"%s\")\n", pkgConfigPaths))
 	}
 
 	// Write variables to environment

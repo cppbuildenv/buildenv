@@ -11,7 +11,7 @@ for example: `conf/platforms/x86_64-linux-20.04.json`:
     "rootfs": {
         "url": "http://192.168.0.1:8080/build_resource/ubuntu-base-20.04.5/ubuntu-base-20.04.5-base-amd64.tar.gz",
         "path": "ubuntu-base-20.04.5-base-amd64",
-        "pkg_config_libdir": [
+        "pkg_config_path": [
             "usr/lib/x86_64-linux-gnu/pkgconfig",
             "usr/share/pkgconfig",
             "usr/lib/pkgconfig"

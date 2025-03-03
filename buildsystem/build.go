@@ -469,10 +469,13 @@ func (b BuildConfig) appendBuildEnvs() error {
 	// Make sure installed libaries can be found via pkg-config during compiling.
 	if b.PortConfig.CrossTools.RootFS != "" {
 		os.Setenv("PKG_CONFIG_SYSROOT_DIR", b.PortConfig.CrossTools.RootFS)
-		os.Setenv("PKG_CONFIG_PATH", fmt.Sprintf("%s/installed/%s/lib/pkgconfig",
-			b.PortConfig.CrossTools.RootFS, b.PortConfig.InstalledFolder))
+		targetDir := fmt.Sprintf("%s/installed/%s/lib/pkgconfig", b.PortConfig.CrossTools.RootFS, b.PortConfig.InstalledFolder)
+		devDir := fmt.Sprintf("%s/installed/dev/lib/pkgconfig", b.PortConfig.CrossTools.RootFS)
+		os.Setenv("PKG_CONFIG_PATH", targetDir+string(os.PathListSeparator)+devDir)
 	} else {
-		os.Setenv("PKG_CONFIG_PATH", b.PortConfig.InstalledDir)
+		targetDir := fmt.Sprintf("%s/lib/pkgconfig", b.PortConfig.InstalledDir)
+		devDir := fmt.Sprintf("%s/lib/pkgconfig", filepath.Join(filepath.Dir(b.PortConfig.InstalledDir), "dev"))
+		os.Setenv("PKG_CONFIG_PATH", targetDir+string(os.PathListSeparator)+devDir)
 	}
 
 	// Append "--sysroot=" for cross compile.
