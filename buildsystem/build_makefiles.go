@@ -51,7 +51,7 @@ func (m *makefiles) Configure(buildType string) error {
 		parentDir := filepath.Dir(m.PortConfig.BuildDir)
 		fileName := filepath.Base(m.PortConfig.BuildDir) + "-autogen.log"
 		logPath := filepath.Join(parentDir, fileName)
-		title := fmt.Sprintf("[autogen %s]", m.PortConfig.LibName)
+		title := fmt.Sprintf("[autogen %s/%s]", m.PortConfig.LibName, m.PortConfig.LibVersion)
 		executor := cmd.NewExecutor(title, "./autogen.sh")
 		executor.SetLogPath(logPath)
 		executor.SetWorkDir(m.PortConfig.SourceDir)

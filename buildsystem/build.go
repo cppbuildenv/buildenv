@@ -469,13 +469,16 @@ func (b BuildConfig) appendBuildEnvs() error {
 
 		var pkgConfigs []string = []string{
 			fmt.Sprintf("%s/installed/%s/lib/pkgconfig", b.PortConfig.CrossTools.RootFS, b.PortConfig.InstalledFolder),
+			fmt.Sprintf("%s/installed/%s/share/pkgconfig", b.PortConfig.CrossTools.RootFS, b.PortConfig.InstalledFolder),
 			os.Getenv("PKG_CONFIG_PATH"),
 		}
 		os.Setenv("PKG_CONFIG_PATH", strings.Join(pkgConfigs, string(os.PathListSeparator)))
 	} else {
-		targetPkgConfig := fmt.Sprintf("%s/lib/pkgconfig", b.PortConfig.InstalledDir)
-		devPkgConfig := fmt.Sprintf("%s/dev/lib/pkgconfig", filepath.Dir(b.PortConfig.InstalledDir))
-		os.Setenv("PKG_CONFIG_PATH", targetPkgConfig+string(os.PathListSeparator)+devPkgConfig)
+		var pkgConfigs []string = []string{
+			fmt.Sprintf("%s/lib/pkgconfig", b.PortConfig.InstalledDir),
+			fmt.Sprintf("%s/share/pkgconfig", b.PortConfig.InstalledDir),
+		}
+		os.Setenv("PKG_CONFIG_PATH", strings.Join(pkgConfigs, string(os.PathListSeparator)))
 	}
 
 	// Append "--sysroot=" for cross compile.
