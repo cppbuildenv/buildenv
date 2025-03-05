@@ -31,6 +31,7 @@ type PortConfig struct {
 
 	// Internal fields
 	CrossTools      CrossTools // cross tools like CC, CXX, FC, RANLIB, AR, LD, NM, OBJDUMP, STRIP
+	WorkspaceDir    string     // It is the root directory of buildenv workspace.
 	PortsDir        string     // ${buildenv}/ports
 	DownloadedDir   string     // ${buildenv}/downloads
 	SourceDir       string     // for example: ${buildenv}/buildtrees/ffmpeg/src
@@ -226,11 +227,7 @@ func (b *BuildConfig) Install(url, version, buildType string) error {
 	}
 
 	// Change pc file's prefix as the installed directory.
-	workspaceDir, err := os.Getwd()
-	if err != nil {
-		panic(fmt.Sprintf("get workspace dir failed: %s", err.Error()))
-	}
-	prefix := strings.TrimPrefix(b.PortConfig.InstalledDir, workspaceDir)
+	prefix := strings.TrimPrefix(b.PortConfig.InstalledDir, b.PortConfig.WorkspaceDir)
 	if err := fixupPkgConfig(b.PortConfig.PackageDir, prefix); err != nil {
 		return fmt.Errorf("fixup pkg-config failed: %w", err)
 	}
@@ -469,13 +466,16 @@ func (b BuildConfig) appendBuildEnvs() error {
 	// Make sure installed libaries can be found via pkg-config during compiling.
 	if b.PortConfig.CrossTools.RootFS != "" {
 		os.Setenv("PKG_CONFIG_SYSROOT_DIR", b.PortConfig.CrossTools.RootFS)
-		targetDir := fmt.Sprintf("%s/installed/%s/lib/pkgconfig", b.PortConfig.CrossTools.RootFS, b.PortConfig.InstalledFolder)
-		devDir := fmt.Sprintf("%s/installed/dev/lib/pkgconfig", b.PortConfig.CrossTools.RootFS)
-		os.Setenv("PKG_CONFIG_PATH", targetDir+string(os.PathListSeparator)+devDir)
+
+		var pkgConfigs []string = []string{
+			fmt.Sprintf("%s/installed/%s/lib/pkgconfig", b.PortConfig.CrossTools.RootFS, b.PortConfig.InstalledFolder),
+			os.Getenv("PKG_CONFIG_PATH"),
+		}
+		os.Setenv("PKG_CONFIG_PATH", strings.Join(pkgConfigs, string(os.PathListSeparator)))
 	} else {
-		targetDir := fmt.Sprintf("%s/lib/pkgconfig", b.PortConfig.InstalledDir)
-		devDir := fmt.Sprintf("%s/lib/pkgconfig", filepath.Join(filepath.Dir(b.PortConfig.InstalledDir), "dev"))
-		os.Setenv("PKG_CONFIG_PATH", targetDir+string(os.PathListSeparator)+devDir)
+		targetPkgConfig := fmt.Sprintf("%s/lib/pkgconfig", b.PortConfig.InstalledDir)
+		devPkgConfig := fmt.Sprintf("%s/dev/lib/pkgconfig", filepath.Dir(b.PortConfig.InstalledDir))
+		os.Setenv("PKG_CONFIG_PATH", targetPkgConfig+string(os.PathListSeparator)+devPkgConfig)
 	}
 
 	// Append "--sysroot=" for cross compile.

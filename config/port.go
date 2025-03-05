@@ -94,6 +94,7 @@ func (p *Port) Init(ctx Context, portPath string) error {
 		LibName:         p.Name,
 		LibVersion:      p.Version,
 		SourceFolder:    p.SourceFolder,
+		WorkspaceDir:    Dirs.WorkspaceDir,
 		PortsDir:        Dirs.PortsDir,
 		DownloadedDir:   Dirs.DownloadedDir,
 		SourceDir:       filepath.Join(Dirs.WorkspaceDir, "buildtrees", nameVersion, "src"),

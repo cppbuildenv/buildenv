@@ -79,8 +79,8 @@ func (b b2) Build() error {
 
 	if !b.AsDev {
 		rootfs := b.PortConfig.CrossTools.RootFS
-		b.Options = append(b.Options, "cxxflags=--sysroot=%s", rootfs)
-		b.Options = append(b.Options, "linkflags=--sysroot=%s", rootfs)
+		b.Options = append(b.Options, "cxxflags=--sysroot=", rootfs)
+		b.Options = append(b.Options, "linkflags=--sysroot=", rootfs)
 	}
 
 	b.prepareBuildInstall()
