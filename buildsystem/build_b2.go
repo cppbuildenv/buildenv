@@ -3,6 +3,7 @@ package buildsystem
 import (
 	"bufio"
 	"buildenv/pkg/cmd"
+	"buildenv/pkg/fileio"
 	"bytes"
 	"fmt"
 	"os"
@@ -22,6 +23,16 @@ type b2 struct {
 func (b *b2) Configure(buildType string) error {
 	// Some libraries' configure or CMakeLists.txt may not in root folder.
 	b.PortConfig.SourceDir = filepath.Join(b.PortConfig.SourceDir, b.PortConfig.SourceFolder)
+
+	// Clean build cache.
+	if fileio.PathExists(filepath.Join(b.PortConfig.SourceDir, "b2")) {
+		title := fmt.Sprintf("[clean %s@%s]", b.PortConfig.LibName, b.PortConfig.LibVersion)
+		executor := cmd.NewExecutor(title, "./b2 clean")
+		executor.SetWorkDir(b.PortConfig.SourceDir)
+		if err := executor.Execute(); err != nil {
+			return err
+		}
+	}
 
 	b.setBuildType(buildType)
 
@@ -77,10 +88,9 @@ func (b b2) Build() error {
 	b.Options = append(b.Options, fmt.Sprintf("--build-dir=%s", b.PortConfig.BuildDir))
 	b.Options = append(b.Options, "toolset=gcc")
 
-	if !b.AsDev {
-		rootfs := b.PortConfig.CrossTools.RootFS
-		b.Options = append(b.Options, "cxxflags=--sysroot=", rootfs)
-		b.Options = append(b.Options, "linkflags=--sysroot=", rootfs)
+	if !b.AsDev && b.PortConfig.CrossTools.RootFS != "" {
+		b.Options = append(b.Options, "cxxflags=--sysroot=", b.PortConfig.CrossTools.RootFS)
+		b.Options = append(b.Options, "linkflags=--sysroot=", b.PortConfig.CrossTools.RootFS)
 	}
 
 	b.prepareBuildInstall()
