@@ -244,7 +244,7 @@ func doRemovePort(ctx config.Context, port config.Port) error {
 func removePackage(ctx config.Context, port config.Port) error {
 	var folderName string
 	if port.AsDev {
-		folderName = port.NameVersion()
+		folderName = port.NameVersion() + "^dev"
 	} else {
 		folderName = fmt.Sprintf("%s^%s^%s^%s",
 			port.NameVersion(),

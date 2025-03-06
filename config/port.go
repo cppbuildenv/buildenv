@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -346,7 +347,25 @@ func (p Port) MatchPattern(pattern string) bool {
 		return true
 	}
 
+	// For dev mode, we change platformName to x86_64-windows-dev, x86_64-macos-dev, x86_64-linux-dev,
+	// then we can match the most like pattern.
 	platformName := p.ctx.Platform().Name
+	if p.AsDev {
+		switch runtime.GOOS {
+		case "windows":
+			platformName = "x86_64-windows-dev"
+
+		case "darwin":
+			platformName = "x86_64-macos-dev"
+
+		case "linux":
+			platformName = "x86_64-linux-dev"
+
+		default:
+			return false
+		}
+	}
+
 	if pattern[0] == '*' && pattern[len(pattern)-1] == '*' {
 		return strings.Contains(platformName, pattern[1:len(pattern)-1])
 	}

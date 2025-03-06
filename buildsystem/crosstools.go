@@ -67,6 +67,7 @@ func (c CrossTools) SetEnvs() {
 
 func (CrossTools) ClearEnvs() {
 	os.Unsetenv("TOOLCHAIN_PREFIX")
+	os.Unsetenv("SYSROOT")
 	os.Unsetenv("HOST")
 	os.Unsetenv("CC")
 	os.Unsetenv("CXX")
@@ -77,4 +78,7 @@ func (CrossTools) ClearEnvs() {
 	os.Unsetenv("NM")
 	os.Unsetenv("OBJDUMP")
 	os.Unsetenv("STRIP")
+
+	os.Unsetenv("PKG_CONFIG_PATH")
+	os.Unsetenv("PKG_CONFIG_SYSROOT_DIR")
 }
