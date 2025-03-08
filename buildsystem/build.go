@@ -3,6 +3,7 @@ package buildsystem
 import (
 	"buildenv/generator"
 	"buildenv/pkg/cmd"
+	"buildenv/pkg/env"
 	"buildenv/pkg/fileio"
 	"fmt"
 	"os"
@@ -57,7 +58,6 @@ type BuildSystem interface {
 	removeBuildEnvs() error
 	fillPlaceHolders()
 	setBuildType(buildType string)
-	consolidate()
 	getLogPath(suffix string) string
 }
 
@@ -81,9 +81,10 @@ type BuildConfig struct {
 	CMakeConfig    string   `json:"cmake_config"`
 
 	// Internal fields
-	buildSystem BuildSystem `json:"-"`
-	PortConfig  PortConfig  `json:"-"`
-	AsDev       bool        `json:"-"`
+	AsDev       bool            `json:"-"`
+	PortConfig  PortConfig      `json:"-"`
+	buildSystem BuildSystem     `json:"-"`
+	environment env.Environment `json:"-"`
 }
 
 func (b BuildConfig) Validate() error {
@@ -171,9 +172,9 @@ func (b *BuildConfig) Install(url, version, buildType string) error {
 	}
 
 	// Clean repo if possible.
-	if err := cmd.CleanRepo(b.PortConfig.SourceDir); err != nil {
-		return fmt.Errorf("clean repo failed: %s", err)
-	}
+	// if err := cmd.CleanRepo(b.PortConfig.SourceDir); err != nil {
+	// 	return fmt.Errorf("clean repo failed: %s", err)
+	// }
 
 	// Set cross tool in environment for cross compiling.
 	if b.AsDev {
@@ -190,9 +191,6 @@ func (b *BuildConfig) Install(url, version, buildType string) error {
 		return err
 	}
 	defer b.buildSystem.removeBuildEnvs()
-
-	// Make sure depedencies libs can be found by current lib.
-	b.buildSystem.consolidate()
 
 	if err := b.buildSystem.Clone(url, version); err != nil {
 		return err
@@ -227,7 +225,10 @@ func (b *BuildConfig) Install(url, version, buildType string) error {
 	}
 
 	// Change pc file's prefix as the installed directory.
-	prefix := strings.TrimPrefix(b.PortConfig.InstalledDir, b.PortConfig.WorkspaceDir)
+	var prefix string
+	if !b.AsDev {
+		prefix = strings.TrimPrefix(b.PortConfig.InstalledDir, b.PortConfig.WorkspaceDir)
+	}
 	if err := fixupPkgConfig(b.PortConfig.PackageDir, prefix); err != nil {
 		return fmt.Errorf("fixup pkg-config failed: %w", err)
 	}
@@ -422,7 +423,9 @@ func (b BuildConfig) fixBuild() error {
 	return nil
 }
 
-func (b BuildConfig) appendBuildEnvs() error {
+func (b *BuildConfig) appendBuildEnvs() error {
+	b.environment.Backup()
+
 	for _, item := range b.EnvVars {
 		item = strings.TrimSpace(item)
 
@@ -436,20 +439,18 @@ func (b BuildConfig) appendBuildEnvs() error {
 		value = b.replaceHolders(value)
 
 		switch key {
-		case "PKG_CONFIG_PATH", "PATH", "CPATH":
+		case "CPATH":
 			current := os.Getenv(key)
 			if strings.TrimSpace(current) == "" {
 				os.Setenv(key, value)
 			} else {
-				os.Setenv(key, fmt.Sprintf("%s%s%s", value, string(os.PathListSeparator), current))
+				os.Setenv(key, value+string(os.PathListSeparator)+current)
 			}
 
 		case "CFLAGS", "CXXFLAGS":
 			// buildenv can wrap CFLAGS and CXXFLAGS, so we need to remove them.
 			value = strings.ReplaceAll(value, "${CFLAGS}", "")
 			value = strings.ReplaceAll(value, "${CXXFLAGS}", "")
-			value = strings.ReplaceAll(value, "${cflags}", "")
-			value = strings.ReplaceAll(value, "${cxxflags}", "")
 
 			current := os.Getenv(key)
 			if strings.TrimSpace(current) == "" {
@@ -463,40 +464,66 @@ func (b BuildConfig) appendBuildEnvs() error {
 		}
 	}
 
-	if !b.AsDev {
-		// Make sure installed libaries can be found via pkg-config during compiling.
+	// Make sure installed libaries can be found via pkg-config during compiling.
+	if b.AsDev {
+		var pkgConfigs = []string{
+			fmt.Sprintf("%s/lib/pkgconfig", b.PortConfig.InstalledDir),
+			fmt.Sprintf("%s/share/pkgconfig", b.PortConfig.InstalledDir),
+		}
+		os.Setenv("PKG_CONFIG_PATH", strings.Join(pkgConfigs, string(os.PathListSeparator)))
+		os.Setenv("PKG_CONFIG_SYSROOT_DIR", b.PortConfig.InstalledDir)
+	} else {
 		if b.PortConfig.CrossTools.RootFS != "" {
-			os.Setenv("PKG_CONFIG_SYSROOT_DIR", b.PortConfig.CrossTools.RootFS)
-
-			var pkgConfigs []string = []string{
+			var pkgConfigs = []string{
 				fmt.Sprintf("%s/installed/%s/lib/pkgconfig", b.PortConfig.CrossTools.RootFS, b.PortConfig.InstalledFolder),
 				fmt.Sprintf("%s/installed/%s/share/pkgconfig", b.PortConfig.CrossTools.RootFS, b.PortConfig.InstalledFolder),
 				os.Getenv("PKG_CONFIG_PATH"),
 			}
 			os.Setenv("PKG_CONFIG_PATH", strings.Join(pkgConfigs, string(os.PathListSeparator)))
+			os.Setenv("PKG_CONFIG_SYSROOT_DIR", b.PortConfig.CrossTools.RootFS)
 		} else {
-			var pkgConfigs []string = []string{
+			var pkgConfigs = []string{
 				fmt.Sprintf("%s/lib/pkgconfig", b.PortConfig.InstalledDir),
 				fmt.Sprintf("%s/share/pkgconfig", b.PortConfig.InstalledDir),
 			}
 			os.Setenv("PKG_CONFIG_PATH", strings.Join(pkgConfigs, string(os.PathListSeparator)))
+			os.Setenv("PKG_CONFIG_SYSROOT_DIR", b.PortConfig.InstalledDir)
 		}
 
 		// Append "--sysroot=" for cross compile.
-		if os.Getenv("CFLAGS") != "" {
-			os.Setenv("CFLAGS", fmt.Sprintf("--sysroot=%s -I%s/include %s",
-				b.PortConfig.CrossTools.RootFS, b.PortConfig.InstalledDir, os.Getenv("CFLAGS")))
+		cflags := os.Getenv("CFLAGS")
+		cxxflags := os.Getenv("CXXFLAGS")
+		installedHeaderDir := fmt.Sprintf("%s/installed/%s/include", b.PortConfig.CrossTools.RootFS, b.PortConfig.InstalledFolder)
+		if strings.TrimSpace(cflags) == "" {
+			os.Setenv("CFLAGS", fmt.Sprintf("--sysroot=%s", b.PortConfig.CrossTools.RootFS))
 		} else {
-			os.Setenv("CFLAGS", fmt.Sprintf("--sysroot=%s -Wl,-rpath-link=%s/lib",
-				b.PortConfig.CrossTools.RootFS, b.PortConfig.InstalledDir))
+			os.Setenv("CFLAGS", fmt.Sprintf("--sysroot=%s -I%s %s",
+				b.PortConfig.CrossTools.RootFS, installedHeaderDir, cflags))
+		}
+		if strings.TrimSpace(cxxflags) == "" {
+			os.Setenv("CXXFLAGS", fmt.Sprintf("--sysroot=%s", b.PortConfig.CrossTools.RootFS))
+		} else {
+			os.Setenv("CXXFLAGS", fmt.Sprintf("--sysroot=%s -I%s %s",
+				b.PortConfig.CrossTools.RootFS, installedHeaderDir, cxxflags))
 		}
 
-		if os.Getenv("CXXFLAGS") != "" {
-			os.Setenv("CXXFLAGS", fmt.Sprintf("--sysroot=%s -I%s/include %s",
-				b.PortConfig.CrossTools.RootFS, b.PortConfig.InstalledDir, os.Getenv("CXXFLAGS")))
+		// Set rpath-link.
+		installedLibDir := fmt.Sprintf("%s/installed/%s/lib", b.PortConfig.CrossTools.RootFS, b.PortConfig.InstalledFolder)
+		ldflags := os.Getenv("LDFLAGS")
+		if strings.TrimSpace(ldflags) == "" {
+			os.Setenv("LDFLAGS", fmt.Sprintf("-Wl,-rpath-link,%s", installedLibDir))
 		} else {
-			os.Setenv("CXXFLAGS", fmt.Sprintf("--sysroot=%s -Wl,-rpath-link=%s/lib",
-				b.PortConfig.CrossTools.RootFS, b.PortConfig.InstalledDir))
+			var parts []string
+			for _, part := range strings.Split(ldflags, " ") {
+				if strings.Contains(part, "-Wl,-rpath-link,") {
+					rpathLink := strings.ReplaceAll(ldflags, "-Wl,-rpath-link,", "")
+					rpathLink = installedLibDir + string(os.PathListSeparator) + rpathLink
+					parts = append(parts, fmt.Sprintf("-Wl,-rpath-link,%s", rpathLink))
+				} else {
+					parts = append(parts, part)
+				}
+			}
+			os.Setenv("LDFLAGS", strings.Join(parts, " "))
 		}
 	}
 
@@ -504,75 +531,7 @@ func (b BuildConfig) appendBuildEnvs() error {
 }
 
 func (b BuildConfig) removeBuildEnvs() error {
-	for _, item := range b.EnvVars {
-		item = strings.TrimSpace(item)
-		index := strings.Index(item, "=")
-		if index == -1 {
-			return fmt.Errorf("invalid env var: %s", item)
-		}
-
-		key := strings.TrimSpace(item[:index])
-		value := strings.TrimSpace(item[index+1:])
-
-		switch key {
-		case "CFLAGS", "CXXFLAGS":
-			// buildenv can wrap CFLAGS and CXXFLAGS, so we need to remove them.
-			value = strings.ReplaceAll(value, "${CFLAGS}", "")
-			value = strings.ReplaceAll(value, "${CXXFLAGS}", "")
-			value = strings.ReplaceAll(value, "${cflags}", "")
-			value = strings.ReplaceAll(value, "${cxxflags}", "")
-
-			flagsValue := strings.ReplaceAll(os.Getenv(key), value, "")
-			flagsValue = strings.ReplaceAll(flagsValue, "  ", " ")
-			if strings.TrimSpace(flagsValue) == "" {
-				os.Unsetenv(key)
-			} else {
-				os.Setenv(key, strings.TrimSpace(flagsValue))
-			}
-
-		case "PKG_CONFIG_PATH", "PATH", "CPATH":
-			if !b.AsDev {
-				parts := strings.Split(os.Getenv("PKG_CONFIG_PATH"), string(os.PathListSeparator))
-				// Remove the value from the slice.
-				for i, part := range parts {
-					if part == value {
-						parts = append(parts[:i], parts[i+1:]...)
-						break
-					}
-				}
-
-				// Reconstruct the PKG_CONFIG_PATH string.
-				if len(parts) == 0 {
-					os.Unsetenv("PKG_CONFIG_PATH")
-				} else {
-					os.Setenv("PKG_CONFIG_PATH", strings.Join(parts, string(os.PathListSeparator)))
-				}
-			}
-
-		default:
-			os.Unsetenv(key)
-		}
-	}
-
-	// Clear pkg-config related env vars.
-	os.Unsetenv("PKG_CONFIG_SYSROOT_DIR")
-	os.Unsetenv("PKG_CONFIG_PATH")
-
-	// Remove "--sysroot=" from CFLAGS and CXXFLAGS.
-	if !b.AsDev {
-		cflags := strings.Split(os.Getenv("CFLAGS"), " ")
-		cflags = slices.DeleteFunc(cflags, func(element string) bool {
-			return strings.Contains(element, "--sysroot=")
-		})
-		os.Setenv("CFLAGS", strings.Join(cflags, " "))
-
-		cxxflags := strings.Split(os.Getenv("CXXFLAGS"), " ")
-		cxxflags = slices.DeleteFunc(cxxflags, func(element string) bool {
-			return strings.Contains(element, "--sysroot=")
-		})
-		os.Setenv("CXXFLAGS", strings.Join(cxxflags, " "))
-	}
-
+	b.environment.Rollback()
 	return nil
 }
 
@@ -660,41 +619,6 @@ func (b BuildConfig) setBuildType(buildType string) {
 		cxxflags = append(cxxflags, flags)
 		os.Setenv("CFLAGS", strings.Join(cflags, " "))
 		os.Setenv("CXXFLAGS", strings.Join(cxxflags, " "))
-	}
-}
-
-// consolidate Sometimes libs not in sysroot cannot be found,
-// we need to set CFLAGS, CXXFLAGS, LDFLAGS to make sure these third-party
-// libaries that installed in installed dir can be found.
-func (b BuildConfig) consolidate() {
-	installedDir := b.PortConfig.InstalledDir
-	cflags := os.Getenv("CFLAGS")
-	cxxflags := os.Getenv("CXXFLAGS")
-	ldflags := os.Getenv("LDFLAGS")
-
-	if strings.TrimSpace(cflags) == "" {
-		os.Setenv("CFLAGS", fmt.Sprintf("-I%s/include", installedDir))
-	} else {
-		part := fmt.Sprintf("-I%s/include", installedDir)
-		if !strings.Contains(cflags, part) {
-			os.Setenv("CFLAGS", fmt.Sprintf("-I%s/include", installedDir)+" "+cflags)
-		}
-	}
-	if strings.TrimSpace(cxxflags) == "" {
-		os.Setenv("CXXFLAGS", fmt.Sprintf("-I%s/include", installedDir))
-	} else {
-		part := fmt.Sprintf("-I%s/include", installedDir)
-		if !strings.Contains(cxxflags, part) {
-			os.Setenv("CXXFLAGS", fmt.Sprintf("-I%s/include", installedDir)+" "+cxxflags)
-		}
-	}
-	if strings.TrimSpace(ldflags) == "" {
-		os.Setenv("LDFLAGS", fmt.Sprintf("-Wl,-rpath-link,%s/lib", installedDir))
-	} else {
-		part := fmt.Sprintf("-Wl,-rpath-link,%s/lib", installedDir)
-		if !strings.Contains(ldflags, part) {
-			os.Setenv("LDFLAGS", fmt.Sprintf("-Wl,-rpath-link,%s/lib", installedDir)+" "+ldflags)
-		}
 	}
 }
 

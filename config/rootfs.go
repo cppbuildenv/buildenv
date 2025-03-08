@@ -68,9 +68,9 @@ func (r *RootFS) Validate() error {
 		}
 
 		if strings.TrimSpace(ldflags) == "" {
-			os.Setenv("LDFLAGS", fmt.Sprintf("-L%s", fullPath))
+			os.Setenv("LDFLAGS", fmt.Sprintf("-Wl,-rpath-link,%s", fullPath))
 		} else {
-			os.Setenv("LDFLAGS", fmt.Sprintf("-L%s %s", fullPath, ldflags))
+			os.Setenv("LDFLAGS", fmt.Sprintf("-Wl,-rpath-link,%s %s", fullPath, ldflags))
 		}
 	}
 
