@@ -14,6 +14,8 @@ type RootFS struct {
 	Url           string   `json:"url"`                    // Download url.
 	ArchiveName   string   `json:"archive_name,omitempty"` // Archive name can be changed to avoid conflict.
 	Path          string   `json:"path"`                   // Runtime path of tool, it's relative path  and would be converted to absolute path later.
+	HeaderDirs    []string `json:"header_dirs"`
+	LibDirs       []string `json:"lib_dirs"`
 	PkgConfigPath []string `json:"pkg_config_path"`
 
 	// Internal fields.
@@ -34,8 +36,43 @@ func (r *RootFS) Validate() error {
 
 	r.fullpath = filepath.Join(Dirs.ExtractedToolsDir, r.Path)
 	r.cmakepath = fmt.Sprintf("${BUILDENV_ROOT_DIR}/downloads/tools/%s", r.Path)
-
 	os.Setenv("SYSROOT", r.fullpath)
+
+	// Add header dirs into search path.
+	cflags := os.Getenv("CFLAGS")
+	cxxflags := os.Getenv("CXXFLAGS")
+	for _, headerDir := range r.HeaderDirs {
+		fullPath := filepath.Join(r.fullpath, headerDir)
+		if !fileio.PathExists(fullPath) {
+			continue
+		}
+
+		if strings.TrimSpace(cflags) == "" {
+			os.Setenv("CFLAGS", fmt.Sprintf("-I%s", fullPath))
+		} else {
+			os.Setenv("CFLAGS", fmt.Sprintf("-I%s %s", fullPath, cflags))
+		}
+		if strings.TrimSpace(cxxflags) == "" {
+			os.Setenv("CXXFLAGS", fmt.Sprintf("-I%s", fullPath))
+		} else {
+			os.Setenv("CXXFLAGS", fmt.Sprintf("-I%s %s", fullPath, cflags))
+		}
+	}
+
+	// Add lib dirs into search path.
+	ldflags := os.Getenv("LDFLAGS")
+	for _, libdir := range r.LibDirs {
+		fullPath := filepath.Join(r.fullpath, libdir)
+		if !fileio.PathExists(fullPath) {
+			continue
+		}
+
+		if strings.TrimSpace(ldflags) == "" {
+			os.Setenv("LDFLAGS", fmt.Sprintf("-L%s", fullPath))
+		} else {
+			os.Setenv("LDFLAGS", fmt.Sprintf("-L%s %s", fullPath, ldflags))
+		}
+	}
 
 	// Add pkg-config libdir in rootfs to environment.
 	var pkgConfigPaths []string
