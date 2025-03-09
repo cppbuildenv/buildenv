@@ -11,16 +11,32 @@ import (
 )
 
 type RootFS struct {
-	Url           string   `json:"url"`                    // Download url.
-	ArchiveName   string   `json:"archive_name,omitempty"` // Archive name can be changed to avoid conflict.
-	Path          string   `json:"path"`                   // Runtime path of tool, it's relative path  and would be converted to absolute path later.
-	HeaderDirs    []string `json:"header_dirs"`
-	LibDirs       []string `json:"lib_dirs"`
-	PkgConfigPath []string `json:"pkg_config_path"`
+	Url             string   `json:"url"`                    // Download url.
+	ArchiveName     string   `json:"archive_name,omitempty"` // Archive name can be changed to avoid conflict.
+	Path            string   `json:"path"`                   // Runtime path of tool, it's relative path  and would be converted to absolute path later.
+	ExtraHeaderDirs []string `json:"extra_header_dirs"`
+	ExtraLibDirs    []string `json:"extra_lib_dirs"`
+	PkgConfigPath   []string `json:"pkg_config_path"`
 
 	// Internal fields.
 	fullpath  string `json:"-"`
 	cmakepath string `json:"-"`
+}
+
+func (r RootFS) extraHeaderDirsString(rootfs string) string {
+	var result []string
+	for _, path := range r.ExtraHeaderDirs {
+		result = append(result, "-I"+filepath.Join(rootfs, path))
+	}
+	return strings.Join(result, " ")
+}
+
+func (r RootFS) extraLibDirsString(rootfs string) string {
+	var result []string
+	for _, path := range r.ExtraLibDirs {
+		result = append(result, filepath.Join(rootfs, path))
+	}
+	return strings.Join(result, string(os.PathListSeparator))
 }
 
 func (r *RootFS) Validate() error {
@@ -38,41 +54,19 @@ func (r *RootFS) Validate() error {
 	r.cmakepath = fmt.Sprintf("${BUILDENV_ROOT_DIR}/downloads/tools/%s", r.Path)
 	os.Setenv("SYSROOT", r.fullpath)
 
-	// Add header dirs into search path.
-	cflags := os.Getenv("CFLAGS")
-	cxxflags := os.Getenv("CXXFLAGS")
-	for _, headerDir := range r.HeaderDirs {
-		fullPath := filepath.Join(r.fullpath, headerDir)
-		if !fileio.PathExists(fullPath) {
-			continue
-		}
-
-		if strings.TrimSpace(cflags) == "" {
-			os.Setenv("CFLAGS", fmt.Sprintf("-I%s", fullPath))
-		} else {
-			os.Setenv("CFLAGS", fmt.Sprintf("-I%s %s", fullPath, cflags))
-		}
-		if strings.TrimSpace(cxxflags) == "" {
-			os.Setenv("CXXFLAGS", fmt.Sprintf("-I%s", fullPath))
-		} else {
-			os.Setenv("CXXFLAGS", fmt.Sprintf("-I%s %s", fullPath, cflags))
-		}
+	// Add extra header dirs into search path.
+	joinedDirs := r.extraHeaderDirsString(r.fullpath)
+	if joinedDirs == "" {
+		env.AppendEnv("CFLAGS", fmt.Sprintf("--sysroot=%s", r.fullpath))
+		env.AppendEnv("CXXFLAGS", fmt.Sprintf("--sysroot=%s", r.fullpath))
+	} else {
+		env.AppendEnv("CFLAGS", fmt.Sprintf("--sysroot=%s %s", r.fullpath, joinedDirs))
+		env.AppendEnv("CXXFLAGS", fmt.Sprintf("--sysroot=%s %s", r.fullpath, joinedDirs))
 	}
 
-	// Add lib dirs into search path.
-	ldflags := os.Getenv("LDFLAGS")
-	for _, libdir := range r.LibDirs {
-		fullPath := filepath.Join(r.fullpath, libdir)
-		if !fileio.PathExists(fullPath) {
-			continue
-		}
-
-		if strings.TrimSpace(ldflags) == "" {
-			os.Setenv("LDFLAGS", fmt.Sprintf("-Wl,-rpath-link,%s", fullPath))
-		} else {
-			os.Setenv("LDFLAGS", fmt.Sprintf("-Wl,-rpath-link,%s %s", fullPath, ldflags))
-		}
-	}
+	// Add extra lib dirs into search path.
+	env.AppendEnv("LDFLAGS", fmt.Sprintf("--sysroot=%s", r.fullpath))
+	env.AppendRPathLink(r.extraLibDirsString(r.fullpath))
 
 	// Add pkg-config libdir in rootfs to environment.
 	var pkgConfigPaths []string

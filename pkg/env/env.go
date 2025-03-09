@@ -7,6 +7,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 )
 
@@ -92,4 +93,49 @@ func homeDir() string {
 func Join(paths ...string) string {
 	separator := string(string(os.PathListSeparator))
 	return strings.Join(paths, separator)
+}
+
+// AppendEnv Not like os.AppendEnv(), it will try to append the value to the original value.
+func AppendEnv(key, value string) {
+	original := os.Getenv(key)
+	if strings.TrimSpace(original) == "" {
+		os.Setenv(key, value)
+	} else {
+		os.Setenv(key, fmt.Sprintf("%s %s", value, original))
+	}
+}
+
+// AppendRPathLink appends the given directory to the value of `-Wl,-rpath-link` in LDFLAGS environment variable.
+func AppendRPathLink(dir string) {
+	ldflags := os.Getenv("LDFLAGS")
+	var rpathAdded bool
+
+	// Split LDFLAGS into parts.
+	parts := strings.Split(ldflags, " ")
+
+	// Iterate through parts to find and modify `-Wl,-rpath-link`.
+	for index, part := range parts {
+		if strings.HasPrefix(part, "-Wl,-rpath-link,") {
+			// Extract existing paths
+			paths := strings.TrimPrefix(part, "-Wl,-rpath-link,")
+			pathList := strings.Split(paths, string(os.PathListSeparator))
+
+			// Check if dir is already in the list,If dir is not in the list, add it.
+			if !slices.Contains(pathList, dir) {
+				pathList = append([]string{dir}, pathList...)
+				parts[index] = "-Wl,-rpath-link," + strings.Join(pathList, string(os.PathListSeparator))
+			}
+
+			rpathAdded = true
+			break
+		}
+	}
+
+	// If no -Wl,-rpath-link was found, add a new one.
+	if !rpathAdded {
+		parts = append(parts, "-Wl,-rpath-link,"+dir)
+	}
+
+	// Set the modified LDFLAGS back to the environment.
+	os.Setenv("LDFLAGS", strings.Join(parts, " "))
 }

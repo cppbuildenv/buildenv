@@ -491,40 +491,17 @@ func (b *BuildConfig) appendBuildEnvs() error {
 		}
 
 		// Append "--sysroot=" for cross compile.
-		cflags := os.Getenv("CFLAGS")
-		cxxflags := os.Getenv("CXXFLAGS")
 		installedHeaderDir := fmt.Sprintf("%s/installed/%s/include", b.PortConfig.CrossTools.RootFS, b.PortConfig.InstalledFolder)
-		if strings.TrimSpace(cflags) == "" {
-			os.Setenv("CFLAGS", fmt.Sprintf("--sysroot=%s", b.PortConfig.CrossTools.RootFS))
-		} else {
-			os.Setenv("CFLAGS", fmt.Sprintf("--sysroot=%s -I%s %s",
-				b.PortConfig.CrossTools.RootFS, installedHeaderDir, cflags))
-		}
-		if strings.TrimSpace(cxxflags) == "" {
-			os.Setenv("CXXFLAGS", fmt.Sprintf("--sysroot=%s", b.PortConfig.CrossTools.RootFS))
-		} else {
-			os.Setenv("CXXFLAGS", fmt.Sprintf("--sysroot=%s -I%s %s",
-				b.PortConfig.CrossTools.RootFS, installedHeaderDir, cxxflags))
-		}
+		env.AppendEnv("CFLAGS", fmt.Sprintf("-I%s", installedHeaderDir))
+		env.AppendEnv("CXXFLAGS", fmt.Sprintf("-I%s", installedHeaderDir))
 
 		// Set rpath-link.
 		installedLibDir := fmt.Sprintf("%s/installed/%s/lib", b.PortConfig.CrossTools.RootFS, b.PortConfig.InstalledFolder)
-		ldflags := os.Getenv("LDFLAGS")
-		if strings.TrimSpace(ldflags) == "" {
-			os.Setenv("LDFLAGS", fmt.Sprintf("-Wl,-rpath-link,%s", installedLibDir))
-		} else {
-			var parts []string
-			for _, part := range strings.Split(ldflags, " ") {
-				if strings.Contains(part, "-Wl,-rpath-link,") {
-					rpathLink := strings.ReplaceAll(ldflags, "-Wl,-rpath-link,", "")
-					rpathLink = installedLibDir + string(os.PathListSeparator) + rpathLink
-					parts = append(parts, fmt.Sprintf("-Wl,-rpath-link,%s", rpathLink))
-				} else {
-					parts = append(parts, part)
-				}
-			}
-			os.Setenv("LDFLAGS", strings.Join(parts, " "))
+		relInstalledDir, err := filepath.Rel(b.PortConfig.CrossTools.RootFS, installedLibDir)
+		if err != nil {
+			return fmt.Errorf("cannot computer relative path of installed dir: %w", err)
 		}
+		env.AppendRPathLink(relInstalledDir)
 	}
 
 	return nil
@@ -592,12 +569,14 @@ func (b BuildConfig) setBuildType(buildType string) {
 	// Remove all -g and -O flags.
 	cflags := strings.Split(os.Getenv("CFLAGS"), " ")
 	cflags = slices.DeleteFunc(cflags, func(element string) bool {
-		return strings.Contains(element, "-g") || strings.Contains(element, "-O")
+		element = strings.TrimSpace(element)
+		return element == "-g" || element == "-O"
 	})
 
 	cxxflags := strings.Split(os.Getenv("CXXFLAGS"), " ")
 	cxxflags = slices.DeleteFunc(cxxflags, func(element string) bool {
-		return strings.Contains(element, "-g") || strings.Contains(element, "-O")
+		element = strings.TrimSpace(element)
+		return element == "-g" || element == "-O"
 	})
 
 	if b.AsDev {
