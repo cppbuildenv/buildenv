@@ -51,6 +51,7 @@ cmake_config的配置独立于version文件之外  | ✔
 完善cmd描述，并告知候选参数是什么 | ✔
 支持在project里覆盖默认port的配置  | ✔
 支持tgz解压 | ✔
+arguments改为options |  ✔
 支持 buildenv -upgrade 升级  | ✘
 动态生成的cmake config文件（windows还没测试）| ✘
 支持windows下工作  | ✘
@@ -68,5 +69,4 @@ cmake_config的配置独立于version文件之外  | ✔
 增加sync功能，可以指定glog@1.2.3, 如果不指定则sync所有仓库 | ✘
 binary库添加-L和-Wl,-rpath-link | ✘
 package名字里的build type统一小写 | ✘
-arguments改为options | ✘
 固定终端第一行显示当前在进行的工作事项 | ✘
