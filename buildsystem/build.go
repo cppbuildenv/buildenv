@@ -41,6 +41,8 @@ type PortConfig struct {
 	PackageDir      string     // for example: ${buildenv}/packages/ffmpeg-3.4.13-x86_64-linux-20.04-Release
 	InstalledDir    string     // for example: ${buildenv}/installed/x86_64-linux-20.04-Release
 	InstalledFolder string     // for example: aarch64-linux-gnu-gcc-9.2^project_01_standard^Release
+	ExtraHeaderDirs []string   // headers not in standard include path.
+	ExtraLibDirs    []string   // libs not in standard lib path.
 	JobNum          int        // number of jobs to run in parallel
 	TmpDir          string     // for example: ${buildenv}/downloaded/tmp
 }
@@ -99,12 +101,12 @@ func (b BuildConfig) Validate() error {
 	return nil
 }
 
-func (b BuildConfig) Clone(url, version string) error {
+func (b BuildConfig) Clone(url, ref string) error {
 	// Clone repo only when source dir not exists.
 	if !fileio.PathExists(b.PortConfig.SourceDir) {
 		if strings.HasSuffix(url, ".git") {
 			// Clone repo.
-			command := fmt.Sprintf("git clone --branch %s %s %s --recursive", version, url, b.PortConfig.SourceDir)
+			command := fmt.Sprintf("git clone --branch %s %s %s --recursive", ref, url, b.PortConfig.SourceDir)
 			title := fmt.Sprintf("[clone %s@%s]", b.PortConfig.LibName, b.PortConfig.LibVersion)
 			if err := cmd.NewExecutor(title, command).Execute(); err != nil {
 				return err
@@ -165,7 +167,7 @@ func (b BuildConfig) Patch() error {
 	return nil
 }
 
-func (b *BuildConfig) Install(url, version, buildType string) error {
+func (b *BuildConfig) Install(url, ref, buildType string) error {
 	// Check if system tool is already installed.
 	if err := b.checkSystemTools(); err != nil {
 		return err
@@ -192,7 +194,7 @@ func (b *BuildConfig) Install(url, version, buildType string) error {
 	}
 	defer b.buildSystem.removeBuildEnvs()
 
-	if err := b.buildSystem.Clone(url, version); err != nil {
+	if err := b.buildSystem.Clone(url, ref); err != nil {
 		return err
 	}
 	if err := b.buildSystem.Patch(); err != nil {
@@ -474,6 +476,36 @@ func (b *BuildConfig) appendBuildEnvs() error {
 		os.Setenv("PKG_CONFIG_SYSROOT_DIR", b.PortConfig.InstalledDir)
 	} else {
 		if b.PortConfig.CrossTools.RootFS != "" {
+			os.Setenv("SYSROOT", b.PortConfig.CrossTools.RootFS)
+
+			// Add extra header dirs into search path.
+			var extraHeaderDirsString = func() string {
+				var result []string
+				for _, path := range b.PortConfig.ExtraHeaderDirs {
+					result = append(result, "-I"+filepath.Join(b.PortConfig.CrossTools.RootFS, path))
+				}
+				return strings.Join(result, " ")
+			}
+			joinedDirs := extraHeaderDirsString()
+			if joinedDirs == "" {
+				env.AppendEnv("CFLAGS", fmt.Sprintf("--sysroot=%s", b.PortConfig.CrossTools.RootFS))
+				env.AppendEnv("CXXFLAGS", fmt.Sprintf("--sysroot=%s", b.PortConfig.CrossTools.RootFS))
+			} else {
+				env.AppendEnv("CFLAGS", fmt.Sprintf("--sysroot=%s %s", b.PortConfig.CrossTools.RootFS, joinedDirs))
+				env.AppendEnv("CXXFLAGS", fmt.Sprintf("--sysroot=%s %s", b.PortConfig.CrossTools.RootFS, joinedDirs))
+			}
+
+			// Add extra lib dirs into search path.
+			var extraLibDirsString = func() string {
+				var result []string
+				for _, path := range b.PortConfig.ExtraLibDirs {
+					result = append(result, filepath.Join(b.PortConfig.CrossTools.RootFS, path))
+				}
+				return strings.Join(result, string(os.PathListSeparator))
+			}
+			env.AppendEnv("LDFLAGS", fmt.Sprintf("--sysroot=%s", b.PortConfig.CrossTools.RootFS))
+			env.AppendRPathLink(extraLibDirsString())
+
 			var pkgConfigs = []string{
 				fmt.Sprintf("%s/installed/%s/lib/pkgconfig", b.PortConfig.CrossTools.RootFS, b.PortConfig.InstalledFolder),
 				fmt.Sprintf("%s/installed/%s/share/pkgconfig", b.PortConfig.CrossTools.RootFS, b.PortConfig.InstalledFolder),
@@ -495,13 +527,8 @@ func (b *BuildConfig) appendBuildEnvs() error {
 		env.AppendEnv("CFLAGS", fmt.Sprintf("-I%s", installedHeaderDir))
 		env.AppendEnv("CXXFLAGS", fmt.Sprintf("-I%s", installedHeaderDir))
 
-		// Set rpath-link.
-		installedLibDir := fmt.Sprintf("%s/installed/%s/lib", b.PortConfig.CrossTools.RootFS, b.PortConfig.InstalledFolder)
-		relInstalledDir, err := filepath.Rel(b.PortConfig.CrossTools.RootFS, installedLibDir)
-		if err != nil {
-			return fmt.Errorf("cannot computer relative path of installed dir: %w", err)
-		}
-		env.AppendRPathLink(relInstalledDir)
+		// Append rpath-link.
+		env.AppendRPathLink(filepath.Join(b.PortConfig.InstalledDir, "lib"))
 	}
 
 	return nil

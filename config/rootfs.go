@@ -23,22 +23,6 @@ type RootFS struct {
 	cmakepath string `json:"-"`
 }
 
-func (r RootFS) extraHeaderDirsString(rootfs string) string {
-	var result []string
-	for _, path := range r.ExtraHeaderDirs {
-		result = append(result, "-I"+filepath.Join(rootfs, path))
-	}
-	return strings.Join(result, " ")
-}
-
-func (r RootFS) extraLibDirsString(rootfs string) string {
-	var result []string
-	for _, path := range r.ExtraLibDirs {
-		result = append(result, filepath.Join(rootfs, path))
-	}
-	return strings.Join(result, string(os.PathListSeparator))
-}
-
 func (r *RootFS) Validate() error {
 	// Validate rootfs download url.
 	if r.Url == "" {
@@ -52,21 +36,6 @@ func (r *RootFS) Validate() error {
 
 	r.fullpath = filepath.Join(Dirs.ExtractedToolsDir, r.Path)
 	r.cmakepath = fmt.Sprintf("${BUILDENV_ROOT_DIR}/downloads/tools/%s", r.Path)
-	os.Setenv("SYSROOT", r.fullpath)
-
-	// Add extra header dirs into search path.
-	joinedDirs := r.extraHeaderDirsString(r.fullpath)
-	if joinedDirs == "" {
-		env.AppendEnv("CFLAGS", fmt.Sprintf("--sysroot=%s", r.fullpath))
-		env.AppendEnv("CXXFLAGS", fmt.Sprintf("--sysroot=%s", r.fullpath))
-	} else {
-		env.AppendEnv("CFLAGS", fmt.Sprintf("--sysroot=%s %s", r.fullpath, joinedDirs))
-		env.AppendEnv("CXXFLAGS", fmt.Sprintf("--sysroot=%s %s", r.fullpath, joinedDirs))
-	}
-
-	// Add extra lib dirs into search path.
-	env.AppendEnv("LDFLAGS", fmt.Sprintf("--sysroot=%s", r.fullpath))
-	env.AppendRPathLink(r.extraLibDirsString(r.fullpath))
 
 	// Add pkg-config libdir in rootfs to environment.
 	var pkgConfigPaths []string

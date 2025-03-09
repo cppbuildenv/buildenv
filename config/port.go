@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 )
@@ -15,12 +16,13 @@ import (
 type Port struct {
 	Url          string                    `json:"url"`
 	Name         string                    `json:"name"`
-	Version      string                    `json:"version"`
+	Ref          string                    `json:"ref"`
 	SourceFolder string                    `json:"source_folder,omitempty"`
 	BuildConfigs []buildsystem.BuildConfig `json:"build_configs"`
 
 	// Internal fields.
 	ctx          Context `json:"-"`
+	version      string  `json:"-"`
 	packageDir   string  `json:"-"`
 	installedDir string  `json:"-"`
 	stateFile    string  `json:"-"` // Used to record installed state
@@ -29,7 +31,7 @@ type Port struct {
 }
 
 func (p Port) NameVersion() string {
-	return p.Name + "@" + p.Version
+	return p.Name + "@" + p.version
 }
 
 func (p *Port) Init(ctx Context, portPath string) error {
@@ -42,6 +44,14 @@ func (p *Port) Init(ctx Context, portPath string) error {
 	if !strings.HasPrefix(portPath, Dirs.PortsDir) {
 		portPath = filepath.Join(Dirs.PortsDir, portPath)
 	}
+
+	// Read version from port path.
+	reg := regexp.MustCompile(`@([a-zA-Z0-9\.\-]+)\.json`)
+	match := reg.FindStringSubmatch(portPath)
+	if len(match) < 1 {
+		return fmt.Errorf("cannot read version from port path: %s", portPath)
+	}
+	p.version = match[1]
 
 	// Read name and version.
 	portPath = strings.ReplaceAll(portPath, "@", "/")
@@ -93,7 +103,7 @@ func (p *Port) Init(ctx Context, portPath string) error {
 		CrossTools:      p.buildCrossTools(),
 		JobNum:          ctx.JobNum(),
 		LibName:         p.Name,
-		LibVersion:      p.Version,
+		LibVersion:      p.version,
 		SourceFolder:    p.SourceFolder,
 		WorkspaceDir:    Dirs.WorkspaceDir,
 		PortsDir:        Dirs.PortsDir,
@@ -104,6 +114,11 @@ func (p *Port) Init(ctx Context, portPath string) error {
 		InstalledDir:    p.installedDir,
 		InstalledFolder: installedFolder,
 		TmpDir:          filepath.Join(Dirs.DownloadedDir, "tmp"),
+	}
+
+	if p.ctx.RootFS() != nil {
+		portConfig.ExtraHeaderDirs = p.ctx.RootFS().ExtraHeaderDirs
+		portConfig.ExtraLibDirs = p.ctx.RootFS().ExtraLibDirs
 	}
 
 	if len(p.BuildConfigs) > 0 {
@@ -128,7 +143,7 @@ func (p *Port) Validate() error {
 		return fmt.Errorf("name of %s is empty", p.Name)
 	}
 
-	if p.Version == "" {
+	if p.Ref == "" {
 		return fmt.Errorf("version of %s is empty", p.Name)
 	}
 
@@ -167,7 +182,7 @@ func (p Port) Installed() bool {
 func (p Port) Write(portPath string) error {
 	p.Url = "// [http url | https url | ftp url | git url]"
 	p.Name = "// [library name]"
-	p.Version = "// [repo branch or tag]"
+	p.Ref = "// [repo branch or tag]"
 	p.SourceFolder = "// [folder that contains CMakeLists.txt or configure or autoconf.sh]"
 	p.BuildConfigs = []buildsystem.BuildConfig{}
 	p.BuildConfigs = append(p.BuildConfigs, buildsystem.BuildConfig{
@@ -499,7 +514,7 @@ func (p Port) installFromSource(silentMode bool, buildConfig *buildsystem.BuildC
 	}
 
 	// Check and repair current port.
-	if err := buildConfig.Install(p.Url, p.Version, p.ctx.BuildType()); err != nil {
+	if err := buildConfig.Install(p.Url, p.Ref, p.ctx.BuildType()); err != nil {
 		return err
 	}
 
@@ -510,12 +525,12 @@ func (p Port) installFromPackage(depedencies []string) error {
 	platformProject := fmt.Sprintf("%s^%s^%s", p.ctx.Platform().Name, p.ctx.Project().Name, p.ctx.BuildType())
 
 	// First, we must check and repair dependency ports.
-	for _, nameVersion := range depedencies {
-		if strings.HasPrefix(nameVersion, p.Name) {
-			return fmt.Errorf("port.dependencies contains circular dependency: %s", nameVersion)
+	for _, nameRef := range depedencies {
+		if strings.HasPrefix(nameRef, p.Name) {
+			return fmt.Errorf("port.dependencies contains circular dependency: %s", nameRef)
 		}
 
-		packageDir := filepath.Join(Dirs.WorkspaceDir, "packages", nameVersion+"^"+platformProject)
+		packageDir := filepath.Join(Dirs.WorkspaceDir, "packages", nameRef+"^"+platformProject)
 		packageFiles, err := p.PackageFiles(
 			packageDir,
 			p.ctx.Platform().Name,

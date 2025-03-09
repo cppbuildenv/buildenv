@@ -129,7 +129,7 @@ func (p *Project) checkPortsConflicts() error {
 
 		p.trackingPorts[port.Name] = []trackingInfo{
 			{
-				version: port.Version,
+				version: port.version,
 				parent:  p.Name,
 			},
 		}
@@ -183,17 +183,17 @@ func (p *Project) trackingPortDepedencies(port Port) error {
 
 		if infos, ok := p.trackingPorts[subPort.Name]; ok {
 			contains := slices.ContainsFunc(infos, func(info trackingInfo) bool {
-				return info.version == subPort.Version
+				return info.version == subPort.version
 			})
 			if !contains {
 				p.trackingPorts[subPort.Name] = append(p.trackingPorts[subPort.Name], trackingInfo{
-					version: subPort.Version,
+					version: subPort.version,
 					parent:  port.Name,
 				})
 			}
 		} else {
 			p.trackingPorts[subPort.Name] = append(p.trackingPorts[subPort.Name], trackingInfo{
-				version: subPort.Version,
+				version: subPort.version,
 				parent:  port.Name,
 			})
 		}
