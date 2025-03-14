@@ -95,7 +95,7 @@ func (d DownloadRepair) download(url, archiveName string) (downloaded string, er
 		// Redownload if remote file size and local file size not match.
 		fileSize, err := FileSize(url)
 		if err != nil || fileSize <= 0 {
-			return "", fmt.Errorf("%s: get remote filesize failed: %w", archiveName, err)
+			return "", fmt.Errorf("get remote filesize failed: %s", url)
 		}
 		info, err := os.Stat(downloaded)
 		if err != nil {

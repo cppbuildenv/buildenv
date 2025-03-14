@@ -43,7 +43,7 @@ For a long time, CMake has only provided functions like  `find_package`、`find_
 
 While third-party package management tools like `Conan` and `Vcpkg` are widely used in the community, they do not fully meet certain needs:
 
-1. **Conan**：虽然功能强大，但依赖于额外的 **Python** 语言和python包，且上手成本较高。因为 Conan 不仅支持 **CMake**，还支持 **Meson**、**Makefile**、**MSBuild**、**SScon**、**QMake**、**Bazaar** 等构建系统，这导致其 API 封装较深，需要更多时间学习和上手，对于本来**CMake**掌握就一般的同学无疑又增加了额外新的学习成本。其实，**Conan**重点解决的只是包的托管和含有依赖关系的库的下载，在编译环境层面并没有提供简化的解决方案，基本上这块工作留给了用户自己。
+1. **Conan**：虽然功能强大，但依赖于额外的 **Python** 语言和**python**包，且上手成本较高。因为 Conan 不仅支持 **CMake**，还支持 **Meson**、**Makefile**、**MSBuild**、**SScon**、**QMake**、**Bazaar** 等构建系统，这导致其 API 封装较深，需要更多时间学习和上手，对于本来**CMake**掌握就一般的同学无疑又增加了额外新的学习成本。其实，**Conan**重点解决的只是包的托管和含有依赖关系的库的下载，在编译环境层面并没有提供简化的解决方案，基本上这块工作留给了用户自己。
 
     ----
 

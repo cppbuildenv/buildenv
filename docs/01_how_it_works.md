@@ -86,9 +86,9 @@ Toolchain, rootfs, tools of different platforms would be download in this folder
 
 ## 3. Work modes
 
-buildenv provides two working mode: `cli menu` and `cli with argument`.
+buildenv provides two working mode: `cli with menu` and `cli with argument`.
 
-### 3.1 Command-Line menu.
+### 3.1 CLI with menu.
 
 ```
 ./buildenv
@@ -110,7 +110,7 @@ Please choose an option from the menu below...
 ↑/k up • ↓/j down • q quit • ? more
 ```
 
-### 3.2 Execute command with parameters.
+### 3.2 CLI with parameters.
 
 ```
 $ ./buildenv -h

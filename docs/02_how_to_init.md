@@ -13,7 +13,13 @@ The generated `buildenv.json` would be like below:
     "platform_name": "",
     "project_name": "",
     "job_num": 32,
-    "cache_dirs": []
+    "cache_dirs": [
+        {
+            "dir": "/home/test/buildenv_cache",
+            "readable": true,
+            "writable": true
+        }
+    ]
 }
 ```
 > `platform_name`, `project_name` and `cache_dirs` are empyt, this requires other configurations later, please refer [05_how_to_select_platform](./05_how_to_select_platform.md) and [07_how_to_select_project](./07_how_to_select_project.md).
