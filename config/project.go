@@ -89,20 +89,20 @@ func (p Project) Setup(args SetupArgs) error {
 	}
 
 	// Validate dependencies.
-	validatePort := func(portNameVersion string) error {
-		portPath := filepath.Join(Dirs.PortsDir, portNameVersion+".json")
+	validatePort := func(nameVersion string) error {
+		portPath := filepath.Join(Dirs.PortsDir, nameVersion+".json")
 		var port Port
 		if err := port.Init(p.ctx, portPath); err != nil {
-			return fmt.Errorf("%s: %w", portNameVersion, err)
+			return fmt.Errorf("%s: %w", nameVersion, err)
 		}
 
 		if err := port.Validate(); err != nil {
-			return fmt.Errorf("%s: %w", portNameVersion, err)
+			return fmt.Errorf("%s: %w", nameVersion, err)
 		}
 
 		if args.InstallPorts() {
 			if err := port.Install(args.Silent()); err != nil {
-				return fmt.Errorf("%s: %w", portNameVersion, err)
+				return fmt.Errorf("%s: %w", nameVersion, err)
 			}
 		}
 
@@ -121,9 +121,9 @@ func (p Project) Setup(args SetupArgs) error {
 func (p *Project) checkPortsConflicts() error {
 	p.trackingPorts = make(map[string][]trackingInfo)
 
-	for _, portDesc := range p.Ports {
+	for _, nameVersion := range p.Ports {
 		var port Port
-		if err := port.Init(p.ctx, filepath.Join(Dirs.PortsDir, portDesc+".json")); err != nil {
+		if err := port.Init(p.ctx, filepath.Join(Dirs.PortsDir, nameVersion+".json")); err != nil {
 			return err
 		}
 
