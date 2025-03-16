@@ -167,9 +167,9 @@ func (b *BuildConfig) Install(url, ref, buildType string) error {
 	}
 
 	// Clean repo if possible.
-	// if err := cmd.CleanRepo(b.PortConfig.SourceDir); err != nil {
-	// 	return fmt.Errorf("clean repo failed: %s", err)
-	// }
+	if err := cmd.CleanRepo(b.PortConfig.SourceDir); err != nil {
+		return fmt.Errorf("clean repo failed: %s", err)
+	}
 
 	// Set cross tool in environment for cross compiling.
 	if b.AsDev {

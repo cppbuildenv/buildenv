@@ -8,30 +8,29 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strings"
 )
 
 type Port struct {
 	Url          string                    `json:"url"`
-	Name         string                    `json:"name"`
 	Ref          string                    `json:"ref"`
 	SourceFolder string                    `json:"source_folder,omitempty"`
 	BuildConfigs []buildsystem.BuildConfig `json:"build_configs"`
 
 	// Internal fields.
+	Name         string  `json:"-"`
+	Version      string  `json:"-"`
+	AsSubDep     bool    `json:"-"`
+	AsDev        bool    `json:"-"`
 	ctx          Context `json:"-"`
-	version      string  `json:"-"`
 	packageDir   string  `json:"-"`
 	installedDir string  `json:"-"`
 	stateFile    string  `json:"-"` // Used to record installed state
-	AsSubDep     bool    `json:"-"`
-	AsDev        bool    `json:"-"`
 }
 
 func (p Port) NameVersion() string {
-	return p.Name + "@" + p.version
+	return p.Name + "@" + p.Version
 }
 
 func (p *Port) Init(ctx Context, portPath string) error {
@@ -45,21 +44,18 @@ func (p *Port) Init(ctx Context, portPath string) error {
 		portPath = filepath.Join(Dirs.PortsDir, portPath)
 	}
 
-	// Read version from port path.
-	reg := regexp.MustCompile(`@([a-zA-Z0-9\.\-]+)\.json`)
-	match := reg.FindStringSubmatch(portPath)
-	if len(match) < 1 {
-		return fmt.Errorf("cannot read version from port path: %s", portPath)
+	// Read name and version from port path.
+	nameVersion := strings.TrimSuffix(filepath.Base(portPath), ".json")
+	if !strings.Contains(nameVersion, "@") {
+		return fmt.Errorf("port name and version are invalid %s", portPath)
 	}
-	p.version = match[1]
+	parts := strings.Split(nameVersion, "@")
+	p.Name = parts[0]
+	p.Version = parts[1]
 
 	// Read name and version.
 	portPath = strings.ReplaceAll(portPath, "@", "/")
 	if !fileio.PathExists(portPath) {
-		version := fileio.FileBaseName(portPath)
-		name := fileio.FileBaseName(filepath.Dir(portPath))
-		nameVersion := name + "@" + version
-
 		if p.AsSubDep {
 			return fmt.Errorf("sub depedency port %s does not exists", nameVersion)
 		} else {
@@ -75,9 +71,6 @@ func (p *Port) Init(ctx Context, portPath string) error {
 	if err := json.Unmarshal(bytes, p); err != nil {
 		return err
 	}
-
-	// Info file: used to record installed state.
-	nameVersion := p.NameVersion()
 
 	var (
 		installedFolder string
@@ -103,7 +96,7 @@ func (p *Port) Init(ctx Context, portPath string) error {
 		CrossTools:      p.buildCrossTools(),
 		JobNum:          ctx.JobNum(),
 		LibName:         p.Name,
-		LibVersion:      p.version,
+		LibVersion:      p.Version,
 		SourceFolder:    p.SourceFolder,
 		WorkspaceDir:    Dirs.WorkspaceDir,
 		PortsDir:        Dirs.PortsDir,
