@@ -55,7 +55,9 @@ func (e executor) Execute() error {
 }
 
 func (e executor) doExecute(buffer *bytes.Buffer) error {
-	fmt.Print(color.Sprintf(color.Blue, "\n%s: %s\n\n", e.title, e.command))
+	if e.title != "" {
+		fmt.Print(color.Sprintf(color.Blue, "\n%s: %s\n\n", e.title, e.command))
+	}
 
 	// Create command for windows and unix like.
 	var cmd *exec.Cmd

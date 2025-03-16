@@ -7,7 +7,6 @@ import (
 	"buildenv/pkg/fileio"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"slices"
@@ -18,12 +17,6 @@ const supportedString = "b2, bazel, cmake, gyp, makefiles, meson, ninja"
 
 var (
 	supportedArray = []string{"b2", "bazel", "cmake", "gyp", "makefiles", "meson", "ninja"}
-	toolMapping    = map[string]string{
-		"autoconf":   "autoconf",
-		"automake":   "automake",
-		"libtoolize": "libtool",
-		"graphviz":   "dot",
-	}
 )
 
 type PortConfig struct {
@@ -344,16 +337,12 @@ func (b BuildConfig) checkSystemTools() error {
 			continue
 		}
 
-		// Replace tool's bin name with tool name.
-		_, err := exec.LookPath(tool)
+		installed, err := cmd.IsLibraryInstalled(tool)
 		if err != nil {
-			for key, value := range toolMapping {
-				if key == tool {
-					tool = value
-					break
-				}
-			}
+			return err
+		}
 
+		if !installed {
 			missing = append(missing, tool)
 		}
 	}

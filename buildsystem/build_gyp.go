@@ -17,7 +17,7 @@ type gyp struct {
 	BuildConfig
 }
 
-func (g gyp) Configure(buildType string) error {
+func (gyp) Configure(buildType string) error {
 	return nil
 }
 
@@ -32,9 +32,8 @@ func (g gyp) Build() error {
 		return err
 	}
 
-	if err := os.Chdir(g.PortConfig.SourceDir); err != nil {
-		return err
-	}
+	// Some libraries' configure or CMakeLists.txt may not in root folder.
+	g.PortConfig.SourceDir = filepath.Join(g.PortConfig.SourceDir, g.PortConfig.SourceFolder)
 
 	joinedOptions := strings.Join(g.Options, " ")
 
@@ -43,6 +42,7 @@ func (g gyp) Build() error {
 	title := fmt.Sprintf("[build %s@%s]", g.PortConfig.LibName, g.PortConfig.LibVersion)
 	executor := cmd.NewExecutor(title, "./build.sh "+joinedOptions)
 	executor.SetLogPath(logPath)
+	executor.SetWorkDir(g.PortConfig.SourceDir)
 	if err := executor.Execute(); err != nil {
 		return err
 	}
