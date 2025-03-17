@@ -90,9 +90,8 @@ func (p Project) Setup(args SetupArgs) error {
 
 	// Validate dependencies.
 	validatePort := func(nameVersion string) error {
-		portPath := filepath.Join(Dirs.PortsDir, nameVersion+".json")
 		var port Port
-		if err := port.Init(p.ctx, portPath); err != nil {
+		if err := port.Init(p.ctx, nameVersion); err != nil {
 			return fmt.Errorf("%s: %w", nameVersion, err)
 		}
 
@@ -123,7 +122,7 @@ func (p *Project) checkPortsConflicts() error {
 
 	for _, nameVersion := range p.Ports {
 		var port Port
-		if err := port.Init(p.ctx, filepath.Join(Dirs.PortsDir, nameVersion+".json")); err != nil {
+		if err := port.Init(p.ctx, nameVersion); err != nil {
 			return err
 		}
 
@@ -175,9 +174,9 @@ func (p *Project) trackingPortDepedencies(port Port) error {
 	}
 
 	// Tracking port depedencies infos.
-	for _, depedency := range matchedConfig.Depedencies {
+	for _, nameVersion := range matchedConfig.Depedencies {
 		var subPort Port
-		if err := subPort.Init(p.ctx, filepath.Join(Dirs.PortsDir, depedency+".json")); err != nil {
+		if err := subPort.Init(p.ctx, nameVersion); err != nil {
 			return err
 		}
 

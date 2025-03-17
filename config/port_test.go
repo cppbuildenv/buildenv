@@ -5,11 +5,10 @@ import (
 )
 
 func TestBuildGFlags(t *testing.T) {
-	portPath := "testdata/conf/ports/gflags-v2.2.2.json"
 	buildenv := NewBuildEnv()
 
 	var port Port
-	if err := port.Init(buildenv, portPath); err != nil {
+	if err := port.Init(buildenv, "gflags@v2.2.2"); err != nil {
 		t.Fatal(err)
 	}
 

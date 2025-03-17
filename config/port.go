@@ -33,29 +33,25 @@ func (p Port) NameVersion() string {
 	return p.Name + "@" + p.Version
 }
 
-func (p *Port) Init(ctx Context, portPath string) error {
+func (p *Port) Init(ctx Context, nameVersion string) error {
 	p.ctx = ctx
 
-	// Add file suffix and prefix if not exists.
-	if !strings.HasSuffix(portPath, ".json") {
-		portPath += ".json"
-	}
-	if !strings.HasPrefix(portPath, Dirs.PortsDir) {
-		portPath = filepath.Join(Dirs.PortsDir, portPath)
-	}
-
-	// Read name and version from port path.
-	nameVersion := strings.TrimSuffix(filepath.Base(portPath), ".json")
+	// Validate name and version.
 	if !strings.Contains(nameVersion, "@") {
-		return fmt.Errorf("port name and version are invalid %s", portPath)
+		return fmt.Errorf("port name and version are invalid %s", nameVersion)
 	}
 	parts := strings.Split(nameVersion, "@")
+	if len(parts) != 2 {
+		return fmt.Errorf("port name and version are invalid %s", nameVersion)
+	}
+
+	// Parse name and version.
 	p.Name = parts[0]
 	p.Version = parts[1]
 
 	// Read name and version.
-	portPath = strings.ReplaceAll(portPath, "@", "/")
-	if !fileio.PathExists(portPath) {
+	portFile := filepath.Join(Dirs.PortsDir, p.Name, p.Version+".json")
+	if !fileio.PathExists(portFile) {
 		if p.AsSubDep {
 			return fmt.Errorf("sub depedency port %s does not exists", nameVersion)
 		} else {
@@ -64,7 +60,7 @@ func (p *Port) Init(ctx Context, portPath string) error {
 	}
 
 	// Decode JSON.
-	bytes, err := os.ReadFile(portPath)
+	bytes, err := os.ReadFile(portFile)
 	if err != nil {
 		return err
 	}
@@ -468,9 +464,9 @@ func (p Port) installFromCache(matchedConfig *buildsystem.BuildConfig) (installe
 
 func (p Port) installFromSource(silentMode bool, buildConfig *buildsystem.BuildConfig) error {
 	// 1. check and repair dev_dependencies.
-	for _, item := range buildConfig.DevDepedencies {
+	for _, nameVersion := range buildConfig.DevDepedencies {
 		// Skip self.
-		if p.AsDev && p.NameVersion() == item {
+		if p.AsDev && p.NameVersion() == nameVersion {
 			continue
 		}
 
@@ -478,8 +474,7 @@ func (p Port) installFromSource(silentMode bool, buildConfig *buildsystem.BuildC
 		var port Port
 		port.AsSubDep = true
 		port.AsDev = true
-		portPath := filepath.Join(Dirs.PortsDir, item+".json")
-		if err := port.Init(p.ctx, portPath); err != nil {
+		if err := port.Init(p.ctx, nameVersion); err != nil {
 			return err
 		}
 		if err := port.Install(silentMode); err != nil {
@@ -488,17 +483,16 @@ func (p Port) installFromSource(silentMode bool, buildConfig *buildsystem.BuildC
 	}
 
 	// 2. check and repair dependencies.
-	for _, item := range buildConfig.Depedencies {
-		if strings.HasPrefix(item, p.Name) {
-			return fmt.Errorf("%s's dependencies contains circular dependency: %s", p.NameVersion(), item)
+	for _, nameVersion := range buildConfig.Depedencies {
+		if strings.HasPrefix(nameVersion, p.Name) {
+			return fmt.Errorf("%s's dependencies contains circular dependency: %s", p.NameVersion(), nameVersion)
 		}
 
 		// Check and repair dependency.
 		var port Port
 		port.AsDev = p.AsDev
 		port.AsSubDep = true
-		portPath := filepath.Join(Dirs.PortsDir, item+".json")
-		if err := port.Init(p.ctx, portPath); err != nil {
+		if err := port.Init(p.ctx, nameVersion); err != nil {
 			return err
 		}
 		if err := port.Install(silentMode); err != nil {
